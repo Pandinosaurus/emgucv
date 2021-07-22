@@ -72,8 +72,11 @@ namespace Emgu.CV.XamarinForms
             bool haveDNN = (openCVConfigDict["HAVE_OPENCV_DNN"] != 0);
             bool haveFreetype = (openCVConfigDict["HAVE_OPENCV_FREETYPE"] != 0);
             bool haveFace = (openCVConfigDict["HAVE_OPENCV_FACE"] != 0);
+            bool haveWechatQRCode = (openCVConfigDict["HAVE_OPENCV_WECHAT_QRCODE"] != 0);
+            bool haveBarcode = (openCVConfigDict["HAVE_OPENCV_BARCODE"] != 0);
             bool haveObjdetect = (openCVConfigDict["HAVE_OPENCV_OBJDETECT"] != 0);
             bool haveTesseract = (openCVConfigDict["HAVE_EMGUCV_TESSERACT"] != 0);
+            
 
             if (haveTesseract)
             {
@@ -126,6 +129,27 @@ namespace Emgu.CV.XamarinForms
                     MainPage.Navigation.PushAsync(faceLandmarkDetectionPage);
                 };
             }
+
+            if (haveWechatQRCode && haveBarcode)
+            {
+                Button barcodeQrcodeDetectionButton = new Button();
+                barcodeQrcodeDetectionButton.Text = "Barcode and QRCode Detection";
+                buttonList.Add(barcodeQrcodeDetectionButton);
+                barcodeQrcodeDetectionButton.Clicked += (sender, args) =>
+                {
+                    BarcodeDetectorModel barcodeDetector = new BarcodeDetectorModel();
+                    WeChatQRCodeDetector qrcodeDetector = new WeChatQRCodeDetector();
+                    CombinedModel combinedModel = new CombinedModel(barcodeDetector, qrcodeDetector);
+
+                    ProcessAndRenderPage barcodeQrcodeDetectionPage = new ProcessAndRenderPage(
+                        combinedModel,
+                        "Perform Barcode and QRCode Detection",
+                        "qrcode_barcode.png",
+                        "");
+                    MainPage.Navigation.PushAsync(barcodeQrcodeDetectionPage);
+                };
+            }
+
 
             bool hasInferenceEngine = false;
             if (haveDNN)
@@ -263,7 +287,7 @@ namespace Emgu.CV.XamarinForms
                 p.IsVisible = true;
                 p.Title = "Preferred DNN backend & target";
 
-                foreach (String option in GetDnnBackends())
+                foreach (String option in GetDnnBackends(DnnBackendType.InferenceEngineOnly))
                 {
                     p.Items.Add(option);
                 }
@@ -356,7 +380,13 @@ namespace Emgu.CV.XamarinForms
             }
         }
 
-        private String[] GetDnnBackends()
+        private enum DnnBackendType
+        {
+            Default,
+            InferenceEngineOnly
+        }
+
+        private String[] GetDnnBackends(DnnBackendType backendType = DnnBackendType.Default)
         {
             var openCVConfigDict = CvInvoke.ConfigDict;
             bool haveDNN = (openCVConfigDict["HAVE_OPENCV_DNN"] != 0);
@@ -367,6 +397,11 @@ namespace Emgu.CV.XamarinForms
                 List<String> dnnBackendsText = new List<string>();
                 foreach (var dnnBackend in dnnBackends)
                 {
+                    if (backendType == DnnBackendType.InferenceEngineOnly &&
+                        !((dnnBackend.Backend == Dnn.Backend.InferenceEngine)
+                        || (dnnBackend.Backend == Dnn.Backend.InferenceEngineNgraph)
+                        || (dnnBackend.Backend == Dnn.Backend.InferenceEngineNnBuilder2019)))
+                        continue;
                     dnnBackendsText.Add(String.Format("{0};{1}", dnnBackend.Backend, dnnBackend.Target));
                 }
 

@@ -11,7 +11,8 @@
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 INCLUDE (CheckPlatform)
 
-IF( (WIN32 AND (NOT NETFX_CORE)) OR IS_UBUNTU OR (APPLE AND ("${IOS_ARCH}" STREQUAL "")) )
+#IF( (WIN32 AND (NOT NETFX_CORE)) OR IS_UBUNTU OR (APPLE AND ("${IOS_ARCH}" STREQUAL "")) )
+IF( (WIN32 AND (NOT NETFX_CORE)) OR IS_UBUNTU )
   SET(EMGU_CV_WITH_DEPTHAI ON CACHE BOOL "Build support for OAK-1 and OAK-D")
 ELSE() 
   SET(EMGU_CV_WITH_DEPTHAI OFF CACHE BOOL "Build support for OAK-1 and OAK-D")
@@ -39,8 +40,15 @@ ENDIF()
 
 PROJECT(emgucv)
 CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
-cmake_policy(SET CMP0022 NEW)
-cmake_policy(SET CMP0069 NEW)
+if(POLICY CMP0022)
+  #cmake_policy(SET CMP0022 NEW)
+  SET(CMAKE_POLICY_DEFAULT_CMP0022 NEW)
+endif()
+if(POLICY CMP0069)
+  #cmake_policy(SET CMP0069 NEW)
+  SET(CMAKE_POLICY_DEFAULT_CMP0069 NEW)
+endif()
+
 
 IF(EMGU_CV_WITH_DEPTHAI)
   # Always build depthai-core as a static library
@@ -321,7 +329,11 @@ MESSAGE(STATUS "<<<< EMGUCV_ARCH: ${EMGUCV_ARCH} >>>>")
 MESSAGE(STATUS "<<<< CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME} >>>>")
 MESSAGE(STATUS "<<<< CMAKE_SYSTEM_VERSION: ${CMAKE_SYSTEM_VERSION} >>>>")
 MESSAGE(STATUS "<<<< CMAKE_GENERATOR: ${CMAKE_GENERATOR} >>>>")
+MESSAGE(STATUS "<<<< CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR} >>>>")
 MESSAGE(STATUS "<<<< CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR} >>>>")
+IF(APPLE)
+  MESSAGE(STATUS "<<<< CMAKE_APPLE_SILICON_PROCESSOR: ${CMAKE_APPLE_SILICON_PROCESSOR} >>>>")
+ENDIF()
 IF(IPHONESIMULATOR)
   MESSAGE(STATUS "<<<< IPHONESIMULATOR: ${IPHONESIMULATOR} >>>>")
 ENDIF()
@@ -477,7 +489,7 @@ IF(IOS)
   ENDIF()
   #CHECK_BINARY_EXIST("libs/iOS" "libcvextern_arm64.a" HAVE_IOS_ARM64 ${IS_IOS_ARM64_BUILD})
 ENDIF()
-CHECK_BINARY_EXIST("libs/iOS" "libcvextern_iphoneos.a" HAVE_IOS ${IS_IOS_BUILD})
+CHECK_BINARY_EXIST("libs/iOS" "libcvextern_*.a" HAVE_IOS ${IS_IOS_BUILD})
 
 #IF(NOT HAVE_IOS)
 #  IF(HAVE_IOS_I386 OR HAVE_IOS_X86_64 OR HAVE_IOS_ARMV7S OR HAVE_IOS_ARMV7 OR HAVE_IOS_ARM64)
@@ -503,7 +515,7 @@ IF(APPLE AND (NOT IOS))
   SET(IS_MACOS_BUILD ON)
   MESSAGE(STATUS "IS_MACOS_BUILD: ${IS_MACOS_BUILD}")
 ENDIF()
-CHECK_BINARY_EXIST("libs/macos" "libcvextern.dylib" HAVE_MACOS ${IS_MACOS_BUILD})
+CHECK_BINARY_EXIST("libs/macos" "lib*.dylib" HAVE_MACOS ${IS_MACOS_BUILD})
 
 SET(IS_ANDROID_ARM64_V8A_BUILD OFF)
 IF(ANDROID AND ("${ANDROID_ABI}" STREQUAL "arm64-v8a"))
@@ -893,6 +905,7 @@ SET (OPENCV_MODULE_NAME_CANDIDATES
   hdf
   gapi
   wechat_qrcode
+  barcode
   )
 
 FOREACH(OPENCV_MODULE_NAME ${OPENCV_MODULE_NAME_CANDIDATES})
@@ -1102,6 +1115,7 @@ IF(HAVE_MACOS)
     <file src=\"..\\..\\..\\libs\\macos\\*.dylib\" target=\"runtimes\\osx\\native\" />
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.Mac.dll\" target=\"lib\\Xamarin.Mac\" />
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.Mac.xml\" target=\"lib\\Xamarin.Mac\" />
+    <file src=\"..\\_._\" target=\"lib\\netstandard2.0\" />
     <file src=\"..\\..\\..\\miscellaneous\\nuget_icon.png\" target=\"icon.png\" />
     <file src=\"..\\..\\..\\${EMGUCV_LICENSE_FILE}\" target=\"\" />")
 	SET(EMGUCV_MACOS_NUGET_DEPENDENCY "
@@ -1509,8 +1523,7 @@ IF(HAVE_ANDROID_ALL_ARCH AND WIN32)
   SET(EMGUCV_ANDROID_NUGET_FILE_LIST " 
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.Android.dll\" target=\"lib\\MonoAndroid50\" />
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.Android.xml\" target=\"lib\\MonoAndroid50\" />")
-    SET(EMGUCV_ANDROID_NUGET_FILE_LIST "${EMGUCV_ANDROID_NUGET_FILE_LIST} 
-    <file src=\"Emgu.CV.runtime.android.targets\" target=\"build\\${EMGUCV_ANDROID_NUGET_ID}.targets\" />
+    SET(EMGUCV_ANDROID_NUGET_FILE_LIST "${EMGUCV_ANDROID_NUGET_FILE_LIST}
     <file src=\"..\\..\\..\\miscellaneous\\nuget_icon.png\" target=\"icon.png\" />
 	<file src=\"..\\..\\..\\${EMGUCV_LICENSE_FILE}\" target=\"\" />
     <file src=\"readme.txt\" target=\"\" />")
@@ -1524,12 +1537,11 @@ IF(HAVE_ANDROID_ALL_ARCH AND WIN32)
 ENDIF()
 
 IF(HAVE_IOS AND WIN32)
-  SET(EMGUCV_IOS_NUGET_TITLE "Emgu CV for iOS")	
+  SET(EMGUCV_IOS_NUGET_TITLE "Emgu CV for iOS Native Runtime")	
   SET(EMGUCV_IOS_NUGET_FILE_LIST " 
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.IOS.dll\" target=\"lib\\Xamarin.iOS10\" />
     <file src=\"..\\..\\..\\libs\\Emgu.CV.Platform.IOS.XML\" target=\"lib\\Xamarin.iOS10\" />")
     SET(EMGUCV_IOS_NUGET_FILE_LIST "${EMGUCV_IOS_NUGET_FILE_LIST} 
-    <file src=\"Emgu.CV.runtime.ios.targets\" target=\"build\\${EMGUCV_IOS_NUGET_ID}.targets\" />
     <file src=\"..\\..\\..\\miscellaneous\\nuget_icon.png\" target=\"icon.png\" />
     <file src=\"..\\..\\..\\${EMGUCV_LICENSE_FILE}\" target=\"\" />
 	<file src=\"readme.txt\" target=\"\" />")
@@ -1601,7 +1613,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Emgu.CV.Models.Package.nuspec.i
 
 #CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/component.yaml.in ${CMAKE_CURRENT_SOURCE_DIR}/platforms/xamarin/emgucv_v3/component/component.yaml)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Example.Android.AndroidManifest.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/Emgu.CV.Example/Android/Properties/AndroidManifest.xml @ONLY)
+#CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Example.Android.AndroidManifest.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/Emgu.CV.Example/Android/Properties/AndroidManifest.xml @ONLY)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/XamarinForms.Android.AndroidManifest.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/Emgu.CV.Example/XamarinForms/Android/Properties/AndroidManifest.xml @ONLY)
 

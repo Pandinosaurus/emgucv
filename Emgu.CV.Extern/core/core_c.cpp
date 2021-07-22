@@ -498,7 +498,7 @@ void cvePerspectiveTransform(cv::_InputArray* src, cv::_OutputArray* dst, cv::_I
 
 void cveMulTransposed(cv::_InputArray* src, cv::_OutputArray* dst, bool aTa, cv::_InputArray* delta, double scale, int dtype)
 {
-	cv::mulTransposed(*src, *dst, aTa, delta ? *delta : static_cast<cv::InputArray>(cv::noArray()), dtype);
+	cv::mulTransposed(*src, *dst, aTa, delta ? *delta : static_cast<cv::InputArray>(cv::noArray()), scale, dtype);
 }
 
 void cveSplit(cv::_InputArray* src, cv::_OutputArray* mv)
@@ -1443,7 +1443,13 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 	value->push_back(0);
 #endif
 
-	
+	key->push_back("HAVE_OPENCV_BARCODE");
+#ifdef HAVE_OPENCV_BARCODE
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
 	key->push_back("HAVE_EMGUCV_TESSERACT");
 #ifdef HAVE_EMGUCV_TESSERACT
 	value->push_back(1);

@@ -47,6 +47,7 @@ namespace Emgu.CV
       {
          if (_ptr != IntPtr.Zero)
             CvInvoke.cveOutputArrayRelease(ref _ptr);
+         _parent = null;
       }
    }
 
@@ -57,6 +58,6 @@ namespace Emgu.CV
       /// </summary>
       /// <param name="arr">Pointer to the input / output array</param>
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void cveOutputArrayRelease(ref IntPtr arr);
+      internal static extern void cveOutputArrayRelease(ref IntPtr arr);
    }
 }

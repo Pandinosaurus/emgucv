@@ -32,9 +32,8 @@ namespace Emgu.CV.Models
         private WeChatQRCode _weChatQRCodeDetectionModel = null;
 
         /// <summary>
-        /// Download and initialize the yolo model
+        /// Download and initialize the WeChatQRCode model
         /// </summary>
-        /// <param name="version">The model version</param>
         /// <param name="onDownloadProgressChanged">Call back method during download</param>
         /// <returns>Asyn task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
@@ -88,10 +87,7 @@ namespace Emgu.CV.Models
                 }
             }
         }
-
-
-
-
+        
         /// <summary>
         /// Clear and reset the model. Required Init function to be called again before calling ProcessAndRender.
         /// </summary>
@@ -105,7 +101,7 @@ namespace Emgu.CV.Models
         }
 
         /// <summary>
-        /// Release the memory associated with this Yolo detector.
+        /// Release the memory associated with this WeChatQRCode detector.
         /// </summary>
         protected override void DisposeObject()
         {
@@ -114,7 +110,7 @@ namespace Emgu.CV.Models
 
 
         /// <summary>
-        /// Download and initialize the yolo model
+        /// Download and initialize the WeChatQRCode model
         /// </summary>
         /// <param name="onDownloadProgressChanged">Callback when download progress has been changed</param>
         /// <param name="initOptions">A string, not used right now.</param>
@@ -133,14 +129,7 @@ namespace Emgu.CV.Models
 #endif
         }
 
-        private static Point[] MatToPoints(Mat m)
-        {
-            PointF[] points = new PointF[ m.Width * m.Height / 2 ];
-            GCHandle handle = GCHandle.Alloc(points, GCHandleType.Pinned);
-            Emgu.CV.Util.CvToolbox.Memcpy( handle.AddrOfPinnedObject(), m.DataPointer,points.Length * Marshal.SizeOf<PointF>());
-            handle.Free();
-            return Array.ConvertAll(points, Point.Round);
-        }
+
         
         /// <summary>
         /// Process the input image and render into the output image
@@ -148,49 +137,37 @@ namespace Emgu.CV.Models
         /// <param name="imageIn">The input image</param>
         /// <param name="imageOut">The output image, can be the same as imageIn, in which case we will render directly into the input image</param>
         /// <returns>The messages that we want to display.</returns>
-
         public String ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut)
         {
-            using (VectorOfMat points = new VectorOfMat())
+            Stopwatch watch = Stopwatch.StartNew();
+            var qrCodesFound = _weChatQRCodeDetectionModel.DetectAndDecode(imageIn);
+            watch.Stop();
+            MCvScalar drawColor = new MCvScalar(0, 0, 255);
+            for (int i = 0; i < qrCodesFound.Length; i++)
             {
-                Stopwatch watch = Stopwatch.StartNew();
-                String[] qrCodesFound = _weChatQRCodeDetectionModel.DetectAndDecode(imageIn, points);
-                watch.Stop();
-                for (int i = 0; i < qrCodesFound.Length; i++)
+                using (VectorOfVectorOfPoint vpp = new VectorOfVectorOfPoint(new Point[][] { qrCodesFound[i].Region }))
                 {
-                    using (Mat p = points[i])
-                    {
-                        Point[] contour = MatToPoints(p);
-
-                        using (VectorOfVectorOfPoint vpp = new VectorOfVectorOfPoint(new Point[][] {contour}))
-                        {
-                            CvInvoke.DrawContours(imageOut, vpp, -1, new MCvScalar(255, 0, 0));
-                        }
-                    }
-                    //CvInvoke.DrawContours(imageOut, points, i, new MCvScalar(255, 0, 0));
-                    //CvInvoke.PutText(imageOut, qrCodesFound[i],  );
+                    CvInvoke.DrawContours(imageOut, vpp, -1, drawColor);
                 }
-                if (imageOut != imageIn)
-                {
-                    using (InputArray iaImageIn = imageIn.GetInputArray())
-                    {
-                        iaImageIn.CopyTo(imageOut);
-                    }
-                }
-
-                //foreach (var detected in detectedObjects)
-                //    detected.Render(imageOut, new MCvScalar(0, 0, 255));
-                return String.Format(
-                    "QR codes found (in {1} milliseconds): {0}", 
-                    String.Join(";", String.Format("\"{0}\"",qrCodesFound)), 
-                    watch.ElapsedMilliseconds);
+                CvInvoke.PutText(
+                    imageOut,
+                    qrCodesFound[i].Code,
+                    Point.Round(qrCodesFound[i].Region[0]),
+                    FontFace.HersheySimplex,
+                    1.0,
+                    drawColor
+                    );
             }
 
-            //var detectedObjects = Detect(imageIn);
+            if (qrCodesFound.Length == 0)
+            {
+                return String.Format("No QR codes found (in {0} milliseconds)", watch.ElapsedMilliseconds);
+            }
 
-
-
-            
+            return String.Format(
+                "QR codes found (in {1} milliseconds): {0}",
+                String.Join(";", String.Format("\"{0}\"", Array.ConvertAll( qrCodesFound, v => v.Code))),
+                watch.ElapsedMilliseconds);
         }
     }
 }

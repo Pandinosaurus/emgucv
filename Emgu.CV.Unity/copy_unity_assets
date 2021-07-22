@@ -125,6 +125,11 @@ mkdir -p Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/Hdf
 cp -r ../Emgu.CV.Contrib/Hdf/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/Hdf
 mkdir -p Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/WechatQrcode
 cp -r ../Emgu.CV.Contrib/WechatQrcode/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/WechatQrcode
+mkdir -p Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/Barcode
+cp -r ../Emgu.CV.Contrib/Barcode/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/Barcode
+#mkdir -p Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/DepthAI
+#cp -r ../Emgu.CV.Contrib/DepthAI/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Contrib/DepthAI
+
 
 cp -r ../Emgu.CV.OCR/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.OCR/
 
@@ -138,16 +143,16 @@ cp -r ../Emgu.CV.Models/Dnn/*.cs Assets/Emgu.CV/Assets/Scripts/Emgu.CV.Models/Dn
 cd Assets/Emgu.CV/Plugins/iOS
 if test -f "../../../../../libs/iOS/libcvextern_iphoneos.a"
 then
-  cp -f ../../../../../Emgu.CV/PInvoke/iOS/libcvextern_iphoneos.a ./
+  cp -f ../../../../../libs/iOS/libcvextern_iphoneos.a ./
 fi
 if test -f "../../../../../libs/iOS/libcvextern_simulator.a"
 then
-  cp -f ../../../../../Emgu.CV/PInvoke/iOS/libcvextern_simulator.a ./
+  cp -f ../../../../../libs/iOS/libcvextern_simulator.a ./
 fi
 cd ..
-if test -d "../../../../platforms/macos/emgucv.bundle"
+if test -d "../../../../platforms/macos/cvextern.bundle"
 then
-  cp -rf ../../../../platforms/macos/emgucv.bundle ./
+  cp -rf ../../../../platforms/macos/cvextern.bundle ./
 fi
 cd ..
 cd ..

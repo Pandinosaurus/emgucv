@@ -263,7 +263,7 @@ namespace Emgu.CV.Models
             Object initOptions = null)
 #endif
         {
-            Dnn.Backend backend = Dnn.Backend.OpenCV;
+            Dnn.Backend backend = Dnn.Backend.InferenceEngine;
             Dnn.Target target = Target.Cpu;
             if (initOptions != null && ((initOptions as String) != null))
             {
@@ -277,7 +277,7 @@ namespace Emgu.CV.Models
                         Enum.TryParse(targetStr, true, out target)))
                     {
                         //If failed to part either backend or target, use the following default
-                        backend = Dnn.Backend.OpenCV;
+                        backend = Dnn.Backend.InferenceEngine;
                         target = Target.Cpu;
                     }
                 }
@@ -305,13 +305,7 @@ namespace Emgu.CV.Models
             Stopwatch watch = Stopwatch.StartNew();
             Vehicle[] detectionResult = Detect(imageIn);
             watch.Stop();
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
+
             Render(imageOut, detectionResult);
             return String.Format("Detected in {0} milliseconds.", watch.ElapsedMilliseconds);
         }

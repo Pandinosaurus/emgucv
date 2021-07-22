@@ -140,6 +140,7 @@ void cveTrackerCSRTRelease(cv::TrackerCSRT** tracker, cv::Ptr<cv::TrackerCSRT>**
 #endif
 }
 
+
 bool cveLegacyTrackerInit(cv::legacy::Tracker* tracker, cv::Mat* image, CvRect* boundingBox)
 {
 #ifdef HAVE_OPENCV_TRACKING

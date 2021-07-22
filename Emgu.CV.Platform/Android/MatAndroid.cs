@@ -55,13 +55,24 @@ namespace Emgu.CV
         /// <param name="bitmap">The bitmap to copy into mat</param>
         public static void ToMat(this Android.Graphics.Bitmap bitmap, Mat mat)
         {
+            ToArray(bitmap, mat);
+        }
+
+        /// <summary>
+        /// Convert a Bitmap to an image
+        /// </summary>
+        /// <param name="image">The image to copy Bitmap into</param>
+        /// <param name="bitmap">The bitmap to copy into image</param>
+        public static void ToArray(this Android.Graphics.Bitmap bitmap, IOutputArray image)
+        {
             Android.Graphics.Bitmap.Config config = bitmap.GetConfig();
             if (config.Equals(Android.Graphics.Bitmap.Config.Argb8888))
             {
-                using (BitmapArgb8888Image bi = new BitmapArgb8888Image(bitmap))
+                using (Mat m = new Mat(new Size(bitmap.Width, bitmap.Height), DepthType.Cv8U, 4, bitmap.LockPixels(), bitmap.RowBytes))
                 {
-                    CvInvoke.CvtColor(bi, mat, ColorConversion.Rgba2Bgra);
+                    CvInvoke.CvtColor(m, image, ColorConversion.Rgba2Bgra);
                 }
+                bitmap.UnlockPixels();
             }
             else if (config.Equals(Android.Graphics.Bitmap.Config.Rgb565))
             {
@@ -71,7 +82,7 @@ namespace Emgu.CV
                 GCHandle handle = GCHandle.Alloc(values, GCHandleType.Pinned);
                 using (Mat bgra = new Mat(size, DepthType.Cv8U, 4, handle.AddrOfPinnedObject(), size.Width * 4))
                 {
-                    bgra.CopyTo(mat);
+                    bgra.CopyTo(image);
                 }
                 handle.Free();
             }
@@ -83,75 +94,98 @@ namespace Emgu.CV
 
 
         /// <summary>
-        /// Convert the Mat to Bitmap
+        /// Convert the image to Bitmap
         /// </summary>
-        /// <param name="mat">The Mat to convert to Bitmap</param>
+        /// <param name="image">The image to convert to Bitmap</param>
         /// <param name="config">The bitmap config type. If null, Argb8888 will be used</param>
         /// <returns>The Bitmap</returns>
-        public static Android.Graphics.Bitmap ToBitmap(this Mat mat, Android.Graphics.Bitmap.Config config = null)
+        public static Android.Graphics.Bitmap ToBitmap(this IInputArray image, Android.Graphics.Bitmap.Config config = null)
         {
-            System.Drawing.Size size = mat.Size;
+            using (InputArray iaImage = image.GetInputArray())
+            {
+                System.Drawing.Size size = iaImage.GetSize();
 
-            if (config == null)
-                config = Android.Graphics.Bitmap.Config.Argb8888;
+                if (config == null)
+                    config = Android.Graphics.Bitmap.Config.Argb8888;
 
-            Android.Graphics.Bitmap result = Android.Graphics.Bitmap.CreateBitmap(size.Width, size.Height, config);
-            mat.ToBitmap(result);
-            return result;
+                Android.Graphics.Bitmap result = Android.Graphics.Bitmap.CreateBitmap(size.Width, size.Height, config);
+                image.ToBitmap(result);
+                return result;
+            }
         }
 
         /// <summary>
-        /// Convert the Mat to Bitmap
+        /// Convert the image to Bitmap
         /// </summary>
-        /// <param name="mat">The Mat to convert to Bitmap</param>
+        /// <param name="image">The image to convert to Bitmap</param>
         /// <param name="bitmap">The bitmap, must be of the same size and has bitmap config type of either Argb888 or Rgb565</param>
         /// <returns>The Bitmap</returns>
-        public static void ToBitmap(this Mat mat, Android.Graphics.Bitmap bitmap)
+        public static void ToBitmap(this IInputArray image, Android.Graphics.Bitmap bitmap)
         {
-            System.Drawing.Size size = mat.Size;
-            if (!(size.Width == bitmap.Width && size.Height == bitmap.Height))
+            using (InputArray iaImage = image.GetInputArray())
             {
-                throw new Exception("Bitmap size doesn't match the Mat size");
-            }
-
-            Android.Graphics.Bitmap.Config config = bitmap.GetConfig();
-            if (config == Android.Graphics.Bitmap.Config.Argb8888)
-            {
-                int channels = mat.NumberOfChannels;
-                using (BitmapArgb8888Image bi = new BitmapArgb8888Image(bitmap))
+                System.Drawing.Size size = iaImage.GetSize();
+                if (!(size.Width == bitmap.Width && size.Height == bitmap.Height))
                 {
-                    if (channels == 1)
-                    {
-                        CvInvoke.CvtColor(mat, bi.Mat, ColorConversion.Gray2Rgba);
-                    }
-                    else if (channels == 3)
-                    {
-                        CvInvoke.CvtColor(mat, bi, ColorConversion.Bgr2Rgba);
-                    }
-                    else if (channels == 4)
-                    {
-                        CvInvoke.CvtColor(mat, bi, ColorConversion.Bgra2Rgba);
-                    }
-                    else
-                    {
-                        using (Image<Rgba, Byte> tmp = mat.ToImage<Rgba, Byte>())
-                        {
-                            tmp.Copy(bi, null);
-                        }
-
-                    }
+                    throw new Exception("Bitmap size doesn't match the Mat size");
                 }
 
-            }
-            else if (config == Android.Graphics.Bitmap.Config.Rgb565)
-            {
-                using (BitmapRgb565Image bi = new BitmapRgb565Image(bitmap))
-                using (Image<Bgr, Byte> tmp = mat.ToImage<Bgr, Byte>())
-                    bi.ConvertFrom(tmp);
-            }
-            else
-            {
-                throw new NotImplementedException("Only Bitmap config of Argb888 or Rgb565 is supported.");
+                Android.Graphics.Bitmap.Config config = bitmap.GetConfig();
+                if (config == Android.Graphics.Bitmap.Config.Argb8888)
+                {
+                    int channels = iaImage.GetChannels();
+                    using (Mat m = new Mat(new Size(bitmap.Width, bitmap.Height), DepthType.Cv8U, 4, bitmap.LockPixels(), bitmap.RowBytes))
+                    {
+                        if (channels == 1)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Gray2Rgba);
+                        }
+                        else if (channels == 3)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Bgr2Rgba);
+                        }
+                        else if (channels == 4)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Bgra2Rgba);
+                        }
+                        else
+                        {
+                            throw new NotImplementedException(
+                                String.Format("InputArray of {0} channels is supported.", channels));
+                        }
+                        bitmap.UnlockPixels();
+                    }
+                }
+                else if (config == Android.Graphics.Bitmap.Config.Rgb565)
+                {
+                    int channels = iaImage.GetChannels();
+                    using (Mat m = new Mat(new Size(bitmap.Width, bitmap.Height), DepthType.Cv8U, 2, bitmap.LockPixels(), bitmap.RowBytes))
+                    {
+                        if (channels == 1)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Gray2Bgr565);
+                        }
+                        else if (channels == 3)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Bgr2Bgr565);
+                        }
+                        else if (channels == 4)
+                        {
+                            CvInvoke.CvtColor(image, m, ColorConversion.Bgra2Bgr565);
+                        }
+                        else
+                        {
+                            throw new NotImplementedException(
+                                String.Format("InputArray of {0} channels is supported.", channels));
+                        }
+                        bitmap.UnlockPixels();
+                    }
+
+                }
+                else
+                {
+                    throw new NotImplementedException("Only Bitmap config of Argb888 or Rgb565 is supported.");
+                }
             }
         }
     }

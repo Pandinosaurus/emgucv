@@ -2245,6 +2245,26 @@ ENDIF()
 	""
 	${HAVE_opencv_video})
 
+  CREATE_OCV_CLASS_PROPERTY( 
+    "video/TrackerDaSiamRPN_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Video/TrackerDaSiamRPN.g.cs"
+    "cv::TrackerDaSiamRPN" 
+    "TrackerDaSiamRPN" 
+    "TrackingScore" 
+    "float" 
+    "propR"
+    "TrackingScore" 
+    "float"
+    "Tracking score"
+    "Emgu.CV"
+    "CvInvoke"
+    "TrackerDaSiamRPN"
+	""
+	"#include \"video_c.h\""
+	""
+	""
+	${HAVE_opencv_video})
+
 ############################### video code gen END ################################
 
 ############################### shape code gen START ##############################
@@ -2458,7 +2478,7 @@ ENDIF()
 	""
 	${HAVE_opencv_saliency})
 
-############################### plot code gen END ##############################
+############################### saliency code gen END ##############################
 
 ############################### xphoto code gen START ##############################
 IF (NOT HAVE_opencv_xphoto)
@@ -2775,6 +2795,8 @@ ENDIF()
 
 ############################### stereo code gen END ##############################
 
+
+
 ############################### OPENMP START ##############################
 IF(WITH_OPENMP)
   FIND_PACKAGE( OpenMP REQUIRED)
@@ -3045,38 +3067,42 @@ LIST(APPEND extern_srcs "${PROJECT_SOURCE_DIR}/tesseract/tesseract.cpp")
 IF(WITH_INF_ENGINE)
 	#SET(INF_ENGINE_LIB_DIRS )
 	#link_directories("${INF_ENGINE_LIB_DIRS}/Release")
-	link_directories("${IE_INCLUDE_DIR}/../lib/intel64/")
+    SET(INF_ENGINE_BASE_DIR "${InferenceEngine_DIR}/../../../inference_engine")
+    #MESSAGE(STATUS "^^^^^^^^^^^^^^^^^ IE_INCLUDE_DIR: ${IE_INCLUDE_DIR}")
+	link_directories("${INF_ENGINE_BASE_DIR}/lib/intel64/")
 	
-	SET(INF_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../bin/intel64/Release")
+	#SET(INF_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../../../bin/intel64/Release")
+    SET(INF_ENGINE_DLL_DIRS "${INF_ENGINE_BASE_DIR}/bin/intel64/Release")
 	FILE(GLOB INF_DLL_NAMES "${INF_ENGINE_DLL_DIRS}/*.dll" "${INF_ENGINE_DLL_DIRS}/*.xml" "${INF_ENGINE_DLL_DIRS}/*.mvcmd" "${INF_ENGINE_DLL_DIRS}/*.json" "${INF_ENGINE_DLL_DIRS}/*.elf")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_DLL_NAMES: ${INF_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_DLL_NAMES})
 
-    SET(INF_TBB_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../external/tbb/bin")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_ENGINE_DLL_DIRS: ${INF_TBB_ENGINE_DLL_DIRS}")
+    SET(INF_TBB_ENGINE_DLL_DIRS "${INF_ENGINE_BASE_DIR}/external/tbb/bin")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_ENGINE_DLL_DIRS: ${INF_TBB_ENGINE_DLL_DIRS}")
     FILE(GLOB INF_TBB_DLL_NAMES "${INF_TBB_ENGINE_DLL_DIRS}/*.dll")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DLL_NAMES: ${INF_TBB_DLL_NAMES}")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DLL_NAMES: ${INF_TBB_DLL_NAMES}")
     FILE(GLOB INF_TBB_DEBUG_DLL_NAMES "${INF_TBB_ENGINE_DLL_DIRS}/*_debug.dll")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DEBUG_DLL_NAMES: ${INF_TBB_DEBUG_DLL_NAMES}")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DEBUG_DLL_NAMES: ${INF_TBB_DEBUG_DLL_NAMES}")
     IF (INF_TBB_DEBUG_DLL_NAMES)
       LIST(REMOVE_ITEM INF_TBB_DLL_NAMES ${INF_TBB_DEBUG_DLL_NAMES})
     ENDIF()
 	LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_TBB_DLL_NAMES})
     
-    SET(INF_NGRAPH_DLL_DIRS "${IE_INCLUDE_DIR}/../../ngraph/lib")
+    SET(INF_NGRAPH_DLL_DIRS "${InferenceEngine_DIR}/../../ngraph/lib")
     FILE(GLOB INF_NGRAPH_DLL_NAMES "${INF_NGRAPH_DLL_DIRS}/*ngraph.dll" "${INF_NGRAPH_DLL_DIRS}/*_importer.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_NGRAPH_DLL_NAMES: ${INF_NGRAPH_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_NGRAPH_DLL_NAMES: ${INF_NGRAPH_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_NGRAPH_DLL_NAMES})
 	
-	SET(INF_HDDL_DLL_DIRS "${IE_INCLUDE_DIR}/../external/hddl/bin")
+	SET(INF_HDDL_DLL_DIRS "${INF_ENGINE_BASE_DIR}/external/hddl/bin")
     FILE(GLOB INF_HDDL_DLL_NAMES "${INF_HDDL_DLL_DIRS}/*.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_HDDL_DLL_NAMES: ${INF_HDDL_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_HDDL_DLL_NAMES: ${INF_HDDL_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_HDDL_DLL_NAMES})
 	
 	SET(PROGRAMFILES_X86_ENV "ProgramFiles(x86)")
     SET(ICC_RUNTIME_DIRS "$ENV{${PROGRAMFILES_X86_ENV}}/Common Files/Intel/Shared Libraries/redist/intel64_win/compiler")
     STRING(REGEX REPLACE "\\\\" "/" ICC_RUNTIME_DIRS ${ICC_RUNTIME_DIRS})
     FILE(GLOB ICC_RUNTIME_DLL_NAMES "${ICC_RUNTIME_DIRS}/libmmd.dll" "${ICC_RUNTIME_DIRS}/svml_dispmd.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  ICC_RUNTIME_DLL_NAMES: ${ICC_RUNTIME_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  ICC_RUNTIME_DLL_NAMES: ${ICC_RUNTIME_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${ICC_RUNTIME_DLL_NAMES})
 	##Add the inference_engine dll
 	#LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${INF_ENGINE_DLL_DIRS}/inference_engine.dll")
@@ -3610,9 +3636,9 @@ IF(EMGU_CV_WITH_TESSERACT AND TESSERACT_OPENCL)
   target_link_libraries(${the_target} OpenCL)
 ENDIF()
 
-IF(WITH_INF_ENGINE)
-  target_link_libraries(${the_target} inference_engine)
-ENDIF()
+#IF(WITH_INF_ENGINE)
+#  target_link_libraries(${the_target} inference_engine)
+#ENDIF()
 
 #message(STATUS "EMGU_CV_WITH_FREETYPE: ${EMGU_CV_WITH_FREETYPE}")
 IF (TARGET opencv_freetype)
@@ -3770,6 +3796,7 @@ ELSEIF (APPLE)
        # Intel Mac
        SET(LIBUSB_PATH /usr/local/opt/libusb/lib/libusb-1.0.0.dylib)
     ENDIF()
+    IF(EXISTS ${LIBUSB_PATH})
     add_custom_command(TARGET ${the_target}
       POST_BUILD
       COMMAND cp -f ${LIBUSB_PATH} ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${LIBUSB_FILE_NAME}
@@ -3782,19 +3809,16 @@ ELSEIF (APPLE)
       ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
       DESTINATION "libs/macos/"
       COMPONENT emgucv_binary)
-#    add_custom_command(TARGET ${the_target}
-#      POST_BUILD
-#      COMMAND install_name_tool -change /usr/local/opt/libusb/lib/libusb-1.0.0.dylib @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib 
-#      COMMENT "Altering dependency for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib")
     add_custom_command(TARGET ${the_target}
       POST_BUILD
-      COMMAND install_name_tool -change /usr/local/opt/libusb/lib/libusb-1.0.0.dylib @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib 
+      COMMAND install_name_tool -change ${LIBUSB_PATH} @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib 
       COMMENT "Altering dependency for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib")
     add_custom_command(TARGET ${the_target}
       POST_BUILD
       COMMAND install_name_tool -id "@rpath/libusb-1.0.0.dylib" ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
       COMMAND chmod a+x ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
       COMMENT "Altering id for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib")
+    ENDIF()
   ENDIF()
 
   INSTALL(FILES
