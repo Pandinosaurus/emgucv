@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -52,14 +52,14 @@ namespace Emgu.CV.Face
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveEigenFaceRecognizerCreate(
+        internal static extern IntPtr cveEigenFaceRecognizerCreate(
             int numComponents,
             double threshold,
             ref IntPtr faceRecognizerPtr,
             ref IntPtr basicFaceRecognizerPtr,
             ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveEigenFaceRecognizerRelease(ref IntPtr sharedPtr);
+        internal static extern void cveEigenFaceRecognizerRelease(ref IntPtr sharedPtr);
 
     }
 

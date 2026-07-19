@@ -16,26 +16,44 @@ jobs:
     timeout-minutes: 2880
     
     steps:
-    - uses: actions/checkout@v2
-    - name: Check out submodules
-      run: git submodule update --init --recursive
+    - name: Checkout repository
+      id: checkout_repo
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Setup dotnet
+      id: setup_dotnet
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.x'
+    - name: Install dotnet workload 
+      id: install_dotnet_workload
+      run: dotnet workload install maui maccatalyst
+    #- name: Check out submodules
+    #  run: git submodule update --init --recursive
     - name: Build Emgu CV 32-bit native binary
-      run: .\Build_Binary_x86.bat 32 nogpu vc no-openni no-doc no-package build
+      run: .\Build_Binary_x86.bat x86 nogpu vc no-openni no-doc no-package build
       working-directory: ${{ github.workspace }}\platforms\windows\
     - name: Clean up the 32-bit build
       run: .\git-clean.bat --keep_binary
       working-directory: ${{ github.workspace }}\miscellaneous
     - name: Build Emgu CV 64-bit native binary
-      run: .\Build_Binary_x86.bat 64 nogpu vc no-openni no-doc package build nuget
+      run: .\Build_Binary_x86.bat x86_64 nogpu vc no-openni no-doc package build nuget
       working-directory: ${{ github.workspace }}\platforms\windows\
-    - uses: actions/upload-artifact@v2
-      with:
-        name: emgucv-windows-nsis-build-log
-        path: ${{ github.workspace }}\build_x64\_CPack_Packages\win64\NSIS\*.log
-    - uses: actions/upload-artifact@v2
+    #- uses: actions/upload-artifact@v4
+    #  with:
+    #    name: emgucv-windows-nsis-build-log
+    #    path: ${{ github.workspace }}\build_x86_64\_CPack_Packages\win64\NSIS\*.log
+    - uses: actions/upload-artifact@v4
       with:
         name: emgucv-windows-zip-package
-        path: ${{ github.workspace }}\build_x64\*.zip
+        path: ${{ github.workspace }}\build_x86_64\*.zip
+    - name: Run a test program
+      run: dotnet run
+      working-directory: ${{ github.workspace }}\Emgu.CV.Example\BuildInfo.Console\   
+    #- name: Run Unit Test
+    #  run: dotnet test --blame-crash
+    #  working-directory: ${{ github.workspace }}\Emgu.CV.Test\Emgu.CV.Test.Netcore\   
     #- name: Clean up the non-gpu build
     #  run: .\git-clean.bat 
     #  working-directory: ${{ github.workspace }}\miscellaneous
@@ -46,3 +64,23 @@ jobs:
     #  with:
     #    name: emgucv-windows-gpu-zip-package
     #    path: ${{ github.workspace }}\build_x64\*.zip
+    - name: Add Visual Studio MSBuild to PATH
+      id: msbuild_path
+      uses: microsoft/setup-msbuild@v1.1
+    - name: Initialize CodeQL
+      id: init_codeql
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+    - name: Build solution
+      id: build_solution
+      run: |
+          Push-Location ${{ github.workspace }}\Solution\Windows.Desktop\
+          msbuild Emgu.CV.sln `
+          -p:Configuration=Release `
+          -p:Platform=x64 `
+          -p:UseSharedCompilation=false `
+          -t:Restore,Build
+    - name: Perform CodeQL Analysis
+      id: analyze_codeql
+      uses: github/codeql-action/analyze@v3

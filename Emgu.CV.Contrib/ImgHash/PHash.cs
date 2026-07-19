@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -44,10 +44,10 @@ namespace Emgu.CV.ImgHash
     internal static partial class ImgHashInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cvePHashCreate(ref IntPtr imgHash, ref IntPtr sharedPtr);
+        internal static extern IntPtr cvePHashCreate(ref IntPtr imgHash, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cvePHashRelease(ref IntPtr hash, ref IntPtr sharedPtr);
+        internal static extern void cvePHashRelease(ref IntPtr hash, ref IntPtr sharedPtr);
     }
 }
 

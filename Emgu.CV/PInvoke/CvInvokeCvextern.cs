@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -327,24 +327,6 @@ namespace Emgu.CV
         }
         [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         private static extern void cveBlendLinear(IntPtr src1, IntPtr src2, IntPtr weights1, IntPtr weights2, IntPtr dst);
-
-
-        /// <summary>
-        /// Contrast Limited Adaptive Histogram Equalization (CLAHE)
-        /// </summary>
-        /// <param name="src">The source image</param>
-        /// <param name="clipLimit">Clip Limit, use 40 for default</param>
-        /// <param name="tileGridSize">Tile grid size, use (8, 8) for default</param>
-        /// <param name="dst">The destination image</param>
-        public static void CLAHE(IInputArray src, double clipLimit, Size tileGridSize, IOutputArray dst)
-        {
-            using (InputArray iaSrc = src.GetInputArray())
-            using (OutputArray oaDst = dst.GetOutputArray())
-                cveCLAHE(iaSrc, clipLimit, ref tileGridSize, oaDst);
-        }
-
-        [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        private static extern void cveCLAHE(IntPtr srcArr, double clipLimit, ref Size tileGridSize, IntPtr dstArr);
 
 
         /// <summary>

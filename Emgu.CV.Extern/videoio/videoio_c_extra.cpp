@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ cv::VideoCapture* cveVideoCaptureCreateFromFile(cv::String* fileName, int apiPre
 #endif
 }
 
-void cveVideoCaptureRelease(cv::VideoCapture** capture)
+void cveVideoCaptureRelease2(cv::VideoCapture** capture)
 {
 #ifdef HAVE_OPENCV_VIDEOIO
 	delete *capture;
@@ -264,7 +264,7 @@ double cveVideoWriterGet(cv::VideoWriter* writer, int propId)
 #endif
 }
 
-void cveVideoWriterWrite(cv::VideoWriter* writer, cv::Mat* image)
+void cveVideoWriterWrite(cv::VideoWriter* writer, cv::_InputArray* image)
 {
 #ifdef HAVE_OPENCV_VIDEOIO
 	writer->write(*image);
@@ -280,6 +280,15 @@ int cveVideoWriterFourcc(char c1, char c2, char c3, char c4)
 	throw_no_videoio();
 #endif
 }
+void cveVideoWriterGetBackendName(cv::VideoWriter* writer, cv::String* name)
+{
+#ifdef HAVE_OPENCV_VIDEOIO
+	* name = writer->getBackendName();
+#else
+	throw_no_videoio();
+#endif
+}
+
 
 void cveGetBackendName(int api, cv::String* name)
 {

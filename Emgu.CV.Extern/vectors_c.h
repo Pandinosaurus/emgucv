@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -12,8 +12,16 @@
 
 #include "opencv2/opencv_modules.hpp"
 #include "opencv2/core/core_c.h"
+
+#ifdef HAVE_OPENCV_FEATURES2D
 #include "opencv2/features2d/features2d.hpp"
+#else
+static inline CV_NORETURN void vectors_throw_no_features2d() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without features2d support"); }
+#endif
+
+#ifdef HAVE_OPENCV_OBJDETECT
 #include "opencv2/objdetect/objdetect.hpp"
+#endif
 
 #ifdef HAVE_OPENCV_TEXT
 #include "opencv2/text/erfilter.hpp"

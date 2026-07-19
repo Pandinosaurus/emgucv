@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using Emgu.CV.Util;
@@ -31,7 +31,7 @@ namespace Emgu.CV.OCR
         {
             get
             {
-                IntPtr ptr = OcrInvoke.TesseractGetVersion();
+                IntPtr ptr = OcrInvoke.cveTesseractGetVersion();
                 if (ptr == IntPtr.Zero)
                     return String.Empty;
                 else
@@ -76,7 +76,7 @@ namespace Emgu.CV.OCR
                 lg = new Emgu.CV.OCR.LocaleGuard(Emgu.CV.OCR.LocaleGuard.LocaleCategory.All, "C");
             try
             {
-                _ptr = OcrInvoke.TessBaseAPICreate();
+                _ptr = OcrInvoke.cveTessBaseAPICreate();
             }
             finally
             {
@@ -96,7 +96,7 @@ namespace Emgu.CV.OCR
         /// <returns>0 if no device found. sizeof(cl_device_id) if device is found.</returns>
         public int GetOpenCLDevice(ref IntPtr device)
         {
-            return OcrInvoke.TessBaseAPIGetOpenCLDevice(_ptr, ref device);
+            return OcrInvoke.cveTessBaseAPIGetOpenCLDevice(_ptr, ref device);
         }
 
         /*
@@ -191,7 +191,7 @@ namespace Emgu.CV.OCR
         /// <returns>0 if the word is invalid, non-zero if valid</returns>
         public int IsValidWord(String word)
         {
-            return OcrInvoke.TessBaseAPIIsValidWord(_ptr, word);
+            return OcrInvoke.cveTessBaseAPIIsValidWord(_ptr, word);
         }
 
         /// <summary>
@@ -202,8 +202,8 @@ namespace Emgu.CV.OCR
         /// </value>
         public PageSegMode PageSegMode
         {
-            get { return OcrInvoke.TessBaseAPIGetPageSegMode(_ptr); }
-            set { OcrInvoke.TessBaseAPISetPageSegMode(_ptr, value); }
+            get { return OcrInvoke.cveTessBaseAPIGetPageSegMode(_ptr); }
+            set { OcrInvoke.cveTessBaseAPISetPageSegMode(_ptr, value); }
         }
 
         /// <summary>
@@ -231,7 +231,18 @@ namespace Emgu.CV.OCR
         /// <returns>the url to download the tessdata file for the specific language</returns>
         public static String GetLangFileUrl(string lang)
         {
-            return String.Format("https://github.com/tesseract-ocr/tessdata/blob/590567f20dc044f6948a8e2c61afc714c360ad0e/{0}.traineddata?raw=true", lang);
+            return String.Format("{0}/{1}.traineddata?raw=true", TessdataUrl, lang);
+        }
+
+        /// <summary>
+        /// Get the url to download the tessdata files
+        /// </summary>
+        private static String TessdataUrl
+        {
+            get
+            {
+                return "https://github.com/tesseract-ocr/tessdata/blob/4.1.0";
+            }
         }
 
         /// <summary>
@@ -280,7 +291,7 @@ namespace Emgu.CV.OCR
             using (CvString csDataPath = new CvString(dataPath))
             using (CvString csLanguage = new CvString(language))
             {
-                int initResult = OcrInvoke.TessBaseAPIInit(_ptr, csDataPath, csLanguage, mode);
+                int initResult = OcrInvoke.cveTessBaseAPIInit(_ptr, csDataPath, csLanguage, mode);
                 if (initResult != 0)
                 {
                     if (dataPath.Equals(String.Empty))
@@ -293,12 +304,58 @@ namespace Emgu.CV.OCR
         }
 
         /// <summary>
+        /// Initialize the OCR engine using the raw .traineddata and language name.
+        /// </summary>
+        /// <param name="rawTrainedData">
+        /// The raw trained data. e.g. for english, the rawTrainedData is the contents of eng.traineddata file.
+        /// </param>
+        /// <param name="language">
+        /// The language is (usually) an ISO 639-3 string or NULL will default to eng.
+        /// It is entirely safe (and eventually will be efficient too) to call
+        /// Init multiple times on the same instance to change language, or just
+        /// to reset the classifier.
+        /// The language may be a string of the form [~]%lt;lang&gt;[+[~]&lt;lang&gt;]* indicating
+        /// that multiple languages are to be loaded. Eg hin+eng will load Hindi and
+        /// English. Languages may specify internally that they want to be loaded
+        /// with one or more other languages, so the ~ sign is available to override
+        /// that. Eg if hin were set to load eng by default, then hin+~eng would force
+        /// loading only hin. The number of loaded languages is limited only by
+        /// memory, with the caveat that loading additional languages will impact
+        /// both speed and accuracy, as there is more work to do to decide on the
+        /// applicable language, and there is more chance of hallucinating incorrect
+        /// words.
+        /// </param>
+        /// <param name="mode">OCR engine mode</param>
+        public void Init(byte[] rawTrainedData, String language, OcrEngineMode mode)
+        {
+            var handle = GCHandle.Alloc(rawTrainedData, GCHandleType.Pinned);
+            try
+            {
+                using (CvString csLanguage = new CvString(language))
+                {
+                    int initResult = OcrInvoke.cveTessBaseAPIInitRaw(_ptr, handle.AddrOfPinnedObject(), rawTrainedData.Length, csLanguage, mode);
+                    if (initResult != 0)
+                    {
+                        throw new ArgumentException(
+                            String.Format(
+                                "Unable to create ocr model using OcrEngineMode '{0}'.",
+                                mode));
+                    }
+                }
+            }
+            finally
+            {
+                handle.Free();
+            }   
+        }        
+
+        /// <summary>
         /// Release the unmanaged resource associated with this class
         /// </summary>
         protected override void DisposeObject()
         {
             if (_ptr != IntPtr.Zero)
-                OcrInvoke.TessBaseAPIRelease(ref _ptr);
+                OcrInvoke.cveTessBaseAPIRelease(ref _ptr);
         }
 
         /// <summary>
@@ -308,7 +365,7 @@ namespace Emgu.CV.OCR
         public void SetImage(IInputArray image)
         {
             using (InputArray iaImage = image.GetInputArray())
-                OcrInvoke.TessBaseAPISetImage(_ptr, iaImage);
+                OcrInvoke.cveTessBaseAPISetImage(_ptr, iaImage);
         }
 
         /// <summary>
@@ -317,7 +374,7 @@ namespace Emgu.CV.OCR
         /// <param name="image">The image where detection took place</param>
         public void SetImage(Pix image)
         {
-            OcrInvoke.TessBaseAPISetImagePix(_ptr, image);
+            OcrInvoke.cveTessBaseAPISetImagePix(_ptr, image);
         }
 
         /// <summary>
@@ -327,7 +384,7 @@ namespace Emgu.CV.OCR
         /// <returns>Returns 0 on success.</returns>
         public int Recognize()
         {
-            return OcrInvoke.TessBaseAPIRecognize(_ptr);
+            return OcrInvoke.cveTessBaseAPIRecognize(_ptr);
         }
 
         /// <summary>
@@ -337,7 +394,7 @@ namespace Emgu.CV.OCR
         /// <param name="value">The value to be set</param>
         public void SetVariable(String variableName, String value)
         {
-            if (!OcrInvoke.TessBaseAPISetVariable(_ptr, variableName, value))
+            if (!OcrInvoke.cveTessBaseAPISetVariable(_ptr, variableName, value))
             {
                 throw new System.ArgumentException(String.Format("Unable to set {0} to {1}", variableName, value));
             }
@@ -351,10 +408,12 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetUTF8Text(_ptr, bytes);
+                OcrInvoke.cveTessBaseAPIGetUTF8Text(_ptr, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
+
+        
 
         /// <summary>
         /// Make a TSV-formatted string from the internal data structures.
@@ -365,7 +424,7 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetTSVText(_ptr, pageNumber, bytes);
+                OcrInvoke.cveTessBaseAPIGetTSVText(_ptr, pageNumber, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
@@ -379,7 +438,7 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetBoxText(_ptr, pageNumber, bytes);
+                OcrInvoke.cveTessBaseAPIGetBoxText(_ptr, pageNumber, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
@@ -393,7 +452,7 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetUNLVText(_ptr, bytes);
+                OcrInvoke.cveTessBaseAPIGetUNLVText(_ptr, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
@@ -407,7 +466,7 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetOsdText(_ptr, pageNumber, bytes);
+                OcrInvoke.cveTessBaseAPIGetOsdText(_ptr, pageNumber, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
@@ -421,7 +480,7 @@ namespace Emgu.CV.OCR
         {
             using (Util.VectorOfByte bytes = new Util.VectorOfByte())
             {
-                OcrInvoke.TessBaseAPIGetHOCRText(_ptr, pageNumber, bytes);
+                OcrInvoke.cveTessBaseAPIGetHOCRText(_ptr, pageNumber, bytes);
                 return UtfByteVectorToString(bytes);
             }
         }
@@ -433,20 +492,24 @@ namespace Emgu.CV.OCR
         }
 
         /// <summary>
-        /// Detect all the characters in the image.
+        /// Detect all the words in the image.
         /// </summary>
-        /// <returns>All the characters in the image</returns>
-        public Character[] GetCharacters()
+        /// <returns>All the words in the image</returns>
+        public Word[] GetWords()
         {
             using (VectorOfByte textSeq = new VectorOfByte())
             using (VectorOfTesseractResult results = new VectorOfTesseractResult())
             {
-                OcrInvoke.TessBaseAPIExtractResult(_ptr, textSeq, results);
+                OcrInvoke.cveTessBaseAPIExtractResult(_ptr, textSeq, results);
 
                 byte[] bytes = textSeq.ToArray();
+#if UNSAFE_ALLOWED
+                var trs = results.GetSpan();
+#else
                 TesseractResult[] trs = results.ToArray();
+#endif
 
-                Character[] res = new Character[trs.Length];
+                Word[] res = new Word[trs.Length];
                 int idx = 0;
                 for (int i = 0; i < trs.Length; i++)
                 {
@@ -454,29 +517,42 @@ namespace Emgu.CV.OCR
                     res[i].Text = _utf8.GetString(bytes, idx, tr.Length).Replace("\n", Environment.NewLine);
 
                     idx += tr.Length;
-                    res[i].Cost = tr.Cost;
-                    if (tr.Cost == 0)
-                        res[i].Region = Rectangle.Empty;
-                    else
-                        res[i].Region = tr.Region;
+                    res[i].Confident = tr.Confident;
+                    res[i].Region = tr.Region;
                 }
                 return res;
             }
         }
 
         /// <summary>
-        /// This represent a character that is detected by the OCR engine
+        /// Get the current location of tessdata.
         /// </summary>
-        public struct Character
+        public String Datapath
+        {
+            get
+            {
+                using (CvString datapath = new CvString())
+                {
+                    OcrInvoke.cveTessBaseAPIGetDatapath(_ptr, datapath);
+                    return datapath.ToString();
+                }
+            }
+        }
+
+        /// <summary>
+        /// This represent a word that is detected by the OCR engine
+        /// </summary>
+        public struct Word
         {
             /// <summary>
             /// The text
             /// </summary>
             public String Text;
             /// <summary>
-            /// The cost. The lower it is, the more confident is the result
+            /// The mean confidence of the current object at the given level.
+            /// The number should be interpreted as a percent probability. (0.0f-100.0f)
             /// </summary>
-            public float Cost;
+            public float Confident;
             /// <summary>
             /// The region where the character is detected.
             /// </summary>
@@ -504,7 +580,7 @@ namespace Emgu.CV.OCR
             using (CvString csFileName = new CvString(filename))
             using (CvString csRetryConfig = new CvString(retryConfig))
             {
-                return OcrInvoke.TessBaseAPIProcessPage(
+                return OcrInvoke.cveTessBaseAPIProcessPage(
                     _ptr,
                     pix,
                     pageIndex,
@@ -522,7 +598,7 @@ namespace Emgu.CV.OCR
         /// <returns>Page iterator</returns>
         public PageIterator AnalyseLayout(bool mergeSimilarWords = false)
         {
-            return new PageIterator(OcrInvoke.TessBaseAPIAnalyseLayout(_ptr, mergeSimilarWords));
+            return new PageIterator(OcrInvoke.cveTessBaseAPIAnalyseLayout(_ptr, mergeSimilarWords));
         }
 
         /// <summary>
@@ -530,7 +606,7 @@ namespace Emgu.CV.OCR
         /// </summary>
         public OcrEngineMode Oem
         {
-            get { return OcrInvoke.TessBaseAPIGetOem(_ptr); }
+            get { return OcrInvoke.cveTessBaseAPIGetOem(_ptr); }
         }
     }
 }

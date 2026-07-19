@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ using Emgu.Util;
 namespace Emgu.CV.Stitching
 {
     /// <summary>
-    /// 
+    /// Base class for all exposure compensators.
     /// </summary>
     public abstract class ExposureCompensator : UnmanagedObject
     {

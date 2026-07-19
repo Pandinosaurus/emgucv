@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -36,29 +36,28 @@ namespace Emgu.CV.Aruco
         /// <summary>
         /// Create a GridBoard object.
         /// </summary>
-        /// <param name="markersX">number of markers in X direction</param>
-        /// <param name="markersY">number of markers in Y direction</param>
-        /// <param name="markerLength">marker side length (normally in meters)</param>
-        /// <param name="markerSeparation">separation between two markers (same unit than markerLenght)</param>
-        /// <param name="dictionary">dictionary of markers indicating the type of markers. The first markersX*markersY markers in the dictionary are used.</param>
-        /// <param name="firstMarker">	id of first marker in dictionary to use on board.</param>
-        public GridBoard(int markersX, int markersY, float markerLength, float markerSeparation,
-         Dictionary dictionary, int firstMarker = 0)
+        /// <param name="markersX">Number of markers in X direction</param>
+        /// <param name="markersY">Number of markers in Y direction</param>
+        /// <param name="markerLength">Marker side length (normally in meters)</param>
+        /// <param name="markerSeparation">Separation between two markers (same unit than markerLenght)</param>
+        /// <param name="dictionary">Dictionary of markers indicating the type of markers. The first markersX*markersY markers in the dictionary are used.</param>
+        /// <param name="ids">set of marker ids in dictionary to use on board.</param>
+        public GridBoard(
+            int markersX, 
+            int markersY, 
+            float markerLength, 
+            float markerSeparation,
+            Dictionary dictionary, 
+            IInputArray ids = null)
         {
-            _ptr = ArucoInvoke.cveArucoGridBoardCreate(markersX, markersY, markerLength, markerSeparation, dictionary, firstMarker, ref _boardPtr, ref _sharedPtr);
-        }
-
-        /// <summary>
-        /// Draw a GridBoard.
-        /// </summary>
-        /// <param name="outSize">size of the output image in pixels.</param>
-        /// <param name="img">output image with the board. The size of this image will be outSize and the board will be on the center, keeping the board proportions.</param>
-        /// <param name="marginSize">minimum margins (in pixels) of the board in the output image</param>
-        /// <param name="borderBits">width of the marker borders.</param>
-        public void Draw(Size outSize, IOutputArray img, int marginSize = 0, int borderBits = 1)
-        {
-            using (OutputArray oaImg = img.GetOutputArray())
-                ArucoInvoke.cveArucoGridBoardDraw(_ptr, ref outSize, oaImg, marginSize, borderBits);
+            using (InputArray iaIds = (ids == null) ? InputArray.GetEmpty() : ids.GetInputArray())
+            {
+                _ptr = ArucoInvoke.cveArucoGridBoardCreate(
+                    markersX, markersY, 
+                    markerLength, markerSeparation,
+                    dictionary, iaIds, 
+                    ref _boardPtr, ref _sharedPtr);
+            }
         }
 
         /// <summary>
@@ -106,19 +105,6 @@ namespace Emgu.CV.Aruco
         }
 
         /// <summary>
-        /// Draw a ChArUco board
-        /// </summary>
-        /// <param name="outSize">size of the output image in pixels.</param>
-        /// <param name="img">output image with the board. The size of this image will be outSize and the board will be on the center, keeping the board proportions.</param>
-        /// <param name="margindSize">minimum margins (in pixels) of the board in the output image</param>
-        /// <param name="borderBits">width of the marker borders.</param>
-        public void Draw(Size outSize, IOutputArray img, int margindSize = 0, int borderBits = 1)
-        {
-            using (OutputArray oaImg = img.GetOutputArray())
-                ArucoInvoke.cveCharucoBoardDraw(_ptr, ref outSize, oaImg, margindSize, borderBits);
-        }
-
-        /// <summary>
         /// Release the unmanaged resource associated with this ChArUco board
         /// </summary>
         protected override void DisposeObject()
@@ -140,22 +126,15 @@ namespace Emgu.CV.Aruco
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern IntPtr cveArucoGridBoardCreate(
            int markersX, int markersY, float markerLength, float markerSeparation,
-           IntPtr dictionary, int firstMarker, ref IntPtr boardPtr, ref IntPtr sharedPtr);
+           IntPtr dictionary, IntPtr ids, ref IntPtr boardPtr, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern void cveArucoGridBoardRelease(ref IntPtr gridBoard, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern void cveArucoGridBoardDraw(IntPtr gridBoard, ref Size outSize, IntPtr img, int marginSize, int borderBits);
-
-
-        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern IntPtr cveCharucoBoardCreate(
            int squaresX, int squaresY, float squareLength, float markerLength,
            IntPtr dictionary, ref IntPtr boardPtr, ref IntPtr sharedPtr);
-
-        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern void cveCharucoBoardDraw(IntPtr charucoBoard, ref Size outSize, IntPtr img, int marginSize, int borderBits);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern void cveCharucoBoardRelease(ref IntPtr charucoBoard, ref IntPtr sharedPtr);

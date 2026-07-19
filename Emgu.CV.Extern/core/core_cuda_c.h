@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -81,6 +81,8 @@ CVAPI(bool) targetArchsHasEqualOrGreaterBin(int major, int minor);
 //----------------------------------------------------------------------------
 
 CVAPI(cv::cuda::GpuMat*) gpuMatCreateDefault();
+
+CVAPI(cv::cuda::GpuMat*) gpuMatCreateFromData(int rows, int cols, int type, void* data, int step);
 
 CVAPI(void) gpuMatCreate(cv::cuda::GpuMat* m, int rows, int cols, int type);
 

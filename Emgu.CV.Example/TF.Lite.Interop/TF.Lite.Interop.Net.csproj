@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="dog416.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="dog416.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Emgu.TF.Lite.Models" Version="2.20.0.1731" />
+    <PackageReference Include="Emgu.TF.Lite.runtime.windows" Version="2.20.0.1731" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Emgu.CV.Bitmap\Emgu.CV.Bitmap.csproj" />
+    <ProjectReference Include="..\..\Emgu.CV.WindowsUI\Emgu.CV.WindowsUI\Emgu.CV.WindowsUI.csproj" />
+    <ProjectReference Include="..\..\Emgu.CV\NetStandard\Emgu.CV.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\Emgu.CV.Runtime\Windows\Emgu.CV.Runtime.Windows.projitems" Label="Shared" />
+
+</Project>

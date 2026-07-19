@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -203,6 +203,14 @@ cv::Mat* cveMatReshape(cv::Mat* mat, int cn, int rows)
 {
 	cv::Mat* result = new cv::Mat();
 	cv::Mat m = mat->reshape(cn, rows);
+	cv::swap(m, *result);
+	return result;
+}
+
+cv::Mat* cveMatReshape2(cv::Mat* mat, int cn, int newndims, int* newsz)
+{
+	cv::Mat* result = new cv::Mat();
+	cv::Mat m = mat->reshape(cn, newndims, newsz);
 	cv::swap(m, *result);
 	return result;
 }

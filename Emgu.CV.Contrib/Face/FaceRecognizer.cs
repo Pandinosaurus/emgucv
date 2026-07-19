@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -28,7 +28,7 @@ namespace Emgu.CV.Face
         /// </summary>
         /// <param name="images">The images used in the training. This can be a VectorOfMat</param>
         /// <param name="labels">The labels of the images. This can be a VectorOfInt</param>
-        public void Train(IInputArray images, IInputArray labels)
+        public void Train(IInputArrayOfArrays images, IInputArray labels)
         {
             using (InputArray iaImage = images.GetInputArray())
             using (InputArray iaLabels = labels.GetInputArray())
@@ -101,6 +101,34 @@ namespace Emgu.CV.Face
         }
 
         /// <summary>
+        /// Sets string info for the specified model's label.
+        /// </summary>
+        /// <param name="label">The label</param>
+        /// <param name="strInfo">The string info</param>
+        /// <remarks>The string info is replaced by the provided value if it was set before for the specified label.</remarks>
+        public void SetLabelInfo(int label, String strInfo)
+        {
+            using (CvString csStrInfo = new CvString(strInfo))
+            {
+                FaceInvoke.cveFaceRecognizerSetLabelInfo(_faceRecognizerPtr, label, csStrInfo);
+            }
+        }
+
+        /// <summary>
+        /// Gets string information by label. If an unknown label id is provided or there is no label information associated with the specified label id the method returns an empty string.
+        /// </summary>
+        /// <param name="label">The label</param>
+        /// <returns>The string associated with this label.</returns>
+        public String GetLabelInfo(int label)
+        {
+            using (CvString csStrInfo = new CvString())
+            {
+                FaceInvoke.cveFaceRecognizerGetLabelInfo(_faceRecognizerPtr, label, csStrInfo);
+                return csStrInfo.ToString();
+            }
+        }
+
+        /// <summary>
         /// Release the unmanaged memory associated with this FaceRecognizer
         /// </summary>
         protected override void DisposeObject()
@@ -120,22 +148,28 @@ namespace Emgu.CV.Face
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFaceRecognizerTrain(IntPtr recognizer, IntPtr images, IntPtr labels);
+        internal static extern void cveFaceRecognizerTrain(IntPtr recognizer, IntPtr images, IntPtr labels);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFaceRecognizerPredict(IntPtr recognizer, IntPtr image, ref int label, ref double distance);
+        internal static extern void cveFaceRecognizerPredict(IntPtr recognizer, IntPtr image, ref int label, ref double distance);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFaceRecognizerWrite(
+        internal static extern void cveFaceRecognizerWrite(
            IntPtr recognizer,
            IntPtr fileName);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFaceRecognizerRead(
+        internal static extern void cveFaceRecognizerRead(
            IntPtr recognizer,
            IntPtr fileName);
 
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFaceRecognizerUpdate(IntPtr recognizer, IntPtr images, IntPtr labels);
+        internal static extern void cveFaceRecognizerUpdate(IntPtr recognizer, IntPtr images, IntPtr labels);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveFaceRecognizerSetLabelInfo(IntPtr recognizer, int label, IntPtr strInfo);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveFaceRecognizerGetLabelInfo(IntPtr recognizer, int label, IntPtr strInfo);
     }
 
 

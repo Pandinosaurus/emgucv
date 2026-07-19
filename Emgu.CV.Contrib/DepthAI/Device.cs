@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -14,7 +14,7 @@ using System.Diagnostics;
 using System.Drawing;
 using Emgu.CV.CvEnum;
 
-namespace Emgu.CV.DepthAI
+namespace Emgu.CV.Dai
 {
     /// <summary>
     /// DepthAI device
@@ -22,16 +22,27 @@ namespace Emgu.CV.DepthAI
     public partial class Device : UnmanagedObject
     {
         /// <summary>
-        /// Create a new device
+        /// Initializes a new instance of the <see cref="Device"/> class using the specified DepthAI pipeline.
         /// </summary>
-        /// <param name="usbDevice">Usb device</param>
-        /// <param name="usb2Mode">If true, will use usb 2 mode</param>
-        public Device(String usbDevice, bool usb2Mode=false)
+        /// <param name="pipeline">
+        /// The <see cref="Pipeline"/> object that defines the configuration and operations for the DepthAI device.
+        /// </param>
+        public Device(Pipeline pipeline)
         {
-            using (CvString csUsbDevice = new CvString(usbDevice))
-                _ptr = DepthAIInvoke.depthaiDeviceCreate(csUsbDevice, usb2Mode);
+            _ptr = DaiInvoke.daiDeviceCreate(pipeline);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Device"/> class.
+        /// </summary>
+        /// <param name="pipeline">The pipeline to be used by the device.</param>
+        /// <param name="usb2Mode">If set to <c>true</c>, the device will operate in USB 2.0 mode.</param>
+        public Device(Pipeline pipeline, bool usb2Mode)
+        {
+            _ptr = DaiInvoke.daiDeviceCreate2(pipeline, usb2Mode);
+        }
+
+        /*
         /// <summary>
         /// Get the available streams
         /// </summary>
@@ -61,6 +72,57 @@ namespace Emgu.CV.DepthAI
                 IntPtr ptr = DepthAIInvoke.depthaiDeviceCreatePipeline(_ptr, csJsonConfigStr, ref sharedPtr);
                 return new CNNHostPipeline(sharedPtr, ptr);
             }
+        }*/
+
+        /// <summary>
+        /// Retrieves the DataOutputQueue associated with the specified name.
+        /// </summary>
+        /// <param name="name">The name of the DataOutputQueue to retrieve.</param>
+        /// <returns>A DataOutputQueue object associated with the specified name.</returns>
+        public DataOutputQueue GetDataOutputQueue(String name)
+        {
+            using (CvString csName = new CvString(name))
+            {
+                IntPtr sharedPtr = IntPtr.Zero;
+                IntPtr ptr = DaiInvoke.daiDeviceGetOutputQueue(_ptr, csName, ref sharedPtr);
+                return new DataOutputQueue(ptr, sharedPtr);
+            }
+        }
+
+        /// <summary>
+        /// Gets the names of the input queues associated with the device.
+        /// </summary>
+        /// <value>
+        /// An array of strings, where each string is the name of an input queue.
+        /// </value>
+        public String[] InputQueueNames
+        {
+            get
+            {
+                using (VectorOfCvString inputQueueNames = new VectorOfCvString())
+                {
+                    DaiInvoke.daiDeviceGetInputQueueNames(_ptr, inputQueueNames);
+                    return inputQueueNames.ToArray();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the names of the output queues available in the device.
+        /// </summary>
+        /// <value>
+        /// An array of strings, where each string is the name of an output queue.
+        /// </value>
+        public String[] OutputQueueNames
+        {
+            get
+            {
+                using (VectorOfCvString outputQueueNames = new VectorOfCvString())
+                {
+                    DaiInvoke.daiDeviceGetOutputQueueNames(_ptr, outputQueueNames);
+                    return outputQueueNames.ToArray();
+                }
+            }
         }
 
         /// <summary>
@@ -70,9 +132,35 @@ namespace Emgu.CV.DepthAI
         {
             if (_ptr != IntPtr.Zero)
             {
-                DepthAIInvoke.depthaiDeviceRelease(ref _ptr);
+                DaiInvoke.daiDeviceRelease(ref _ptr);
             }
         }
     }
 
+    /// <summary>
+    /// Entry points for the DepthAI module.
+    /// </summary>
+    public static partial class DaiInvoke
+    {
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern IntPtr daiDeviceCreate(IntPtr pipeline);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern IntPtr daiDeviceCreate2(
+            IntPtr pipeline,
+            [MarshalAs(CvInvoke.BoolMarshalType)]
+            bool usb2Mode);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void daiDeviceRelease(ref IntPtr usbDevice);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern IntPtr daiDeviceGetOutputQueue(IntPtr device, IntPtr name, ref IntPtr outputQueueSharedPtr);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void daiDeviceGetInputQueueNames(IntPtr device, IntPtr names);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void daiDeviceGetOutputQueueNames(IntPtr device, IntPtr names);
+    }
 }

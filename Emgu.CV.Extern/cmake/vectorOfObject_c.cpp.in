@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //  Vector of ${VECTOR_NAME}
 //
@@ -67,10 +67,10 @@ ${VECTOR_ELEMENT}* VectorOf${VECTOR_NAME}GetStartAddress(std::vector< ${VECTOR_E
    return v->empty() ? NULL : &(*v)[0];
 }
 
-void* VectorOf${VECTOR_NAME}GetEndAddress(std::vector< ${VECTOR_ELEMENT} >* v)
+int64_t VectorOf${VECTOR_NAME}GetMemorySize(std::vector< ${VECTOR_ELEMENT} >* v)
 {
-   if (v->empty()) return NULL;
-   return (void*) &(*v)[v->size()];
+   if (v->empty()) return 0;
+   return (int64_t) (v->size() * sizeof(${VECTOR_ELEMENT}));
 }
 
 void VectorOf${VECTOR_NAME}GetItemPtr(std::vector<  ${VECTOR_ELEMENT} >* vec, int index,  ${VECTOR_ELEMENT}** element)
@@ -145,6 +145,11 @@ void VectorOf${VECTOR_NAME}CopyData(void* v, void* data)
 }
 
 void* VectorOf${VECTOR_NAME}GetStartAddress(void* v)
+{
+   throw_no_vector();
+}
+
+int64_t VectorOf${VECTOR_NAME}GetMemorySize(void* v)
 {
    throw_no_vector();
 }

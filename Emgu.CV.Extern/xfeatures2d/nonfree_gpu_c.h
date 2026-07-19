@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -8,13 +8,22 @@
 #ifndef EMGU_NONFREE_GPU_C_H
 #define EMGU_NONFREE_GPU_C_H
 
-#include "opencv2/imgproc/imgproc.hpp"
-//#include "opencv2/xfeatures2d.hpp"
 #include "opencv2/core/core_c.h"
+#include "nonfree_c.h"
+
+#ifdef HAVE_OPENCV_XFEATURES2D
+//#include "opencv2/xfeatures2d.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 //#include "opencv2/nonfree/nonfree.hpp"
 #include "opencv2/xfeatures2d/cuda.hpp"
 //#include "opencv2/nonfree/cuda.hpp"
-
+#else
+namespace cv {
+	namespace cuda {
+		class SURF_CUDA {};
+	}
+}
+#endif
 
 //----------------------------------------------------------------------------
 //

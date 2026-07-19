@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -124,7 +124,11 @@ namespace Emgu.CV
 
                 CvInvoke.cveSubdiv2DGetVoronoiFacetList(_ptr, vi, facetVec, centerVec);
                 PointF[][] vertices = facetVec.ToArrayOfArray();
+#if UNSAFE_ALLOWED
+                var centers = centerVec.GetSpan();
+#else
                 PointF[] centers = centerVec.ToArray();
+#endif
 
                 VoronoiFacet[] facets = new VoronoiFacet[centers.Length];
                 for (int i = 0; i < facets.Length; i++)

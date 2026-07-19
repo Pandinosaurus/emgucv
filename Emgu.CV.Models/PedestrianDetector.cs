@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -25,6 +25,17 @@ namespace Emgu.CV.Models
     /// </summary>
     public class PedestrianDetector : DisposableObject, IProcessAndRenderModel
     {
+        /// <summary>
+        /// The rendering method
+        /// </summary>
+        public RenderType RenderMethod
+        {
+            get
+            {
+                return RenderType.Update;
+            }
+        }
+
 #if !(UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL)
         private CudaHOG _hogCuda;
 #endif
@@ -69,7 +80,6 @@ namespace Emgu.CV.Models
 
             using (InputArray iaImage = image.GetInputArray())
             {
-
 #if !(UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL)
                 //if the input array is a GpuMat
                 //check if there is a compatible Cuda device to run pedestrian detection
@@ -99,15 +109,35 @@ namespace Emgu.CV.Models
         }
 
         /// <summary>
+        /// Return true if the model is initialized
+        /// </summary>
+        public bool Initialized
+        {
+            get
+            {
+                if (_hog == null)
+                    return false;
+#if !(UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL)
+                if (CudaInvoke.HasCuda)
+                {
+                    if (_hogCuda == null)
+                        return false;
+                }
+#endif
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Initialize the pedestrian detection model
         /// </summary>
         /// <param name="onDownloadProgressChanged">Call back method during download</param>
         /// <param name="initOptions">Initialization options. None supported at the moment, any value passed will be ignored.</param>
         /// <returns>Asyn task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        public IEnumerator Init(DownloadProgressChangedEventHandler onDownloadProgressChanged = null, Object initOptions = null)
+        public IEnumerator Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null, Object initOptions = null)
 #else
-        public async Task Init(DownloadProgressChangedEventHandler onDownloadProgressChanged = null, Object initOptions = null)
+        public async Task Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null, Object initOptions = null)
 #endif
         {
             _hog = new HOGDescriptor();
@@ -125,14 +155,38 @@ namespace Emgu.CV.Models
                     new Size(8, 8));
                 _hogCuda.SetSVMDetector(_hogCuda.GetDefaultPeopleDetector());
             }
+
+            await Task.Delay(1);
 #endif
+        }
+
+        private MCvScalar _renderColor = new MCvScalar(0, 0, 255);
+
+        /// <summary>
+        /// Get or Set the color used in rendering the rectangle around the object.
+        /// </summary>
+        public MCvScalar RenderColor
+        {
+            get
+            {
+                return _renderColor;
+            }
+            set
+            {
+                _renderColor = value;
+            }
         }
 
         /// <summary>
         /// Process the input image and render into the output image
         /// </summary>
         /// <param name="imageIn">The input image</param>
-        /// <param name="imageOut">The output image, can be the same as imageIn, in which case we will render directly into the input image</param>
+        /// <param name="imageOut">
+        /// The output image, can be the same as <paramref name="imageIn"/>, in which case we will render directly into the input image.
+        /// Note that if no pedestrian is detected, <paramref name="imageOut"/> will remain unchanged.
+        /// If a pedestrian is detected, we will draw the (rectangle) region on top of the existing pixels of <paramref name="imageOut"/>.
+        /// If the <paramref name="imageOut"/> is not the same object as <paramref name="imageIn"/>, it is a good idea to copy the pixels over from the input image before passing it to this function.
+        /// </param>
         /// <returns>The messages that we want to display.</returns>
         public string ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut)
         {
@@ -140,17 +194,9 @@ namespace Emgu.CV.Models
             Rectangle[] pedestrians = Find(imageIn);
             watch.Stop();
 
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
-
             foreach (Rectangle rect in pedestrians)
             {
-                CvInvoke.Rectangle(imageOut, rect, new MCvScalar(0, 0, 255), 2);
+                CvInvoke.Rectangle(imageOut, rect, RenderColor, 2);
             }
 
             return String.Format("Detected in {0} milliseconds.", watch.ElapsedMilliseconds);

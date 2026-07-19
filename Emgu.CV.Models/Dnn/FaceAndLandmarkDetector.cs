@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -30,6 +30,17 @@ namespace Emgu.CV.Models
         private FaceDetector _faceDetector = null;
         private FacemarkDetector _facemarkDetector = null;
 
+        /// <summary>
+        /// The rendering method
+        /// </summary>
+        public RenderType RenderMethod
+        {
+            get
+            {
+                return RenderType.Update;
+            }
+        }
+
         ///<inheritdoc/>
         public void Clear()
         {
@@ -54,10 +65,25 @@ namespace Emgu.CV.Models
             Clear();
         }
 
+        /// <summary>
+        /// Return true if the model is initialized
+        /// </summary>
+        public bool Initialized
+        {
+            get
+            {
+                if (_faceDetector == null)
+                    return false;
+                if (_facemarkDetector == null)
+                    return false;
+                return true;
+            }
+        }
+
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitFaceDetector(DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitFaceDetector(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitFaceDetector(DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitFaceDetector(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_faceDetector == null)
@@ -72,9 +98,9 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitFacemark(DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitFacemark(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitFacemark(DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitFacemark(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_facemarkDetector == null)
@@ -100,7 +126,7 @@ namespace Emgu.CV.Models
         public async Task
 #endif
             Init(
-            DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+                FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
         {
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
@@ -112,22 +138,53 @@ namespace Emgu.CV.Models
 #endif
         }
 
+        private MCvScalar _renderColorRectangle = new MCvScalar(0, 255, 0);
+
+        /// <summary>
+        /// Get or Set the color used in rendering the rectangle around the object.
+        /// </summary>
+        public MCvScalar RenderColorRectangle
+        {
+            get
+            {
+                return _renderColorRectangle;
+            }
+            set
+            {
+                _renderColorRectangle = value;
+            }
+        }
+
+        private MCvScalar _renderColorLandmark = new MCvScalar(255, 0, 0);
+
+        /// <summary>
+        /// Get or Set the color used in rendering the rectangle around the object.
+        /// </summary>
+        public MCvScalar RenderColorLandmark
+        {
+            get
+            {
+                return _renderColorLandmark;
+            }
+            set
+            {
+                _renderColorLandmark = value;
+            }
+        }
+
         /// <summary>
         /// Process the input image and render into the output image
         /// </summary>
         /// <param name="imageIn">The input image</param>
-        /// <param name="imageOut">The output image, can be the same as imageIn, in which case we will render directly into the input image</param>
+        /// <param name="imageOut">
+        /// The output image, can be the same as <paramref name="imageIn"/>, in which case we will render directly into the input image.
+        /// Note that if no faces are detected, <paramref name="imageOut"/> will remain unchanged.
+        /// If faces/landmarks are detected, we will draw the regions and markers on top of the existing pixels of <paramref name="imageOut"/>.
+        /// If the <paramref name="imageOut"/> is not the same object as <paramref name="imageIn"/>, it is a good idea to copy the pixels over from the input image before passing it to this function.
+        /// </param>
         /// <returns>The messages that we want to display.</returns>
         public string ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut)
         {
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
-
             Stopwatch watch = Stopwatch.StartNew();
 
             List<DetectedObject> fullFaceRegions = new List<DetectedObject>();
@@ -138,7 +195,7 @@ namespace Emgu.CV.Models
             {
                 foreach (DetectedObject face in partialFaceRegions)
                 {
-                    CvInvoke.Rectangle(imageOut, face.Region, new MCvScalar(0, 255, 0));
+                    CvInvoke.Rectangle(imageOut, face.Region, RenderColorRectangle);
                 }
             }
 
@@ -146,7 +203,7 @@ namespace Emgu.CV.Models
             {
                 foreach (DetectedObject face in fullFaceRegions)
                 {
-                    CvInvoke.Rectangle(imageOut, face.Region, new MCvScalar(0, 255, 0));
+                    CvInvoke.Rectangle(imageOut, face.Region, RenderColorRectangle);
                 }
 
                 var fullFaceRegionsArr = fullFaceRegions.ToArray();
@@ -158,7 +215,7 @@ namespace Emgu.CV.Models
                     for (int i = 0; i < len; i++)
                     {
                         using (VectorOfPointF vpf = landmarks[i])
-                            FaceInvoke.DrawFacemarks(imageOut, vpf, new MCvScalar(255, 0, 0));
+                            FaceInvoke.DrawFacemarks(imageOut, vpf, RenderColorLandmark);
                     }
                 }
             }

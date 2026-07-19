@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -112,6 +112,17 @@ namespace Emgu.CV
         {
             using (CvString cs = new CvString(nodeName))
                 CvInvoke.cveFileStorageWriteInt(_ptr, cs, value);
+        }
+
+        /// <summary>
+        /// Writes the specified Mat to the node with the specific name
+        /// </summary>
+        /// <param name="value">The value to be written to the file storage</param>
+        /// <param name="nodeName">The name of the node.</param>
+        public void Write(Int64 value, String nodeName = null)
+        {
+            using (CvString cs = new CvString(nodeName))
+                CvInvoke.cveFileStorageWriteInt64(_ptr, cs, value);
         }
 
         /// <summary>
@@ -245,41 +256,43 @@ namespace Emgu.CV
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern IntPtr cveFileStorageCreate(IntPtr source, FileStorage.Mode flags, IntPtr encoding);
+        internal static extern IntPtr cveFileStorageCreate(IntPtr source, FileStorage.Mode flags, IntPtr encoding);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         [return: MarshalAs(CvInvoke.BoolMarshalType)]
-        static internal extern bool cveFileStorageIsOpened(IntPtr storage);
+        internal static extern bool cveFileStorageIsOpened(IntPtr storage);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageReleaseAndGetString(IntPtr storage, IntPtr result);
+        internal static extern void cveFileStorageReleaseAndGetString(IntPtr storage, IntPtr result);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageRelease(ref IntPtr storage);
+        internal static extern void cveFileStorageRelease(ref IntPtr storage);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageWriteMat(IntPtr fs, IntPtr name, IntPtr value);
+        internal static extern void cveFileStorageWriteMat(IntPtr fs, IntPtr name, IntPtr value);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageWriteInt(IntPtr fs, IntPtr name, int value);
+        internal static extern void cveFileStorageWriteInt(IntPtr fs, IntPtr name, int value);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageWriteFloat(IntPtr fs, IntPtr name, float value);
+        internal static extern void cveFileStorageWriteInt64(IntPtr fs, IntPtr name, Int64 value);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageWriteDouble(IntPtr fs, IntPtr name, double value);
+        internal static extern void cveFileStorageWriteFloat(IntPtr fs, IntPtr name, float value);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageWriteString(IntPtr fs, IntPtr name, IntPtr value);
+        internal static extern void cveFileStorageWriteDouble(IntPtr fs, IntPtr name, double value);
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveFileStorageWriteString(IntPtr fs, IntPtr name, IntPtr value);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern IntPtr cveFileStorageRoot(IntPtr fs, int streamIdx);
+        internal static extern IntPtr cveFileStorageRoot(IntPtr fs, int streamIdx);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern IntPtr cveFileStorageGetFirstTopLevelNode(IntPtr fs);
+        internal static extern IntPtr cveFileStorageGetFirstTopLevelNode(IntPtr fs);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern IntPtr cveFileStorageGetNode(IntPtr fs, IntPtr nodeName);
+        internal static extern IntPtr cveFileStorageGetNode(IntPtr fs, IntPtr nodeName);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        static internal extern void cveFileStorageInsertString(IntPtr fs, IntPtr value);
+        internal static extern void cveFileStorageInsertString(IntPtr fs, IntPtr value);
     }
 
 }

@@ -152,17 +152,19 @@ MACRO(BUILD_CSPROJ target csproj_file extra_flags)
   #      TARGET ${target}
   #      COMMAND ${CMAKE_VS_DEVENV_COMMAND} /Build ${DEFAULT_CS_CONFIG} ${extra_flags} ${csproj_file}
   #      COMMENT "Building ${target} with ${CMAKE_VS_DEVENV_COMMAND}")
-  IF(MSBUILD_EXECUTABLE)
+  IF (DOTNET_EXECUTABLE)
+    ADD_CUSTOM_COMMAND (
+      TARGET ${target}
+	  POST_BUILD
+      COMMAND ${MAC_FRESH_SHELL_PREFIX} "${DOTNET_EXECUTABLE}" build -c ${DEFAULT_CS_CONFIG} "${csproj_file}"
+      COMMENT "Building ${target} with ${DOTNET_EXECUTABLE}")
+  ELSEIF(MSBUILD_EXECUTABLE)
     #MESSAGE(STATUS "Adding custom command: ${MSBUILD_EXECUTABLE} /t:Build /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${csproj_file}")
     ADD_CUSTOM_COMMAND (
       TARGET ${target}
+	  POST_BUILD
       COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} /t:Build /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${csproj_file}
       COMMENT "Building ${target} with ${MSBUILD_EXECUTABLE}")
-  ELSEIF (DOTNET_EXECUTABLE)
-    ADD_CUSTOM_COMMAND (
-      TARGET ${target}
-      COMMAND ${MAC_FRESH_SHELL_PREFIX} "${DOTNET_EXECUTABLE}" build -c ${DEFAULT_CS_CONFIG} "${csproj_file}"
-      COMMENT "Building ${target} with ${DOTNET_EXECUTABLE}")
   ELSE()
     MESSAGE(FATAL_ERROR "Neither Visual Studio, msbuild nor dotnot is found!")
   ENDIF()
@@ -207,12 +209,15 @@ MACRO(BUILD_CSPROJ_IN_SOLUTION target solution_file project_name extra_flags)
   IF (DOTNET_EXECUTABLE)
     ADD_CUSTOM_COMMAND (
 	TARGET ${target}
-	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
+	POST_BUILD
+	#COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
+	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} restore ${solution_file}
 	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}
 	COMMENT "Building ${target} with command: ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}")
   ELSEIF(MSBUILD_EXECUTABLE)
     ADD_CUSTOM_COMMAND (
 	TARGET ${target}
+	POST_BUILD
 	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
 	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}
 	COMMENT "Building ${target} with command: ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}")
@@ -220,6 +225,8 @@ MACRO(BUILD_CSPROJ_IN_SOLUTION target solution_file project_name extra_flags)
     MESSAGE(FATAL_ERROR "dotnet command is not found!")
   ENDIF()
 ENDMACRO()
+
+
 
 MACRO(MSBUILD_CSPROJ_IN_SOLUTION target solution_file project_name extra_flags)
   IF((APPLE AND ("${EMGUCV_ARCH}" STREQUAL "x64")) OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS"))
@@ -232,55 +239,107 @@ MACRO(MSBUILD_CSPROJ_IN_SOLUTION target solution_file project_name extra_flags)
   ELSE()
 	#MESSAGE(STATUS ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> msbuild_target_name: ${msbuild_target_name}")
     STRING(REGEX REPLACE "\\." "_" msbuild_target_name ${project_name})
+	SET(MSBUILD_TARGET_OPTION /target:${msbuild_target_name})	
+	#TODO: This should not be necessary if dotnot msbuild command is fixed. Currently looking up the "Build" target is broken, need to use the "BuildCompile" target.
+	#Should be removed when dotnet msbuild is fixed.
+	SET(MSBUILD_TARGET_OPTION ${MSBUILD_TARGET_OPTION}:BuildCompile)	
+      ENDIF()     
+  IF(MSBUILD_EXECUTABLE)
+    ADD_CUSTOM_COMMAND (
+    TARGET ${target}
+	POST_BUILD
+    #COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
+    COMMAND ${DOTNET_EXECUTABLE} restore ${solution_file}
+    COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}
+    COMMENT "Building ${target} with command: ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}")
+  ELSE()
+    MESSAGE(FATAL_ERROR "msbuild command is not found!")
+  ENDIF()
+ENDMACRO()
+
+MACRO(DOTNET_MSBUILD_CSPROJ_IN_SOLUTION target solution_file project_name extra_flags)
+  IF((APPLE AND ("${EMGUCV_ARCH}" STREQUAL "x64")) OR ("${CMAKE_SYSTEM_NAME}" STREQUAL "iOS"))
+    # Mac OS targeting intel cpu, or iOS
+    SET(MAC_FRESH_SHELL_PREFIX env -i zsh)
+  ENDIF()
+  ADD_CUSTOM_TARGET (${target} ${ARGV4})
+  IF ("${project_name}" STREQUAL "")
+	SET(MSBUILD_TARGET_OPTION "")
+  ELSE()
+	#MESSAGE(STATUS ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> msbuild_target_name: ${msbuild_target_name}")
+    STRING(REGEX REPLACE "\\." "_" msbuild_target_name ${project_name})
 	SET(MSBUILD_TARGET_OPTION /target:${msbuild_target_name})
-	
 	#TODO: This should not be necessary if dotnot msbuild command is fixed. Currently looking up the "Build" target is broken, need to use the "BuildCompile" target.
 	#Should be removed when dotnet msbuild is fixed.
 	SET(MSBUILD_TARGET_OPTION ${MSBUILD_TARGET_OPTION}:BuildCompile)
-	
   ENDIF()
-  IF(MSBUILD_EXECUTABLE)
+  IF(DOTNET_EXECUTABLE)
     ADD_CUSTOM_COMMAND (
-	TARGET ${target}
-	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
-	COMMAND ${MAC_FRESH_SHELL_PREFIX} ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}
-	COMMENT "Building ${target} with command: ${MSBUILD_EXECUTABLE} /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}")
+    TARGET ${target}
+	POST_BUILD
+    COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file}
+    COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}
+    COMMENT "Building ${target} with command: ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild /p:Configuration=${DEFAULT_CS_CONFIG} ${extra_flags} ${solution_file} ${MSBUILD_TARGET_OPTION}")  
   ELSE()
-    MESSAGE(FATAL_ERROR "msbuild command is not found!")
+    MESSAGE(FATAL_ERROR "dotnet or msbuild command not found!")
   ENDIF()
 ENDMACRO()
 
 
 MACRO(BUILD_DOTNET_PROJ target csproj_file extra_flags)
   ADD_CUSTOM_TARGET (${target} ${ARGV3})
-  #IF(APPLE)
-  #  SET(MAC_FRESH_SHELL_PREFIX env -i zsh)
-  #ENDIF()
-  
+  IF(APPLE)
+    # Use env -i to strip all Xcode-injected build settings from the environment.
+    # Xcode sets many build settings (PRODUCT_NAME, EXECUTABLE_NAME, PROJECT_NAME, etc.)
+    # as environment variables when running shell script build phases. MSBuild treats
+    # environment variables as properties (case-insensitively), so any Xcode variable
+    # whose name matches an MSBuild property can silently override project-defined values
+    # (e.g. AssemblyName). Using env -i gives dotnet a clean environment with only
+    # the essential variables it needs: PATH (for tool discovery) and HOME (for NuGet cache).
+    SET(MAC_FRESH_SHELL_PREFIX env -i "PATH=$ENV{PATH}" "HOME=$ENV{HOME}" "TMPDIR=$ENV{TMPDIR}")
+  ENDIF()
+  SEPARATE_ARGUMENTS(extra_flag_list UNIX_COMMAND "${extra_flags}")
   IF (DOTNET_EXECUTABLE)
     ADD_CUSTOM_COMMAND (
       TARGET ${target}
-      COMMAND ${MAC_FRESH_SHELL_PREFIX} "${DOTNET_EXECUTABLE}" build -c ${DEFAULT_CS_CONFIG} ${extra_flags} "${csproj_file}"
-      COMMENT "Building ${target} with command: ${MAC_FRESH_SHELL_PREFIX} \"${DOTNET_EXECUTABLE}\" build -c ${DEFAULT_CS_CONFIG} ${extra_flags} \"${csproj_file}\"")
+	  POST_BUILD
+      #COMMAND ${MAC_FRESH_SHELL_PREFIX} "${DOTNET_EXECUTABLE}" restore ${extra_flags} "${csproj_file}"
+      COMMAND ${MAC_FRESH_SHELL_PREFIX} "${DOTNET_EXECUTABLE}" build -c ${DEFAULT_CS_CONFIG} ${extra_flag_list} "${csproj_file}"
+      COMMENT "Building ${target} with command: ${MAC_FRESH_SHELL_PREFIX} \"${DOTNET_EXECUTABLE}\" build -c ${DEFAULT_CS_CONFIG} ${extra_flag_list} \"${csproj_file}\"")
   ELSE()
     MESSAGE(FATAL_ERROR "DOTNET_EXECUTABLE not found!")
   ENDIF()
 ENDMACRO()
 
 MACRO(BUILD_NUGET_PACKAGE target csproj_file nuspec_file output_dir working_dir)
-  IF(APPLE AND ("${EMGUCV_ARCH}" STREQUAL "x64"))
-    SET(MAC_FRESH_SHELL_PREFIX env -i zsh)
-  ENDIF()
-  IF (DOTNET_EXECUTABLE)
-    ADD_CUSTOM_TARGET(
-      ${target} ALL
-	  COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} msbuild -t:restore /p:Configuration=${DEFAULT_CS_CONFIG} ${csproj_file}
-      COMMAND ${DOTNET_EXECUTABLE} pack "${csproj_file}" -p:NuspecFile="${nuspec_file}" --no-build -o "${output_dir}"
-      WORKING_DIRECTORY "${working_dir}"
+  IF(NUGET_FOUND AND (WIN32 OR APPLE))
+	ADD_CUSTOM_TARGET(
+	  ${target} ALL
+	  COMMAND "${NUGET_EXECUTABLE}" pack "${nuspec_file}" -OutputDirectory "${output_dir}"
+	  WORKING_DIRECTORY "${working_dir}"
+	  COMMENT "Building ${target} with command: ${NUGET_EXECUTABLE} pack \"${nuspec_file}\" -OutputDirectory \"${output_dir}\""
+	)
+  ELSEIF(NUGET_FOUND AND MONO_FOUND)
+	#Use mono with nuget.exe to create the nuget package
+  	ADD_CUSTOM_TARGET(
+	  ${target} ALL
+	  COMMAND "${MONO_EXECUTABLE}" "${NUGET_EXECUTABLE}" pack "${nuspec_file}" -OutputDirectory "${output_dir}"
+	  WORKING_DIRECTORY "${working_dir}"
+	  COMMENT "Building ${target} with command: ${MONO_EXECUTABLE} ${NUGET_EXECUTABLE} pack \"${nuspec_file}\" -OutputDirectory \"${output_dir}\""
+	)
+  ELSEIF(DOTNET_FOUND)
+	IF(APPLE AND ("${EMGUCV_ARCH}" STREQUAL "x64"))
+	  SET(MAC_FRESH_SHELL_PREFIX env -i zsh)
+	ENDIF()
+	ADD_CUSTOM_TARGET(
+	  ${target} ALL
+	  COMMAND ${MAC_FRESH_SHELL_PREFIX} ${DOTNET_EXECUTABLE} restore /p:Configuration=${DEFAULT_CS_CONFIG} ${csproj_file}
+	  COMMAND ${DOTNET_EXECUTABLE} pack "${csproj_file}" -p:NuspecFile="${nuspec_file}" -o "${output_dir}"
+	  WORKING_DIRECTORY "${working_dir}"
 	  COMMENT "Building ${target} with command: ${DOTNET_EXECUTABLE} pack \"${csproj_file}\" -p:NuspecFile=\"${nuspec_file}\" --no-build -o \"${output_dir}\""
-    )
+	)
   ELSE()
-    MESSAGE(FATAL_ERROR "DOTNET_EXECUTABLE not found!")
+	MESSAGE(FATAL_ERROR "DOTNET_EXECUTABLE not found!")
   ENDIF()
 ENDMACRO()
 
@@ -341,6 +400,7 @@ MACRO(COMPILE_CS target target_type source)
   
   ADD_CUSTOM_COMMAND (
     TARGET ${target}
+	POST_BUILD
     ${CS_PREBUILD_COMMAND}	   
     COMMAND ${CSC_EXECUTABLE} ${CS_COMMANDLINE_FLAGS} @${target}_SourceList.rsp
     ${CS_POSTBUILD_COMMAND}

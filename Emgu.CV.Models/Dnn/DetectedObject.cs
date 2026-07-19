@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -121,11 +121,18 @@ namespace Emgu.CV.Models
                     classIds,
                     confidents,
                     regions,
-                    (float)confThreshold,
-                    (float)nmsThreshold);
+                    confThreshold,
+                    nmsThreshold);
+#if UNSAFE_ALLOWED
+                var classIdArr = classIds.GetSpan();
+                var confidentArr = confidents.GetSpan();
+                var regionArr = regions.GetSpan();
+#else
                 var classIdArr = classIds.ToArray();
                 var confidentArr = confidents.ToArray();
                 var regionArr = regions.ToArray();
+
+#endif
                 List<DetectedObject> results = new List<DetectedObject>();
                 for (int i = 0; i < classIdArr.Length; i++)
                 {

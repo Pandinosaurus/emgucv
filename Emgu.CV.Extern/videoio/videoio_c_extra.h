@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -24,7 +24,7 @@
 #endif
 
 #else
-static inline CV_NORETURN void throw_no_videoio() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without Videoio support"); }
+static inline CV_NORETURN void throw_no_videoio() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without Videoio support. To use this module, please switch to the full Emgu CV runtime."); }
 class CvCapture
 {	
 };
@@ -69,7 +69,7 @@ CVAPI(void) OpenniGetColorPoints(
 CVAPI(cv::VideoCapture*) cveVideoCaptureCreateFromDevice(int device, int apiPreference, std::vector< int >* params);
 CVAPI(cv::VideoCapture*) cveVideoCaptureCreateFromFile(cv::String* fileName, int apiPreference, std::vector< int >* params);
 
-CVAPI(void) cveVideoCaptureRelease(cv::VideoCapture** capture);
+CVAPI(void) cveVideoCaptureRelease2(cv::VideoCapture** capture);
 CVAPI(bool) cveVideoCaptureSet(cv::VideoCapture* capture, int propId, double value);
 CVAPI(double) cveVideoCaptureGet(cv::VideoCapture* capture, int propId);
 CVAPI(bool) cveVideoCaptureGrab(cv::VideoCapture* capture);
@@ -96,8 +96,9 @@ CVAPI(bool) cveVideoWriterIsOpened(cv::VideoWriter* writer);
 CVAPI(bool) cveVideoWriterSet(cv::VideoWriter* writer, int propId, double value);
 CVAPI(double) cveVideoWriterGet(cv::VideoWriter* writer, int propId);
 CVAPI(void) cveVideoWriterRelease(cv::VideoWriter** writer);
-CVAPI(void) cveVideoWriterWrite(cv::VideoWriter* writer, cv::Mat* image);
+CVAPI(void) cveVideoWriterWrite(cv::VideoWriter* writer, cv::_InputArray* image);
 CVAPI(int) cveVideoWriterFourcc(char c1, char c2, char c3, char c4);
+CVAPI(void) cveVideoWriterGetBackendName(cv::VideoWriter* writer, cv::String* name);
 
 CVAPI(void) cveGetBackendName(int api, cv::String* name);
 CVAPI(void) cveGetBackends(std::vector<int>* backends);

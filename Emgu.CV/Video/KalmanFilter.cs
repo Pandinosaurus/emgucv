@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -42,7 +42,7 @@ namespace Emgu.CV
       /// Updates the predicted state from the measurement.
       /// </summary>
       /// <param name="measurement">The measured system parameters</param>
-      /// <returns></returns>
+      /// <returns>The updated predicted state</returns>
       public Mat Correct(Mat measurement)
       {
          return new Mat(CvInvoke.cveKalmanFilterCorrect(_ptr, measurement), false);

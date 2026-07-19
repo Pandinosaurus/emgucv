@@ -1,6 +1,8 @@
 REM POSSIBLE OPTIONS: 
 REM %1%: "x86", "x86_64", "arm64-v8a" or "armeabi-v7a"
-REM %2%: "core", if set to "core", will not build the contrib module
+REM %2%: "core", will not build the contrib module
+REM %2%: "mini", only the absolute minimum modules will get build
+REM %2%: anything else, we will build all modules.
 REM %3%: optional android-toolchain
 
 pushd %~p0
@@ -32,11 +34,11 @@ SET BUILD_OPENCV=1
 IF ("%3"=="") (SET ANDROID_TOOLCHAIN_CMAKE="") else (SET ANDROID_TOOLCHAIN_CMAKE=-DANDROID_TOOLCHAIN_NAME=%3)
 
 :: inherit old names
-IF NOT DEFINED CMAKE SET CMAKE=%CMAKE_EXE%
-IF NOT DEFINED MAKE SET MAKE=%MAKE_EXE%
+:: IF NOT DEFINED CMAKE SET CMAKE=%CMAKE_EXE%
+:: IF NOT DEFINED MAKE SET MAKE=%MAKE_EXE%
 
 :: defaults
-IF NOT DEFINED BUILD_DIR SET BUILD_DIR=build_%1
+IF NOT DEFINED BUILD_DIR SET BUILD_DIR=android_%1
 IF NOT DEFINED ANDROID_ABI SET ANDROID_ABI=%1
 SET OPENCV_BUILD_DIR=%SCRIPTS_DIR%\..\%BUILD_DIR%
 SET INSTALL_FOLDER=%cd%\%BUILD_DIR%\install
@@ -46,8 +48,8 @@ PUSHD .
 IF NOT DEFINED ANDROID_NDK (ECHO. & ECHO You should set an environment variable ANDROID_NDK to the full path to your copy of Android NDK & GOTO end)
 (CD "%ANDROID_NDK%") || (ECHO. & ECHO Directory "%ANDROID_NDK%" specified by ANDROID_NDK variable does not exist & GOTO end)
 
-IF NOT EXIST "%CMAKE%" (ECHO. & ECHO You should set an environment variable CMAKE to the full path to cmake executable & GOTO end)
-IF NOT EXIST "%MAKE%" (ECHO. & ECHO You should set an environment variable MAKE to the full path to native port of make executable & GOTO end)
+IF NOT EXIST "%CMAKE%" (ECHO. & ECHO You should set an environment variable CMAKE to the full path to cmake executable. CMAKE="%CMAKE%" & GOTO end)
+IF NOT EXIST "%MAKE%" (ECHO. & ECHO You should set an environment variable MAKE to the full path to native port of make executable. MAKE="%MAKE%" & GOTO end)
 
 IF NOT %BUILD_JAVA_PART%==1 GOTO required_variables_checked
 
@@ -71,19 +73,26 @@ IF %BUILD_WITH_NINJA%==1 (SET CMAKE_GENERATOR=Ninja) ELSE (SET CMAKE_GENERATOR=M
 IF EXIST "%ANDROID_NDK%\build\cmake\android.toolchain.cmake" SET CMAKE_TOOLCHAIN_FILE=%ANDROID_NDK%\build\cmake\android.toolchain.cmake
 REM IF EXIST "%SCRIPTS_DIR%\..\..\..\opencv\platforms\android\android.toolchain.cmake" SET CMAKE_TOOLCHAIN_FILE=%SCRIPTS_DIR%\..\..\..\opencv\platforms\android\android.toolchain.cmake
 
-::Setup the contrib modules
-IF "%2"=="core" GOTO CORE_BUILD_CONFIG
-
-:FULL_BUILD_CONFIG
 SET CMAKE_CXX_FLAGS_RELEASE_OPTION=-DCMAKE_CXX_FLAGS_RELEASE:STRING="-g0 -O3" 
 SET CMAKE_C_FLAGS_RELEASE_OPTION=-DCMAKE_C_FLAGS_RELEASE:STRING="-g0 -O3" 
+
+
+::Setup the contrib modules
+IF "%2"=="core" GOTO CORE_BUILD_CONFIG
+IF "%2"=="mini" GOTO MINI_BUILD_CONFIG
+
+:FULL_BUILD_CONFIG
 SET TESSERACT_OPTION=-DEMGU_CV_WITH_TESSERACT:BOOL=ON 
 GOTO END_CONFIG
 
 :CORE_BUILD_CONFIG
-SET CMAKE_CXX_FLAGS_RELEASE_OPTION=-DCMAKE_CXX_FLAGS_RELEASE:STRING="-g0 -O3" 
-SET CMAKE_C_FLAGS_RELEASE_OPTION=-DCMAKE_C_FLAGS_RELEASE:STRING="-g0 -O3"
 SET TESSERACT_OPTION=-DEMGU_CV_WITH_TESSERACT:BOOL=OFF
+GOTO END_CONFIG
+
+:MINI_BUILD_CONFIG
+SET TESSERACT_OPTION=-DEMGU_CV_WITH_TESSERACT:BOOL=OFF
+SET EMGU_CV_CMAKE_EXTRA_FLAGS=-DBUILD_opencv_3d:BOOL=FALSE -DBUILD_opencv_calib:BOOL=FALSE -DBUILD_opencv_dnn:BOOL=FALSE -DBUILD_opencv_ml:BOOL=FALSE -DBUILD_opencv_photo:BOOL=FALSE -DBUILD_opencv_features2d:BOOL=FALSE -DBUILD_opencv_gapi:BOOL=FALSE -DBUILD_opencv_flann:BOOL=FALSE -DBUILD_opencv_video:BOOL=FALSE 
+
 :END_CONFIG
 
 SET CMAKE_CONF_FLAGS= -G "%CMAKE_GENERATOR%" ^
@@ -106,7 +115,7 @@ REM -DCMAKE_SHARED_LINKER_FLAGS:STRING="-Wl,--gc-sections" ^
 REM cd openvino 
 REM IF NOT EXIST "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 REM cd "%BUILD_DIR%"
-REM "%CMAKE%" %CMAKE_CONF_FLAGS% %* -DENABLE_OPENCV:BOOL=OFF -DENABLE_MKL_DNN:BOOL=OFF -DANDROID_LD=deprecated .. 
+REM "%CMAKE%" %CMAKE_CONF_FLAGS% -DENABLE_OPENCV:BOOL=OFF -DENABLE_MKL_DNN:BOOL=OFF -DANDROID_LD=deprecated .. 
 REM SET OPENVINO_DIR=%cd%
 REM echo on
 REM "%CMAKE%" --build . --config Release --target install
@@ -116,7 +125,7 @@ REM cd ..
 cd eigen 
 IF NOT EXIST "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd "%BUILD_DIR%"
-"%CMAKE%" %CMAKE_CONF_FLAGS% %* .. 
+"%CMAKE%" %CMAKE_CONF_FLAGS% .. 
 SET EIGEN_DIR=%cd%
 echo on
 "%CMAKE%" --build . --config Release --target install
@@ -132,17 +141,30 @@ cd ..
 
 ::Setup the contrib modules
 IF "%2"=="core" GOTO CORE_BUILD_EMGU
+IF "%2"=="mini" GOTO CORE_BUILD_EMGU
 
 :FULL_BUILD_EMGU
 cd 3rdParty
+
 cd freetype2
 IF NOT EXIST "%BUILD_DIR%" mkdir "%BUILD_DIR%"
 cd "%BUILD_DIR%"
-"%CMAKE%" %CMAKE_CONF_FLAGS% %* .. 
+"%CMAKE%" %CMAKE_CONF_FLAGS% .. 
 "%CMAKE%" --build . --config Release --parallel --target install
 cd .. 
 cd ..
-cd ..
+
+REM cd openvino
+REM IF NOT EXIST "%BUILD_DIR%" mkdir "%BUILD_DIR%"
+REM cd "%BUILD_DIR%"
+REM "%CMAKE%" %CMAKE_CONF_FLAGS% -DCMAKE_FIND_ROOT_PATH:STRING=%INSTALL_FOLDER:\=/% -DHB_HAVE_FREETYPE:BOOL=TRUE ..
+REM "%CMAKE%" --build . --config Release --parallel --target install
+REM SET OPENVINO_INSTALL_DIR=%INSTALL_FOLDER:\=/%/runtime/cmake
+REM SET OPENVINO_CMAKE_CONFIG_FLAGS=^
+REM -DWITH_OPENVINO:BOOL=TRUE ^
+REM -DOpenVINO_DIR:STRING=%OPENVINO_INSTALL_DIR% ^
+REM -DENABLE_CXX11:BOOL=TRUE
+REM cd ..
 
 
 cd harfbuzz
@@ -178,7 +200,6 @@ IF NOT %BUILD_OPENCV%==1 GOTO other-cmake
 echo on
 
 
-
 SET CMAKE_CONF_FLAGS=%CMAKE_CONF_FLAGS% ^
 %TESSERACT_OPTION% ^
 -DBUILD_SHARED_LIBS:BOOL=OFF ^
@@ -202,15 +223,17 @@ SET CMAKE_CONF_FLAGS=%CMAKE_CONF_FLAGS% ^
 -DEMGU_CV_WITH_DEPTHAI:BOOL=FALSE ^
 -DCMAKE_FIND_ROOT_PATH:STRING=%INSTALL_FOLDER:\=/% ^
 -DEigen3_DIR:STRING=%EIGEN_DIR:\=/% ^
--DANDROID_LD=deprecated
+%EMGU_CV_CMAKE_EXTRA_FLAGS% ^
+%OPENVINO_CMAKE_CONFIG_FLAGS% 
 
+REM -DANDROID_LD=deprecated
 REM For reason on adding "-DANDROID_LD=deprecated" flag, see https://github.com/android/ndk/issues/1426
 
 REM -DENABLE_LTO:BOOL=ON ^
 REM -DENABLE_THIN_LTO:BOOL=OFF ^
 
-::("%CMAKE%" -G"%CMAKE_GENERATOR%" -DANDROID_ABI="%ANDROID_ABI%" -DCMAKE_TOOLCHAIN_FILE="%SOURCE_DIR%\android.toolchain.cmake" %ANDROID_TOOLCHAIN_CMAKE% -DCMAKE_MAKE_PROGRAM="%MAKE%" %* "%SOURCE_DIR%" -DOPENCV_EXTRA_MODULES_PATH="%SOURCE_DIR%\opencv_contrib\modules" -DANDROID_EXTRA_NDK_VERSIONS="-r15c" -DBUILD_SHARED_LIBS:BOOL=OFF -DBUILD_ANDROID_EXAMPLES:BOOL=OFF -DBUILD_PERF_TESTS:BOOL=OFF -DWITH_IPP:BOOL=OFF -DBUILD_DOCS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF -DBUILD_WITH_DEBUG_INFO:BOOL=OFF -DBUILD_opencv_java:BOOL=OFF -DBUILD_opencv_ts:BOOL=OFF -DBUILD_opencv_androidcamera:BOOL=OFF -DBUILD_opencv_adas:BOOL=OFF -DBUILD_opencv_hdf:BOOL=OFF -DBUILD_opencv_saliency:BOOL=OFF -DBUILD_TBB:BOOL=OFF -DWITH_OPENMP:BOOL=ON -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_C_FLAGS="-fopenmp" -DWITH_OPENCL:BOOL=ON -DWITH_CUDA:BOOL=OFF -DANDROID_NATIVE_API_LEVEL:STRING=21 -DCMAKE_CONFIGURATION_TYPES:STRING=Release) && GOTO cmakefin
-("%CMAKE%" %CMAKE_CONF_FLAGS% %* "%SOURCE_DIR%" ) ^
+::("%CMAKE%" -G"%CMAKE_GENERATOR%" -DANDROID_ABI="%ANDROID_ABI%" -DCMAKE_TOOLCHAIN_FILE="%SOURCE_DIR%\android.toolchain.cmake" %ANDROID_TOOLCHAIN_CMAKE% -DCMAKE_MAKE_PROGRAM="%MAKE%" "%SOURCE_DIR%" -DOPENCV_EXTRA_MODULES_PATH="%SOURCE_DIR%\opencv_contrib\modules" -DANDROID_EXTRA_NDK_VERSIONS="-r15c" -DBUILD_SHARED_LIBS:BOOL=OFF -DBUILD_ANDROID_EXAMPLES:BOOL=OFF -DBUILD_PERF_TESTS:BOOL=OFF -DWITH_IPP:BOOL=OFF -DBUILD_DOCS:BOOL=OFF -DBUILD_TESTS:BOOL=OFF -DBUILD_WITH_DEBUG_INFO:BOOL=OFF -DBUILD_opencv_java:BOOL=OFF -DBUILD_opencv_ts:BOOL=OFF -DBUILD_opencv_androidcamera:BOOL=OFF -DBUILD_opencv_adas:BOOL=OFF -DBUILD_opencv_hdf:BOOL=OFF -DBUILD_opencv_saliency:BOOL=OFF -DBUILD_TBB:BOOL=OFF -DWITH_OPENMP:BOOL=ON -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_C_FLAGS="-fopenmp" -DWITH_OPENCL:BOOL=ON -DWITH_CUDA:BOOL=OFF -DANDROID_NATIVE_API_LEVEL:STRING=21 -DCMAKE_CONFIGURATION_TYPES:STRING=Release) && GOTO cmakefin
+("%CMAKE%" %CMAKE_CONF_FLAGS% "%SOURCE_DIR%" ) ^
 && GOTO cmakefin
 REM -DCMAKE_BUILD_TYPE:STRING=MINSIZEREL) ^
 REM -DANDROID_STL:STRING=c++_static ^
@@ -218,7 +241,7 @@ REM -DCMAKE_CXX_FLAGS:STRING="-D__cplusplus=201103L" ^
 
 ECHO. & ECHO cmake failed &	GOTO end
 :other-cmake
-("%CMAKE%" -G"%CMAKE_GENERATOR%" -DANDROID_ABI="%ANDROID_ABI%" -DOpenCV_DIR="%OPENCV_BUILD_DIR%" -DCMAKE_TOOLCHAIN_FILE="%OPENCV_BUILD_DIR%\..\android.toolchain.cmake" -DCMAKE_MAKE_PROGRAM="%MAKE%" %* "%SOURCE_DIR%") && GOTO cmakefin
+("%CMAKE%" -G"%CMAKE_GENERATOR%" -DANDROID_ABI="%ANDROID_ABI%" -DOpenCV_DIR="%OPENCV_BUILD_DIR%" -DCMAKE_TOOLCHAIN_FILE="%OPENCV_BUILD_DIR%\..\android.toolchain.cmake" -DCMAKE_MAKE_PROGRAM="%MAKE%" "%SOURCE_DIR%") && GOTO cmakefin
 ECHO. & ECHO cmake failed &	GOTO end
 :cmakefin
 

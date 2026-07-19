@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -18,7 +18,9 @@
 #include "opencv2/core/utils/logger.hpp"
 #include "registry_parallel.hpp"
 
-CVAPI(CvErrorCallback) cveRedirectError(CvErrorCallback error_handler, void* userdata, void** prev_userdata);
+CVAPI(bool) cveSetBreakOnError(bool flag);
+CVAPI(cv::ErrorCallback) cveRedirectError(cv::ErrorCallback errorHandler, void* userdata, void** prevUserdata);
+CVAPI(cv::String*) cveTempfile(cv::String* suffix);
 CVAPI(int) cveGetErrMode();
 CVAPI(int) cveSetErrMode(int mode);
 CVAPI(int) cveGetErrStatus();
@@ -38,7 +40,7 @@ CVAPI(void) cveGetParallelBackends(std::vector< cv::String >* backendNames);
 
 
 CVAPI(cv::String*) cveStringCreate();
-CVAPI(cv::String*) cveStringCreateFromStr(const char* c);
+CVAPI(cv::String*) cveStringCreateFromStr(const char* c, int size);
 CVAPI(void) cveStringGetCStr(cv::String* string, const char** c, int* size);
 CVAPI(int) cveStringGetLength(cv::String* string);
 CVAPI(void) cveStringRelease(cv::String** string);
@@ -75,6 +77,8 @@ CVAPI(void) cveScalarRelease(cv::Scalar** scalar);
 
 CVAPI(void) cveMinMaxIdx(cv::_InputArray* src, double* minVal, double* maxVal, int* minIdx, int* maxIdx, cv::_InputArray* mask);
 CVAPI(void) cveMinMaxLoc(cv::_InputArray* src, double* minVal, double* maxVal, CvPoint* minLoc, CvPoint* macLoc, cv::_InputArray* mask);
+CVAPI(void) cveReduceArgMin(cv::_InputArray* src, cv::_OutputArray* dst, int axis, bool lastIndex);
+CVAPI(void) cveReduceArgMax(cv::_InputArray* src, cv::_OutputArray* dst, int axis, bool lastIndex);
 
 CVAPI(void) cveBitwiseAnd(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, cv::_InputArray* mask);
 CVAPI(void) cveBitwiseNot(cv::_InputArray* src, cv::_OutputArray* dst, cv::_InputArray* mask);
@@ -85,7 +89,8 @@ CVAPI(void) cveAdd(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArra
 CVAPI(void) cveSubtract(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, cv::_InputArray* mask, int dtype);
 CVAPI(void) cveDivide(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, double scale, int dtype);
 CVAPI(void) cveMultiply(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, double scale, int dtype);
-CVAPI(void) cveCountNonZero(cv::_InputArray* src);
+CVAPI(bool) cveHasNonZero(cv::_InputArray* src);
+CVAPI(int) cveCountNonZero(cv::_InputArray* src);
 CVAPI(void) cveFindNonZero(cv::_InputArray* src, cv::_OutputArray* idx);
 CVAPI(void) cveMin(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst);
 CVAPI(void) cveMax(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst);
@@ -98,6 +103,8 @@ CVAPI(void) cveSqrt(cv::_InputArray* src, cv::_OutputArray* dst);
 CVAPI(void) cveCompare(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, int compop);
 
 CVAPI(void) cveFlip(cv::_InputArray* src, cv::_OutputArray* dst, int flipCode);
+CVAPI(void) cveFlipND(cv::_InputArray* src, cv::_OutputArray* dst, int axis);
+CVAPI(void) cveBroadcast(cv::_InputArray* src, cv::_InputArray* shape, cv::_OutputArray* dst);
 CVAPI(void) cveRotate(cv::_InputArray* src, cv::_OutputArray* dst, int rotateCode);
 CVAPI(void) cveTranspose(cv::_InputArray* src, cv::_OutputArray* dst);
 CVAPI(void) cveLUT(cv::_InputArray* src, cv::_InputArray* lut, cv::_OutputArray* dst);
@@ -126,10 +133,10 @@ CVAPI(void) cvePolarToCart(cv::_InputArray* magnitude, cv::_InputArray* angle, c
 CVAPI(void) cveSetIdentity(cv::_InputOutputArray* mtx, CvScalar* scalar);
 CVAPI(int) cveSolveCubic(cv::_InputArray* coeffs, cv::_OutputArray* roots);
 CVAPI(double) cveSolvePoly(cv::_InputArray* coeffs, cv::_OutputArray* roots, int maxIters);
-CVAPI(void) cveSolve(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, int flags);
+CVAPI(bool) cveSolve(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, int flags);
 CVAPI(void) cveSort(cv::_InputArray* src, cv::_OutputArray* dst, int flags);
 CVAPI(void) cveSortIdx(cv::_InputArray* src, cv::_OutputArray* dst, int flags);
-CVAPI(void) cveInvert(cv::_InputArray* src, cv::_OutputArray* dst, int flags);
+CVAPI(double) cveInvert(cv::_InputArray* src, cv::_OutputArray* dst, int flags);
 
 CVAPI(void) cveDft(cv::_InputArray* src, cv::_OutputArray* dst, int flags, int nonzeroRows);
 CVAPI(void) cveDct(cv::_InputArray* src, cv::_OutputArray* dst, int flags);
@@ -138,7 +145,7 @@ CVAPI(int) cveGetOptimalDFTSize(int vecsize);
 
 CVAPI(void) cveTransform(cv::_InputArray* src, cv::_OutputArray* dst, cv::_InputArray* m);
 
-CVAPI(void) cveMahalanobis(cv::_InputArray* v1, cv::_InputArray* v2, cv::_InputArray* icovar);
+CVAPI(double) cveMahalanobis(cv::_InputArray* v1, cv::_InputArray* v2, cv::_InputArray* icovar);
 CVAPI(void) cveCalcCovarMatrix(cv::_InputArray* samples, cv::_OutputArray* covar, cv::_InputOutputArray* mean, int flags, int ctype);
 CVAPI(void) cveNormalize(cv::_InputArray* src, cv::_InputOutputArray* dst, double alpha, double beta, int normType, int dType, cv::_InputArray* mask);
 
@@ -181,12 +188,13 @@ CVAPI(void) cveRandn(cv::_InputOutputArray* dst, cv::_InputArray* mean, cv::_Inp
 CVAPI(void) cveRandu(cv::_InputOutputArray* dst, cv::_InputArray* low, cv::_InputArray* high);
 
 //File Storage
-CVAPI(cv::FileStorage*) cveFileStorageCreate(const cv::String* source, int flags, const cv::String* encoding);
+CVAPI(cv::FileStorage*) cveFileStorageCreate(cv::String* source, int flags, cv::String* encoding);
 CVAPI(bool) cveFileStorageIsOpened(cv::FileStorage* storage);
 CVAPI(void) cveFileStorageReleaseAndGetString(cv::FileStorage* storage, cv::String* result);
 CVAPI(void) cveFileStorageRelease(cv::FileStorage** storage);
 CVAPI(void) cveFileStorageWriteMat(cv::FileStorage* fs, cv::String* name, cv::Mat* value);
 CVAPI(void) cveFileStorageWriteInt(cv::FileStorage* fs, cv::String* name, int value);
+CVAPI(void) cveFileStorageWriteInt64(cv::FileStorage* fs, cv::String* name, int64_t value);
 CVAPI(void) cveFileStorageWriteFloat(cv::FileStorage* fs, cv::String* name, float value);
 CVAPI(void) cveFileStorageWriteDouble(cv::FileStorage* fs, cv::String* name, double value);
 CVAPI(void) cveFileStorageWriteString(cv::FileStorage* fs, cv::String* name, cv::String* value);
@@ -203,6 +211,7 @@ CVAPI(void) cveFileNodeGetKeys(cv::FileNode* node, std::vector< cv::String >* ke
 CVAPI(void) cveFileNodeReadMat(cv::FileNode* node, cv::Mat* mat, cv::Mat* defaultMat);
 CVAPI(void) cveFileNodeReadString(cv::FileNode* node, cv::String* str, cv::String* defaultStr);
 CVAPI(int) cveFileNodeReadInt(cv::FileNode* node, int defaultInt);
+CVAPI(int64_t) cveFileNodeReadInt64(cv::FileNode* node, int64_t defaultInt);
 CVAPI(double) cveFileNodeReadDouble(cv::FileNode* node, double defaultDouble);
 CVAPI(float) cveFileNodeReadFloat(cv::FileNode* node, float defaultFloat);
 CVAPI(void) cveFileNodeRelease(cv::FileNode** node);

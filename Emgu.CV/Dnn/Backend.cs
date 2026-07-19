@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -44,6 +44,18 @@ namespace Emgu.CV.Dnn
         /// Cuda backend
         /// </summary>
 		Cuda,
+        /// <summary>
+        /// Webnn
+        /// </summary>
+        Webnn,
+        /// <summary>
+        /// Timvx
+        /// </summary>
+        Timvx,
+        /// <summary>
+        /// CANN
+        /// </summary>
+        Cann,
         /// <summary>
         /// Inference Engine NGraph
         /// </summary>

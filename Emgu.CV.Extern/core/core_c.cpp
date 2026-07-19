@@ -1,14 +1,29 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
 #include "core_c_extra.h"
 
-CvErrorCallback cveRedirectError(CvErrorCallback error_handler, void* userdata, void** prev_userdata)
+bool cveSetBreakOnError(bool flag)
 {
-	return cvRedirectError(error_handler, userdata, prev_userdata);
+	return cv::setBreakOnError(flag);
+}
+
+cv::ErrorCallback cveRedirectError(cv::ErrorCallback errorHandler, void* userdata, void** prevUserdata)
+{
+	return cv::redirectError(errorHandler, userdata, prevUserdata);
+}
+
+cv::String* cveTempfile(cv::String* suffix)
+{
+	cv::String tempFile;
+	if (!suffix)
+		tempFile = cv::tempfile();
+	else
+		tempFile = cv::tempfile(suffix->c_str());
+	return new cv::String(tempFile);
 }
 
 int cveGetErrMode()
@@ -76,9 +91,9 @@ cv::String* cveStringCreate()
 {
 	return new cv::String();
 }
-cv::String* cveStringCreateFromStr(const char* c)
+cv::String* cveStringCreateFromStr(const char* c, int size)
 {
-	return new cv::String(c);
+	return new cv::String(c, size);
 }
 void cveStringGetCStr(cv::String* string, const char** c, int* size)
 {
@@ -236,6 +251,16 @@ void cveMinMaxLoc(cv::_InputArray* src, double* minVal, double* maxVal, CvPoint*
 	maxLoc->x = maxPt.x; maxLoc->y = maxPt.y;
 }
 
+void cveReduceArgMin(cv::_InputArray* src, cv::_OutputArray* dst, int axis, bool lastIndex)
+{
+	cv::reduceArgMin(*src, *dst, axis, lastIndex);
+}
+
+void cveReduceArgMax(cv::_InputArray* src, cv::_OutputArray* dst, int axis, bool lastIndex)
+{
+	cv::reduceArgMax(*src, *dst, axis, lastIndex);
+}
+
 void cveBitwiseAnd(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, cv::_InputArray* mask)
 {
 	cv::bitwise_and(*src1, *src2, *dst, mask ? *mask : static_cast<cv::InputArray>(cv::noArray()));
@@ -269,9 +294,13 @@ void cveMultiply(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray*
 {
 	cv::multiply(*src1, *src2, *dst, scale, dtype);
 }
-void cveCountNonZero(cv::_InputArray* src)
+bool cveHasNonZero(cv::_InputArray* src)
 {
-	cv::countNonZero(*src);
+	return cv::hasNonZero(*src);
+}
+int cveCountNonZero(cv::_InputArray* src)
+{
+	return cv::countNonZero(*src);
 }
 void cveFindNonZero(cv::_InputArray* src, cv::_OutputArray* idx)
 {
@@ -306,6 +335,16 @@ void cveCompare(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* 
 void cveFlip(cv::_InputArray* src, cv::_OutputArray* dst, int flipCode)
 {
 	cv::flip(*src, *dst, flipCode);
+}
+
+void cveFlipND(cv::_InputArray* src, cv::_OutputArray* dst, int axis)
+{
+	cv::flipND(*src, *dst, axis);
+}
+
+void cveBroadcast(cv::_InputArray* src, cv::_InputArray* shape, cv::_OutputArray* dst)
+{
+	cv::broadcast(*src, *shape, *dst);
 }
 
 void cveRotate(cv::_InputArray* src, cv::_OutputArray* dst, int rotateCode)
@@ -436,9 +475,9 @@ double cveSolvePoly(cv::_InputArray* coeffs, cv::_OutputArray* roots, int maxIte
 {
 	return cv::solvePoly(*coeffs, *roots, maxIters);
 }
-void cveSolve(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, int flags)
+bool cveSolve(cv::_InputArray* src1, cv::_InputArray* src2, cv::_OutputArray* dst, int flags)
 {
-	cv::solve(*src1, *src2, *dst, flags);
+	return cv::solve(*src1, *src2, *dst, flags);
 }
 void cveSort(cv::_InputArray* src, cv::_OutputArray* dst, int flags)
 {
@@ -448,9 +487,9 @@ void cveSortIdx(cv::_InputArray* src, cv::_OutputArray* dst, int flags)
 {
 	cv::sortIdx(*src, *dst, flags);
 }
-void cveInvert(cv::_InputArray* src, cv::_OutputArray* dst, int flags)
+double cveInvert(cv::_InputArray* src, cv::_OutputArray* dst, int flags)
 {
-	cv::invert(*src, *dst, flags);
+	return cv::invert(*src, *dst, flags);
 }
 
 void cveDft(cv::_InputArray* src, cv::_OutputArray* dst, int flags, int nonzeroRows)
@@ -476,9 +515,9 @@ void cveTransform(cv::_InputArray* src, cv::_OutputArray* dst, cv::_InputArray* 
 	cv::transform(*src, *dst, *m);
 }
 
-void cveMahalanobis(cv::_InputArray* v1, cv::_InputArray* v2, cv::_InputArray* icovar)
+double cveMahalanobis(cv::_InputArray* v1, cv::_InputArray* v2, cv::_InputArray* icovar)
 {
-	cv::Mahalanobis(*v1, *v2, *icovar);
+	return cv::Mahalanobis(*v1, *v2, *icovar);
 }
 
 void cveCalcCovarMatrix(cv::_InputArray* samples, cv::_OutputArray* covar, cv::_InputOutputArray* mean, int flags, int ctype)
@@ -498,7 +537,7 @@ void cvePerspectiveTransform(cv::_InputArray* src, cv::_OutputArray* dst, cv::_I
 
 void cveMulTransposed(cv::_InputArray* src, cv::_OutputArray* dst, bool aTa, cv::_InputArray* delta, double scale, int dtype)
 {
-	cv::mulTransposed(*src, *dst, aTa, delta ? *delta : static_cast<cv::InputArray>(cv::noArray()), dtype);
+	cv::mulTransposed(*src, *dst, aTa, delta ? *delta : static_cast<cv::InputArray>(cv::noArray()), scale, dtype);
 }
 
 void cveSplit(cv::_InputArray* src, cv::_OutputArray* mv)
@@ -616,7 +655,7 @@ void cveRandu(cv::_InputOutputArray* dst, cv::_InputArray* low, cv::_InputArray*
 }
 
 //File Storage
-cv::FileStorage* cveFileStorageCreate(const cv::String* source, int flags, const cv::String* encoding)
+cv::FileStorage* cveFileStorageCreate(cv::String* source, int flags, cv::String* encoding)
 {
 	return new cv::FileStorage(*source, flags, *encoding);
 }
@@ -626,8 +665,7 @@ bool cveFileStorageIsOpened(cv::FileStorage* storage)
 }
 void cveFileStorageReleaseAndGetString(cv::FileStorage* storage, cv::String* result)
 {
-	cv::String res = storage->releaseAndGetString();
-	res.swap(*result);
+	*result = storage->releaseAndGetString();
 }
 void cveFileStorageRelease(cv::FileStorage** storage)
 {
@@ -639,6 +677,10 @@ void cveFileStorageWriteMat(cv::FileStorage* fs, cv::String* name, cv::Mat* valu
 	cv::write(*fs, *name, *value);
 }
 void cveFileStorageWriteInt(cv::FileStorage* fs, cv::String* name, int value)
+{
+	cv::write(*fs, *name, value);
+}
+void cveFileStorageWriteInt64(cv::FileStorage* fs, cv::String* name, int64_t value)
 {
 	cv::write(*fs, *name, value);
 }
@@ -714,6 +756,12 @@ void cveFileNodeReadString(cv::FileNode* node, cv::String* str, cv::String* defa
 int cveFileNodeReadInt(cv::FileNode* node, int defaultInt)
 {
 	int result = 0;
+	cv::read(*node, result, defaultInt);
+	return result;
+}
+int64_t cveFileNodeReadInt64(cv::FileNode* node, int64_t defaultInt)
+{
+	int64_t result = 0;
 	cv::read(*node, result, defaultInt);
 	return result;
 }
@@ -938,8 +986,7 @@ void cveSetUseOpenVX(bool flag)
 
 void cveGetBuildInformation(cv::String* buildInformation)
 {
-	cv::String bi = cv::getBuildInformation();
-	*buildInformation = bi;
+	*buildInformation = cv::getBuildInformation();
 }
 
 void cveGetRawData(CvArr* arr, uchar** data, int* step, CvSize* roiSize)
@@ -1016,9 +1063,8 @@ cv::Affine3d* cveAffine3dCreate()
 }
 cv::Affine3d* cveAffine3dGetIdentity()
 {
-	cv::Affine3d i = cv::Affine3d::Identity();
 	cv::Affine3d* result = new cv::Affine3d();
-	*result = i;
+	*result = cv::Affine3d::Identity();
 	return result;
 }
 cv::Affine3d* cveAffine3dRotate(cv::Affine3d* affine, double r0, double r1, double r2)
@@ -1100,6 +1146,13 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 	key->clear();
 	value->clear();
 
+	key->push_back("HAVE_OPENCV_GAPI");
+#ifdef HAVE_OPENCV_GAPI
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
 	key->push_back("HAVE_OPENCV_ALPHAMAT");
 #ifdef HAVE_OPENCV_ALPHAMAT
 	value->push_back(1);
@@ -1134,6 +1187,15 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 #else
 	value->push_back(0);
 #endif
+	
+/*
+	key->push_back("HAVE_OPENCV_3D");
+#ifdef HAVE_OPENCV_3D
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+*/
 
 	key->push_back("HAVE_OPENCV_CORE");
 #ifdef HAVE_OPENCV_CORE
@@ -1338,8 +1400,22 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 	value->push_back(0);
 #endif
 
+	key->push_back("HAVE_OPENCV_SIGNAL");
+#ifdef HAVE_OPENCV_SIGNAL
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
 	key->push_back("HAVE_OPENCV_STEREO");
 #ifdef HAVE_OPENCV_STEREO
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
+	key->push_back("HAVE_OPENCV_STRUCTURED_LIGHT");
+#ifdef HAVE_OPENCV_STRUCTURED_LIGHT
 	value->push_back(1);
 #else
 	value->push_back(0);
@@ -1443,7 +1519,22 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 	value->push_back(0);
 #endif
 
-	
+	/*
+	key->push_back("HAVE_OPENCV_BARCODE");
+#ifdef HAVE_OPENCV_BARCODE
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+*/
+
+	key->push_back("HAVE_OPENCV_RGBD");
+#ifdef HAVE_OPENCV_RGBD
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
 	key->push_back("HAVE_EMGUCV_TESSERACT");
 #ifdef HAVE_EMGUCV_TESSERACT
 	value->push_back(1);
@@ -1453,6 +1544,13 @@ void cveGetConfigDict(std::vector<cv::String>* key, std::vector<double>* value)
 	
 	key->push_back("HAVE_DEPTHAI");
 #ifdef HAVE_DEPTHAI
+	value->push_back(1);
+#else
+	value->push_back(0);
+#endif
+
+	key->push_back("HAVE_DIRECTX");
+#ifdef HAVE_DIRECTX
 	value->push_back(1);
 #else
 	value->push_back(0);

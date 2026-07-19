@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -39,8 +39,8 @@ namespace Emgu.CV.Structure
         {
             get
             {
-                int dx = P1.X - P2.X;
-                int dy = P1.Y - P2.Y;
+                int dx = P2.X - P1.X;
+                int dy = P2.Y - P1.Y;
                 float dist = (float)Math.Sqrt(dx * dx + dy * dy);
 
                 return new PointF(dx / dist, dy / dist);

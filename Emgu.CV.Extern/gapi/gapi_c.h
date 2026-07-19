@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -14,8 +14,9 @@
 #include "opencv2/gapi.hpp"
 #include "opencv2/gapi/core.hpp"
 #include "opencv2/gapi/imgproc.hpp"
+#include "opencv2/gapi/stereo.hpp"
 #else
-static inline CV_NORETURN void throw_no_gapi() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without gapi support"); }
+static inline CV_NORETURN void throw_no_gapi() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without gapi support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 	class GMat {};
 	class GScalar {};
@@ -147,6 +148,7 @@ CVAPI(cv::GMat*) cveGapiWarpAffine(
 	int borderMode,
 	CvScalar* borderValue);
 
+CVAPI(cv::GMat*) cveGapiTranspose(cv::GMat* src);
 
 CVAPI(cv::GComputation*) cveGComputationCreate1(cv::GMat* input, cv::GMat* output);
 CVAPI(cv::GComputation*) cveGComputationCreate2(cv::GMat* input, cv::GScalar* output);
@@ -304,4 +306,6 @@ CVAPI(cv::GMat*) cveGapiBayerGR2RGB(cv::GMat* srcGR);
 CVAPI(cv::GMat*) cveGapiRGB2HSV(cv::GMat* src);
 CVAPI(cv::GMat*) cveGapiRGB2YUV422(cv::GMat* src);
 
+
+CVAPI(cv::GMat*) cveGapiStereo(cv::GMat* left, cv::GMat* right, int of);
 #endif

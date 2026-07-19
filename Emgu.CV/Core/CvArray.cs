@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -209,7 +209,7 @@ namespace Emgu.CV
                             using (GZipStream stream = new GZipStream(ms, CompressionMode.Decompress))
                             {
                                 bytes = new Byte[size];
-                                stream.Read(bytes, 0, size);
+                                int bytesRead = stream.Read(bytes, 0, size);
                             }
                         }
                     }

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -80,9 +80,9 @@ namespace Emgu.CV
         
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMomentsCreate();
+        internal static extern IntPtr cveMomentsCreate();
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMomentsRelease(ref IntPtr moments);
+        internal static extern void cveMomentsRelease(ref IntPtr moments);
 
         /*
         [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]

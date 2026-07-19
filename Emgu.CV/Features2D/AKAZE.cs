@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -82,12 +82,12 @@ namespace Emgu.CV.Features2D
     public static partial class Features2DInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveAKAZEDetectorCreate(
+        internal static extern IntPtr cveAKAZEDetectorCreate(
            AKAZE.DescriptorType descriptorType, int descriptorSize, int descriptorChannels,
            float threshold, int octaves, int nOctaveLayers, KAZE.Diffusivity diffusivity,
            ref IntPtr feature2D, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveAKAZEDetectorRelease(ref IntPtr sharedPtr);
+        internal static extern void cveAKAZEDetectorRelease(ref IntPtr sharedPtr);
     }
 }

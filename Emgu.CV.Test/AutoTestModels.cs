@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ using Emgu.CV.Freetype;
 
 using Emgu.CV.Dnn;
 using Emgu.CV.Cuda;
-using Emgu.CV.DepthAI;
+using Emgu.CV.Dai;
 using Emgu.CV.Mcc;
 using Emgu.CV.Models;
 using Emgu.CV.Tiff;
@@ -66,16 +66,20 @@ namespace Emgu.CV.Test
     [TestFixture]
     public class AutoTestModels
     {
-        private static void DownloadManager_OnDownloadProgressChanged(object sender, System.Net.DownloadProgressChangedEventArgs e)
+        public static void DownloadManager_OnDownloadProgressChanged(long? totalBytesToReceive, long bytesReceived, double? progressPercentage)
         {
-            if (e.TotalBytesToReceive <= 0)
-                Trace.WriteLine(String.Format("{0} bytes downloaded.", e.BytesReceived));
+            if (totalBytesToReceive != null) 
+                Trace.WriteLine(String.Format("{0} bytes downloaded.", bytesReceived));
             else
-                Trace.WriteLine(String.Format("{0} of {1} bytes downloaded ({2}%)", e.BytesReceived, e.TotalBytesToReceive, e.ProgressPercentage));
+                Trace.WriteLine(String.Format("{0} of {1} bytes downloaded ({2}%)", bytesReceived, totalBytesToReceive, progressPercentage));
         }
-        
+
 #if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
         [Ignore("Ignore from test run by default.")]
+#endif
 #endif
         [Test]
         public async Task TestWeChatQRCode()
@@ -89,5 +93,128 @@ namespace Emgu.CV.Test
 
         }
 
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
+        [Test]
+        public async Task TestYolo()
+        {
+            using (Mat m = EmguAssert.LoadMat("pedestrian.png"))
+            using (Emgu.CV.Models.Yolo detector = new Yolo())
+            {
+                await detector.Init(DownloadManager_OnDownloadProgressChanged, "YoloV8N");
+                String text = detector.ProcessAndRender(m, m);
+            }
+
+        }
+
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
+        [Test]
+        public async Task TestPedestrianDetector()
+        {
+            using (Mat m = EmguAssert.LoadMat("pedestrian.png"))
+            using (Emgu.CV.Models.PedestrianDetector detector = new PedestrianDetector())
+            {
+                await detector.Init(DownloadManager_OnDownloadProgressChanged);
+                String text = detector.ProcessAndRender(m, m);
+            }
+
+        }
+
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
+        [Test]
+        public async Task TestDnnSuperres()
+        {
+            using (Mat m = EmguAssert.LoadMat("pedestrian"))
+            using (Emgu.CV.Models.Superres detector = new Models.Superres())
+            {
+                await detector.Init(Models.Superres.SuperresVersion.EdsrX2, DownloadManager_OnDownloadProgressChanged);
+                String text = detector.ProcessAndRender(m, m);
+            }
+
+        }
+
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
+        [Test]
+        public async Task TestDnnSSDFaceDetect()
+        {
+            using (Emgu.CV.Models.FaceAndLandmarkDetector detector = new Models.FaceAndLandmarkDetector())
+            using (Mat img = EmguAssert.LoadMat("lena.jpg"))
+            using (Mat result = new Mat())
+            {
+                await detector.Init(AutoTestModels.DownloadManager_OnDownloadProgressChanged);
+                img.CopyTo(result);
+                detector.ProcessAndRender(img, result);
+                CvInvoke.Imwrite("rgb_ssd_facedetect.jpg", result);
+            }
+        }
+
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
+        [Test]
+        public async Task TestMACE()
+        {
+            using (MACE mace = new MACE(64))
+            using (FaceDetectorYNModel detector = new FaceDetectorYNModel())
+            {
+                await detector.Init();
+                using (VectorOfMat trainingFaces = new VectorOfMat())
+                {
+                    using (Mat img1 = EmguAssert.LoadMat("lena.jpg"))
+                    {
+                        foreach (var face in detector.Detect(img1))
+                        {
+                            using (Mat faceRegion = new Mat(img1, Rectangle.Round(face.Region)))
+                            {
+                                trainingFaces.Push(faceRegion);
+                                using (Mat blurredFace1 = new Mat())
+                                {
+                                    CvInvoke.GaussianBlur(faceRegion, blurredFace1, new Size(3, 3), 1);
+                                    trainingFaces.Push(blurredFace1);
+                                }
+                            }
+                        }
+                    }
+
+                    mace.Train(trainingFaces);
+
+                    using (Mat trainingImg1 = trainingFaces[0])
+                    {
+                        EmguAssert.IsTrue(mace.Same(trainingImg1));
+
+                    }
+
+                    String filePath = Path.Combine(Path.GetTempPath(), "mace.xml");
+                    mace.Save(filePath);
+                }
+            }
+        }
     }
 }

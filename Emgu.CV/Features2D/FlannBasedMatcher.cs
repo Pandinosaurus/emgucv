@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -41,10 +41,10 @@ namespace Emgu.CV.Features2D
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveFlannBasedMatcherCreate(
+        internal static extern IntPtr cveFlannBasedMatcherCreate(
            IntPtr ip, IntPtr sp, ref IntPtr dmPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFlannBasedMatcherRelease(ref IntPtr matcher);
+        internal static extern void cveFlannBasedMatcherRelease(ref IntPtr matcher);
     }
 }

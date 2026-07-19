@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -13,16 +13,133 @@ using Emgu.CV.Util;
 using Emgu.Util;
 using System.IO;
 
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+using System.Text.Json;
+using System.Text.Json.Serialization;
+#endif
+
 namespace Emgu.CV
 {
+
     /// <summary>
-    /// The equivalent of cv::Mat
+    /// Represents a matrix object in the Emgu CV library, which is used for image processing and computer vision tasks.
     /// </summary>
+    /// <remarks>
+    /// This class provides a managed wrapper for the OpenCV matrix (cv::Mat) and includes functionality for creating, manipulating, and accessing matrix data.
+    /// It supports various constructors for initializing matrices with specific dimensions, data types, and data sources.
+    /// Additionally, it implements interfaces for serialization, equality comparison, and input/output array operations.
+    /// </remarks>
+    /// <example>
+    /// <code>
+    /// // Example of creating a Mat object
+    /// Mat mat = new Mat(100, 100, CvEnum.DepthType.Cv8U, 3);
+    /// </code>
+    /// </example>
     [Serializable]
     [DebuggerTypeProxy(typeof(Mat.DebuggerProxy))]
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+    [JsonConverter(typeof(Mat.MatJsonConverter))]
+#endif
     public partial class Mat : UnmanagedObject, IEquatable<Mat>, IInputOutputArray, ISerializable
     {
-#region Implement ISerializable interface
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+        /// <summary>
+        /// Class used for Json Serialized the Mat class
+        /// </summary>
+        internal class MatJsonConverter : JsonConverter<Mat>
+        {
+            public static Mat ReadMat(ref Utf8JsonReader reader)
+            {
+                if (reader.TokenType != JsonTokenType.StartObject)
+                {
+                    throw new JsonException();
+                }
+
+                int rows = -1;
+                int cols = -1;
+                int numberOfChannels = -1;
+                CvEnum.DepthType depthType = DepthType.Default;
+                byte[] bytes = null;
+                while (reader.Read())
+                {
+                    if (reader.TokenType == JsonTokenType.EndObject)
+                    {
+                        if (rows <= 0)
+                            throw new JsonException("Invalid number of rows");
+                        if (cols <= 0)
+                            throw new JsonException("Invalid number of columns");
+                        if (numberOfChannels <= 0)
+                            throw new JsonException("Invalid number of Channels");
+                        if (depthType == DepthType.Default)
+                            throw new JsonException("Invalid DepthType");
+                        if (bytes == null)
+                            throw new JsonException("Invalid bytes");
+                        Mat m = new Mat(rows, cols, depthType, numberOfChannels);
+                        m.Bytes = bytes;
+                        return m;
+                    }
+
+                    if (reader.TokenType == JsonTokenType.PropertyName)
+                    {
+                        var propertyName = reader.GetString();
+                        reader.Read();
+                        switch (propertyName)
+                        {
+                            case "Rows":
+                                rows = reader.GetInt32();
+                                break;
+                            case "Cols":
+                                cols = reader.GetInt32();
+                                break;
+                            case "DepthType":
+                                depthType = (CvEnum.DepthType)reader.GetInt32();
+                                break;
+                            case "NumberOfChannels":
+                                numberOfChannels = reader.GetInt32();
+                                break;
+                            case "Bytes":
+                                bytes = reader.GetBytesFromBase64();
+                                break;
+                        }
+                    }
+                }
+
+                throw new JsonException();
+            }
+
+            /// <inheritdoc/>
+            public override Mat Read(
+                ref Utf8JsonReader reader,
+                Type typeToConvert,
+                JsonSerializerOptions options)
+            {
+                return ReadMat(ref reader);
+            }
+
+            public static void WriteMat(Utf8JsonWriter writer, Mat mat)
+            {
+                writer.WriteStartObject();
+                writer.WriteNumber("Rows", mat.Rows);
+                writer.WriteNumber("Cols", mat.Cols);
+                writer.WriteNumber("DepthType", (int)mat.Depth);
+                writer.WriteNumber("NumberOfChannels", (int)mat.NumberOfChannels);
+
+                writer.WriteBase64String("Bytes", mat.Bytes);
+                writer.WriteEndObject();
+            }
+
+            /// <inheritdoc/>
+            public override void Write(
+                Utf8JsonWriter writer,
+                Mat mat,
+                JsonSerializerOptions options)
+            {
+                WriteMat(writer, mat);
+            }
+        }
+#endif
+
+        #region Implement ISerializable interface
         /// <summary>
         /// Constructor used to deserialize runtime serialized object
         /// </summary>
@@ -219,7 +336,7 @@ namespace Emgu.CV
         /// </summary>
         /// <param name="fileName">The name of the file</param>
         /// <param name="loadType">File loading method</param>
-        public Mat(String fileName, CvEnum.ImreadModes loadType = ImreadModes.Color)
+        public Mat(String fileName, CvEnum.ImreadModes loadType = ImreadModes.ColorBgr)
            : this(MatInvoke.cveMatCreate(), true, false)
         {
 
@@ -412,7 +529,30 @@ namespace Emgu.CV
             }
 
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            CvInvoke.cveMemcpy(handle.AddrOfPinnedObject(), DataPointer, byteSize);
+            if (this.IsContinuous)
+            {
+                // Special Mat that hold none-image data.
+                // e.g. inference results from DNN
+                CvInvoke.cveMemcpy(handle.AddrOfPinnedObject(), DataPointer, byteSize);
+            }
+            else if (this.Width > 0 && this.Height > 0 && this.Dims <= 3)
+            {
+                // Typical Mat holding image data
+                using (Mat dst = new Mat(
+                           this.Size,
+                           this.Depth,
+                           this.NumberOfChannels,
+                           handle.AddrOfPinnedObject(),
+                           byteSize / Height))
+                {
+                    this.CopyTo(dst);
+                }
+            }
+            else
+            {
+                throw new Exception("Unable to convert into Data object. Mat is neither continues, or matching a known Mat format.");
+            }
+
             handle.Free();
             return array;
         }
@@ -641,6 +781,28 @@ namespace Emgu.CV
         public Mat Reshape(int cn, int rows = 0)
         {
             return new Mat(MatInvoke.cveMatReshape(Ptr, cn, rows), true, false);
+        }
+
+        /// <summary>
+        /// Changes the shape and/or the number of channels of a matrix without copying the data.
+        /// </summary>
+        /// <param name="cn">New number of channels. If the parameter is 0, the number of channels remains the same.</param>
+        /// <param name="newDims">Array with new matrix size by all dimensions. If some sizes are zero, the original sizes in those dimensions are presumed.</param>
+        /// <returns>A new mat header that has different shape</returns>
+        public Mat Reshape(int cn, int[] newDims)
+        {
+            GCHandle handle = GCHandle.Alloc(newDims, GCHandleType.Pinned);
+            try
+            {
+                return new Mat(
+                    MatInvoke.cveMatReshape2(Ptr, cn, newDims.Length, handle.AddrOfPinnedObject()), 
+                    true, 
+                    false);
+            }
+            finally 
+            {
+                handle.Free();
+            }
         }
 
         /// <summary>
@@ -1081,6 +1243,8 @@ namespace Emgu.CV
         /// <returns>True if the two Mats are equal</returns>
         public bool Equals(Mat other)
         {
+            if (other == null)
+                return false;
             if (!(Size.Equals(other.Size) && NumberOfChannels == other.NumberOfChannels && Depth == other.Depth))
                 return false;
 
@@ -1137,7 +1301,39 @@ namespace Emgu.CV
             }
         }
 
-#region Operator overload
+#if UNSAFE_ALLOWED
+        /// <summary>
+        /// Returns a memory span that wraps the underlying memory buffer.
+        /// </summary>
+        /// <param name="size">The size of the Span. If it is less than or equals to 0, the full span is used.</param>
+        /// <typeparam name="T">The type of the elements in the span.</typeparam>
+        /// <returns>A memory span that wraps the underlying memory buffer.</returns>
+        public Span<T> GetSpan<T>(int size = 0) where T : struct
+        {
+            if (!IsContinuous)
+                throw new NotSupportedException(
+                    "To create a Span, the Mat's memory must be continuous. This Mat does not use continuous memory.");
+            
+            int maxSize = this.Total.ToInt32() * this.ElementSize / Marshal.SizeOf<T>();
+            if (size <= 0)
+            {
+                size = maxSize;
+            } else if (size > maxSize)
+            {
+                throw new NotSupportedException(
+                    String.Format("The maximum size allowed for this Mat is {0}", maxSize));
+            }
+
+            unsafe
+            {
+                return new Span<T>(this.DataPointer.ToPointer(), size);
+            }
+
+        }
+#endif
+
+
+        #region Operator overload
 
         /// <summary>
         /// Perform an element wise AND operation on the two mats
@@ -1498,6 +1694,15 @@ namespace Emgu.CV
                     return _v.GetData(true);
                 }
             }
+
+            /*
+            public Mat Mat
+            {
+                get
+                {
+                    return _v;
+                }
+            }*/
         }
     }
 
@@ -1509,34 +1714,34 @@ namespace Emgu.CV
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputArrayFromMat(IntPtr mat);
+        internal static extern IntPtr cveInputArrayFromMat(IntPtr mat);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveOutputArrayFromMat(IntPtr mat);
+        internal static extern IntPtr cveOutputArrayFromMat(IntPtr mat);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputOutputArrayFromMat(IntPtr mat);
+        internal static extern IntPtr cveInputOutputArrayFromMat(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatCreate();
+        internal static extern IntPtr cveMatCreate();
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatRelease(ref IntPtr mat);
+        internal static extern void cveMatRelease(ref IntPtr mat);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatGetSize(IntPtr mat, ref Size s);
+        internal static extern void cveMatGetSize(IntPtr mat, ref Size s);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatCopyTo(IntPtr mat, IntPtr m, IntPtr mask);
+        internal static extern void cveMatCopyTo(IntPtr mat, IntPtr m, IntPtr mask);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static int cveMatGetElementSize(IntPtr mat);
+        internal static extern int cveMatGetElementSize(IntPtr mat);
 
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatGetDataPointer(IntPtr mat);
+        internal static extern IntPtr cveMatGetDataPointer(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatGetDataPointer2(IntPtr mat, IntPtr indices);
+        internal static extern IntPtr cveMatGetDataPointer2(IntPtr mat, IntPtr indices);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatGetStep(IntPtr mat);
+        internal static extern IntPtr cveMatGetStep(IntPtr mat);
 
         /*
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
@@ -1544,16 +1749,16 @@ namespace Emgu.CV
         internal extern static bool cvMatIsEmpty(IntPtr mat);*/
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatCreateData(IntPtr mat, int row, int cols, int type);
+        internal static extern void cveMatCreateData(IntPtr mat, int row, int cols, int type);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatCreateWithData(int rows, int cols, int type, IntPtr data, IntPtr step);
+        internal static extern IntPtr cveMatCreateWithData(int rows, int cols, int type, IntPtr data, IntPtr step);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatCreateFromRect(IntPtr mat, ref Rectangle roi);
+        internal static extern IntPtr cveMatCreateFromRect(IntPtr mat, ref Rectangle roi);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatCreateFromRange(IntPtr mat, ref Emgu.CV.Structure.Range rowRange, ref Emgu.CV.Structure.Range colRange);
+        internal static extern IntPtr cveMatCreateFromRange(IntPtr mat, ref Emgu.CV.Structure.Range rowRange, ref Emgu.CV.Structure.Range colRange);
 
         /*
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
@@ -1564,37 +1769,40 @@ namespace Emgu.CV
            );
         */
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatGetUMat(IntPtr mat, CvEnum.AccessType access, UMat.Usage usageFlags);
+        internal static extern IntPtr cveMatGetUMat(IntPtr mat, CvEnum.AccessType access, UMat.Usage usageFlags);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatSetTo(IntPtr mat, IntPtr value, IntPtr mask);
+        internal static extern void cveMatSetTo(IntPtr mat, IntPtr value, IntPtr mask);
 
         //[DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         //internal extern static IntPtr cveMatUseCustomAllocator(IntPtr mat, MatDataAllocatorInvoke.MatAllocateCallback allocator, MatDataAllocatorInvoke.MatDeallocateCallback deallocator, IntPtr allocateDataActionPtr, IntPtr freeDataActionPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatConvertTo(IntPtr mat, IntPtr outArray, CvEnum.DepthType rtype, double alpha, double beta);
+        internal static extern void cveMatConvertTo(IntPtr mat, IntPtr outArray, CvEnum.DepthType rtype, double alpha, double beta);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatReshape(IntPtr mat, int cn, int rows);
+        internal static extern IntPtr cveMatReshape(IntPtr mat, int cn, int rows);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveMatToIplImage(IntPtr mat);
+        internal static extern IntPtr cveMatReshape2(IntPtr mat, int cn, int newndims, IntPtr newsz);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static double cveMatDot(IntPtr mat, IntPtr m);
+        internal static extern IntPtr cveMatToIplImage(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatCross(IntPtr mat, IntPtr m, IntPtr result);
+        internal static extern double cveMatDot(IntPtr mat, IntPtr m);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatCopyDataTo(IntPtr mat, IntPtr dest);
+        internal static extern void cveMatCross(IntPtr mat, IntPtr m, IntPtr result);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatCopyDataFrom(IntPtr mat, IntPtr source);
+        internal static extern void cveMatCopyDataTo(IntPtr mat, IntPtr dest);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatGetSizeOfDimension(IntPtr mat, IntPtr sizes);
+        internal static extern void cveMatCopyDataFrom(IntPtr mat, IntPtr source);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveMatGetSizeOfDimension(IntPtr mat, IntPtr sizes);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         private static extern IntPtr cveMatCreateMultiDimWithData(int ndims, IntPtr sizes, CvEnum.DepthType type, IntPtr data,
@@ -1633,18 +1841,18 @@ namespace Emgu.CV
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatEye(int rows, int cols, int type, IntPtr m);
+        internal static extern void cveMatEye(int rows, int cols, int type, IntPtr m);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatDiag(IntPtr src, int d, IntPtr dst);
+        internal static extern void cveMatDiag(IntPtr src, int d, IntPtr dst);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatT(IntPtr src, IntPtr dst);
+        internal static extern void cveMatT(IntPtr src, IntPtr dst);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatZeros(int rows, int cols, int type, IntPtr dst);
+        internal static extern void cveMatZeros(int rows, int cols, int type, IntPtr dst);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveMatOnes(int rows, int cols, int type, IntPtr dst);
+        internal static extern void cveMatOnes(int rows, int cols, int type, IntPtr dst);
 
     }
 }

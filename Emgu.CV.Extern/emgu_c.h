@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -10,7 +10,9 @@
 
 #include "opencv2/core/core_c.h"
 #include "opencv2/imgproc/imgproc.hpp"
+#ifdef HAVE_OPENCV_OBJDETECT
 #include "opencv2/objdetect/objdetect.hpp"
+#endif
 //#include "opencv2/text/erfilter.hpp"
 
 namespace emgu

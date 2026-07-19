@@ -1,6 +1,6 @@
 ﻿//----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //  Vector of ${VECTOR_NAME}
 //
@@ -73,7 +73,7 @@ namespace ${NAMESPACE_CS}
       }
 
       /// <summary>
-      /// Create an standard vector of ${VECTOR_NAME} of the specific size
+      /// Create a standard vector of ${VECTOR_NAME} of the specific size
       /// </summary>
       /// <param name="size">The size of the vector</param>
       public VectorOf${VECTOR_NAME}(int size)
@@ -82,7 +82,7 @@ namespace ${NAMESPACE_CS}
       }
 	  
       /// <summary>
-      /// Create an standard vector of ${VECTOR_NAME} with the initial values
+      /// Create a standard vector of ${VECTOR_NAME} with the initial values
       /// </summary>
       /// <param name="values">The initial values</param>
       public VectorOf${VECTOR_NAME}(${VECTOR_ELEMENT_CS}[] values)
@@ -92,15 +92,15 @@ namespace ${NAMESPACE_CS}
       }
 	  
       /// <summary>
-      /// Push an array of value into the standard vector
+      /// Push an array of values into the standard vector
       /// </summary>
-      /// <param name="value">The value to be pushed to the vector</param>
-      public void Push(${VECTOR_ELEMENT_CS}[] value)
+      /// <param name="values">The values to be pushed to the vector</param>
+      public void Push(${VECTOR_ELEMENT_CS}[] values)
       {
-         if (value.Length > 0)
+         if (values.Length > 0)
          {
-            GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
-            VectorOf${VECTOR_NAME}PushMulti(_ptr, handle.AddrOfPinnedObject(), value.Length);
+            GCHandle handle = GCHandle.Alloc(values, GCHandleType.Pinned);
+            VectorOf${VECTOR_NAME}PushMulti(_ptr, handle.AddrOfPinnedObject(), values.Length);
             handle.Free();
          }
       }
@@ -129,6 +129,54 @@ namespace ${NAMESPACE_CS}
          }
          return res;
       }
+
+#if UNSAFE_ALLOWED
+       /// <summary>
+       /// Create a standard vector of ${VECTOR_NAME} with the initial values
+       /// </summary>
+       /// <param name="values">The initial values</param>
+       public VectorOf${VECTOR_NAME}(Span<${VECTOR_ELEMENT_CS}> values)
+          :this()
+       {
+           Push(values);
+       }
+
+       /// <summary>
+       /// Push an array of values into the standard vector
+       /// </summary>
+       /// <param name="values">The value to be pushed to the vector</param>
+       public void Push(Span<${VECTOR_ELEMENT_CS}> values)
+       {
+          if (values.Length > 0)
+          {
+              unsafe
+              {
+                  fixed (${VECTOR_ELEMENT_CS}* ptr = values)
+                  {
+                      VectorOf${VECTOR_NAME}PushMulti(_ptr, (IntPtr)ptr, values.Length);
+                  }
+              }
+          }
+       }
+	   
+       /// <summary>
+       /// Returns a memory span that wraps the underlying memory buffer.
+       /// </summary>
+       /// <returns>A memory span that wraps the underlying memory buffer.</returns>
+       public Span<${VECTOR_ELEMENT_CS}> GetSpan()
+       {
+	       if (_ptr == IntPtr.Zero)
+              return Span<${VECTOR_ELEMENT_CS}>.Empty;
+           IntPtr startAddress = StartAddress;
+           int size = Size;
+           if (startAddress == IntPtr.Zero || size == 0)
+              return Span<${VECTOR_ELEMENT_CS}>.Empty;
+           unsafe
+           {
+               return new Span<${VECTOR_ELEMENT_CS}>(StartAddress.ToPointer(), Size);
+           }
+       }
+#endif
 
       /// <summary>
       /// Get the size of the vector
@@ -159,18 +207,18 @@ namespace ${NAMESPACE_CS}
             return VectorOf${VECTOR_NAME}GetStartAddress(_ptr);
          }
       }
-	  
+
 	  /// <summary>
-      /// The pointer to memory address at the end of the vector. In case of an empty vector, IntPtr.Zero will be returned.
+      /// The size of memory in bytes, that is needed to hold all the items in this vector
       /// </summary>
-      public override IntPtr EndAddress
+      public override long Length
       {
          get
          {
-            return VectorOf${VECTOR_NAME}GetEndAddress(_ptr);
+            return VectorOf${VECTOR_NAME}GetMemorySize(_ptr);
          }
       }
-	  
+
       /// <summary>
       /// Get the item in the specific index
       /// </summary>
@@ -266,7 +314,7 @@ namespace ${NAMESPACE_CS}
       internal static extern IntPtr VectorOf${VECTOR_NAME}GetStartAddress(IntPtr v);
 	  
 	  [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal static extern IntPtr VectorOf${VECTOR_NAME}GetEndAddress(IntPtr v);
+      internal static extern long VectorOf${VECTOR_NAME}GetMemorySize(IntPtr v);
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
       internal static extern void VectorOf${VECTOR_NAME}PushMulti(IntPtr v, IntPtr values, int count);

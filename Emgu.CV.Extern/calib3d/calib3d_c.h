@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -9,7 +9,19 @@
 #define EMGU_CALIB3D_C_H
 
 #include "opencv2/core/core_c.h"
+
+#ifdef HAVE_OPENCV_CALIB3D
 #include "opencv2/calib3d/calib3d.hpp"
+#else
+static inline CV_NORETURN void throw_no_calib3d() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without calib3d support. To use this module, please switch to the full Emgu CV runtime."); }
+
+namespace cv {
+	class Feature2D {};
+	class StereoSGBM {};
+	class StereoMatcher {};
+}
+
+#endif
 
 CVAPI(int)  cveEstimateAffine3D(
    cv::_InputArray* src, cv::_InputArray* dst,
@@ -33,7 +45,7 @@ CVAPI(void) cveStereoMatcherCompute(cv::StereoMatcher*  disparitySolver, cv::_In
 CVAPI(void) cveStereoMatcherRelease(cv::Ptr<cv::StereoMatcher>** sharedPtr);
 
 //2D Tracker
-CVAPI(bool) getHomographyMatrixFromMatchedFeatures(std::vector<cv::KeyPoint>* model, std::vector<cv::KeyPoint>* observed, std::vector< std::vector< cv::DMatch > >* matches, cv::Mat* mask, double randsacThreshold, cv::Mat* homography);
+CVAPI(bool) cveGetHomographyMatrixFromMatchedFeatures(std::vector<cv::KeyPoint>* model, std::vector<cv::KeyPoint>* observed, std::vector< std::vector< cv::DMatch > >* matches, cv::Mat* mask, double randsacThreshold, cv::Mat* homography);
 
 //Find circles grid
 CVAPI(bool) cveFindCirclesGrid(cv::_InputArray* image, CvSize* patternSize, cv::_OutputArray* centers, int flags, cv::Feature2D* blobDetector);
@@ -100,10 +112,40 @@ CVAPI(void) cveCalibrationMatrixValues(
    cv::_InputArray* cameraMatrix, CvSize* imageSize, double apertureWidth, double apertureHeight, 
    double* fovx, double* fovy, double* focalLength, CvPoint2D64f* principalPoint, double* aspectRatio);
 
-CVAPI(double) cveStereoCalibrate(
-   cv::_InputArray* objectPoints, cv::_InputArray* imagePoints1, cv::_InputArray* imagePoints2,
-   cv::_InputOutputArray* cameraMatrix1, cv::_InputOutputArray* distCoeffs1, cv::_InputOutputArray* cameraMatrix2, cv::_InputOutputArray* distCoeffs2,
-   CvSize* imageSize, cv::_OutputArray* r, cv::_OutputArray* t, cv::_OutputArray* e, cv::_OutputArray* f, int flags, CvTermCriteria* criteria);
+CVAPI(double) cveStereoCalibrate1(
+	cv::_InputArray* objectPoints,
+	cv::_InputArray* imagePoints1,
+	cv::_InputArray* imagePoints2,
+	cv::_InputOutputArray* cameraMatrix1,
+	cv::_InputOutputArray* distCoeffs1,
+	cv::_InputOutputArray* cameraMatrix2,
+	cv::_InputOutputArray* distCoeffs2,
+	CvSize* imageSize,
+	cv::_InputOutputArray* r,
+	cv::_InputOutputArray* t,
+	cv::_OutputArray* e,
+	cv::_OutputArray* f,
+	cv::_OutputArray* rvecs,
+	cv::_OutputArray* tvecs,
+	cv::_OutputArray* perViewErrors,
+	int flags,
+	CvTermCriteria* criteria);
+
+CVAPI(double) cveStereoCalibrate2(
+    cv::_InputArray* objectPoints, 
+	cv::_InputArray* imagePoints1, 
+	cv::_InputArray* imagePoints2,
+    cv::_InputOutputArray* cameraMatrix1, 
+	cv::_InputOutputArray* distCoeffs1, 
+	cv::_InputOutputArray* cameraMatrix2, 
+	cv::_InputOutputArray* distCoeffs2,
+    CvSize* imageSize, 
+	cv::_OutputArray* r, 
+	cv::_OutputArray* t, 
+	cv::_OutputArray* e, 
+	cv::_OutputArray* f, 
+	int flags, 
+	CvTermCriteria* criteria);
 
 CVAPI(bool) cveSolvePnP(cv::_InputArray* objectPoints, cv::_InputArray* imagePoints, cv::_InputArray* cameraMatrix, cv::_InputArray* distCoeffs, cv::_OutputArray* rvec, cv::_OutputArray* tvec, bool useExtrinsicGuess, int flags);
 
@@ -170,25 +212,58 @@ CVAPI(void) cveFisheyeProjectPoints(cv::_InputArray* objectPoints, cv::_OutputAr
 
 CVAPI(void) cveFisheyeDistortPoints(cv::_InputArray* undistored, cv::_OutputArray* distorted, cv::_InputArray* K, cv::_InputArray* D, double alpha);
 
-CVAPI(void) cveFisheyeUndistorPoints(cv::_InputArray* distorted, cv::_OutputArray* undistorted, cv::_InputArray* K, cv::_InputArray* D, cv::_InputArray* R, cv::_InputArray* P);
+CVAPI(void) cveFisheyeUndistortPoints(
+	cv::_InputArray* distorted, 
+	cv::_OutputArray* undistorted, 
+	cv::_InputArray* K, 
+	cv::_InputArray* D, 
+	cv::_InputArray* R, 
+	cv::_InputArray* P,
+	CvTermCriteria* criteria);
 
-CVAPI(void) cveFisheyeInitUndistorRectifyMap(cv::_InputArray* K, cv::_InputArray* D, cv::_InputArray* R, cv::_InputArray* P, CvSize* size, int m1Type, cv::_OutputArray* map1, cv::_OutputArray* map2);
+CVAPI(void) cveFisheyeInitUndistortRectifyMap(cv::_InputArray* K, cv::_InputArray* D, cv::_InputArray* R, cv::_InputArray* P, CvSize* size, int m1Type, cv::_OutputArray* map1, cv::_OutputArray* map2);
 
-CVAPI(void) cveFisheyeUndistorImage(cv::_InputArray* distorted, cv::_OutputArray* undistored, cv::_InputArray* K, cv::_InputArray* D, cv::_InputArray* Knew, CvSize* newSize);
+CVAPI(void) cveFisheyeUndistortImage(cv::_InputArray* distorted, cv::_OutputArray* undistored, cv::_InputArray* K, cv::_InputArray* D, cv::_InputArray* Knew, CvSize* newSize);
 
-CVAPI(void) cveFisheyeEstimateNewCameraMatrixForUndistorRectify(cv::_InputArray* K, cv::_InputArray* D, CvSize* imageSize, cv::_InputArray* R, cv::_OutputArray* P, double balance, CvSize* newSize, double fovScale);
+CVAPI(void) cveFisheyeEstimateNewCameraMatrixForUndistortRectify(cv::_InputArray* K, cv::_InputArray* D, CvSize* imageSize, cv::_InputArray* R, cv::_OutputArray* P, double balance, CvSize* newSize, double fovScale);
 
 CVAPI(void) cveFisheyeStereoRectify(cv::_InputArray* K1, cv::_InputArray*D1, cv::_InputArray* K2, cv::_InputArray* D2, CvSize* imageSize,
    cv::_InputArray* R, cv::_InputArray* tvec, cv::_OutputArray* R1, cv::_OutputArray* R2, cv::_OutputArray* P1, cv::_OutputArray* P2, cv::_OutputArray* Q, int flags,
    CvSize* newImageSize, double balance, double fovScale);
 
-CVAPI(void) cveFisheyeCalibrate(cv::_InputArray* objectPoints, cv::_InputArray* imagePoints, CvSize* imageSize,
+CVAPI(double) cveFisheyeCalibrate(cv::_InputArray* objectPoints, cv::_InputArray* imagePoints, CvSize* imageSize,
    cv::_InputOutputArray* K, cv::_InputOutputArray* D, cv::_OutputArray* rvecs, cv::_OutputArray* tvecs, int flags,
    CvTermCriteria* criteria);
 
-CVAPI(void) cveFisheyeStereoCalibrate(cv::_InputArray* objectPoints, cv::_InputArray* imagePoints1,
+CVAPI(double) cveFisheyeStereoCalibrate(cv::_InputArray* objectPoints, cv::_InputArray* imagePoints1,
    cv::_InputArray* imagePoints2, cv::_InputOutputArray* K1, cv::_InputOutputArray* D1, cv::_InputOutputArray* K2, cv::_InputOutputArray* D2,
    CvSize* imageSize, cv::_OutputArray* R, cv::_OutputArray* T, int flags, CvTermCriteria* criteria);
+
+CVAPI(bool) cveFisheyeSolvePnP(
+	cv::_InputArray* objectPoints, 
+	cv::_InputArray* imagePoints, 
+	cv::_InputArray* cameraMatrix, 
+	cv::_InputArray* distCoeffs, 
+	cv::_OutputArray* rvec, 
+	cv::_OutputArray* tvec, 
+	bool useExtrinsicGuess, 
+	int flags, 
+	CvTermCriteria* criteria);
+
+CVAPI(bool) cveFisheyeSolvePnPRansac(
+	cv::_InputArray* opoints,
+	cv::_InputArray* ipoints,
+	cv::_InputArray* cameraMatrix,
+	cv::_InputArray* distCoeffs,
+	cv::_OutputArray* rvec,
+	cv::_OutputArray* tvec,
+	bool useExtrinsicGuess,
+	int iterationsCount,
+	float reprojectionError,
+	double confidence,
+	cv::_OutputArray* inliers,
+	int flags,
+	CvTermCriteria* criteria);
 
 CVAPI(void) cveInitUndistortRectifyMap(cv::_InputArray* cameraMatrix, cv::_InputArray* distCoeffs, cv::_InputArray* r, cv::_InputArray* newCameraMatrix, CvSize* size, int m1type, cv::_OutputArray* map1, cv::_OutputArray* map2);
 CVAPI(void) cveUndistort(cv::_InputArray* src, cv::_OutputArray* dst, cv::_InputArray* cameraMatrix, cv::_InputArray* distorCoeffs, cv::_InputArray* newCameraMatrix);
@@ -211,6 +286,17 @@ CVAPI(void) cveEstimateAffinePartial2D(
 	int maxIters, double confidence,
 	int refineIters,
 	cv::Mat* affine);
+
+CVAPI(void) cveEstimateTranslation2D(
+	cv::_InputArray* from, 
+	cv::_InputArray* to,
+	cv::_OutputArray* inliers,
+	int method,
+	double ransacReprojThreshold,
+	int maxIters, 
+	double confidence,
+	int refineIters, 
+	CvPoint2D64f* result);
 
 CVAPI(void) cveCalibrateHandEye(cv::_InputArray* R_gripper2base, cv::_InputArray* t_gripper2base,
 	cv::_InputArray* R_target2cam, cv::_InputArray* t_target2cam,
@@ -235,4 +321,23 @@ CVAPI(void) cveDecomposeProjectionMatrix(
 	cv::_OutputArray* rotMatrixY,
 	cv::_OutputArray* rotMatrixZ,
 	cv::_OutputArray* eulerAngles);
+
+CVAPI(void) cveDecomposeEssentialMat(cv::_InputArray* e, cv::_OutputArray* r1, cv::_OutputArray* r2, cv::_OutputArray* t);
+
+CVAPI(int) cveDecomposeHomographyMat(
+	cv::_InputArray* h,
+	cv::_InputArray* k,
+	cv::_OutputArray* rotations,
+	cv::_OutputArray* translations,
+	cv::_OutputArray* normals);
+
+CVAPI(void) cveDrawFrameAxes(
+	cv::_InputOutputArray* image, 
+	cv::_InputArray* cameraMatrix, 
+	cv::_InputArray* distCoeffs,
+	cv::_InputArray* rvec, 
+	cv::_InputArray* tvec, 
+	float length, 
+	int thickness);
+
 #endif

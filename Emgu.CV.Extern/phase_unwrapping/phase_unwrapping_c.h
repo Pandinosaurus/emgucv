@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 #ifdef HAVE_OPENCV_PHASE_UNWRAPPING
 #include "opencv2/phase_unwrapping.hpp"
 #else
-static inline CV_NORETURN void throw_no_phase_unwrapping() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without phase unwrapping support"); }
+static inline CV_NORETURN void throw_no_phase_unwrapping() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without phase unwrapping support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 namespace phase_unwrapping {
 class HistogramPhaseUnwrapping {};

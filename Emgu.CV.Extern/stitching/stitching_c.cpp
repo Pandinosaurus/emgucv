@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -257,6 +257,53 @@ int cveStitcherComposePanorama2(cv::Stitcher* stitcher, cv::_InputArray* images,
 	throw_no_stitching();
 #endif
 }
+
+void cveStitcherCameras(cv::Stitcher* stitcher, std::vector< cv::detail::CameraParams >* cameraParams)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	* cameraParams = stitcher->cameras();
+#else
+	throw_no_stitching();
+#endif	
+}
+
+void cveStitcherComponent(cv::Stitcher* stitcher, std::vector< int >* component)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	* component = stitcher->component();
+#else
+	throw_no_stitching();
+#endif		
+}
+
+int cveStitcherSetTransform(
+	cv::Stitcher* stitcher,
+	cv::_InputArray* images,
+	const std::vector< cv::detail::CameraParams >* cameras,
+	const std::vector< int >* component)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	if (component)
+		return stitcher->setTransform(*images, *cameras, *component);
+	else
+		return stitcher->setTransform(*images, *cameras);
+#else
+	throw_no_stitching();
+#endif			
+}
+
+void cveStitcherGetResultMask(
+	cv::Stitcher* stitcher,
+	cv::_OutputArray* resultMask)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	cv::UMat m = stitcher->resultMask();
+	m.copyTo(*resultMask);
+#else
+	throw_no_stitching();
+#endif				
+}
+
 
 void cveRotationWarperBuildMaps(cv::detail::RotationWarper* warper, CvSize* srcSize, cv::_InputArray* K, cv::_InputArray* R, cv::_OutputArray* xmap, cv::_OutputArray* ymap, CvRect* boundingBox)
 {
@@ -665,6 +712,40 @@ void cveTransverseMercatorWarperRelease(cv::TransverseMercatorWarper** warperCre
 	throw_no_stitching();
 #endif	
 }
+
+void cveBlenderPrepare(cv::detail::Blender* blender, std::vector< cv::Point >* corners, const std::vector< cv::Size >* sizes)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	blender->prepare(*corners, *sizes);
+#else
+	throw_no_stitching();
+#endif		
+}
+void cveBlenderPrepare2(cv::detail::Blender* blender, CvRect* dstRoi)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	blender->prepare(*dstRoi);
+#else
+	throw_no_stitching();
+#endif	
+}
+void cveBlenderFeed(cv::detail::Blender* blender, cv::_InputArray* img, cv::_InputArray* mask, CvPoint* tl)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	blender->feed(*img, *mask, *tl);
+#else
+	throw_no_stitching();
+#endif	
+}
+void cveBlenderBlend(cv::detail::Blender* blender, cv::_InputOutputArray* dst, cv::_InputOutputArray* dstMask)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	blender->blend(*dst, *dstMask);
+#else
+	throw_no_stitching();
+#endif	
+}
+
 
 cv::detail::FeatherBlender* cveFeatherBlenderCreate(float sharpness, cv::detail::Blender** blender)
 {
@@ -1307,4 +1388,33 @@ void cveSphericalWarperGpuRelease(cv::SphericalWarperGpu** warper)
 #else
 	throw_no_stitching();
 #endif	
+}
+
+
+cv::detail::CameraParams* cveCameraParamsCreate()
+{
+#ifdef HAVE_OPENCV_STITCHING
+	return new cv::detail::CameraParams();
+#else
+	throw_no_stitching();
+#endif	
+}
+void cveCameraParamsRelease(cv::detail::CameraParams** params)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	delete* params;
+	*params = 0;
+#else
+	throw_no_stitching();
+#endif	
+}
+
+void cveCameraParamsGetK(cv::detail::CameraParams* params, cv::_OutputArray* k)
+{
+#ifdef HAVE_OPENCV_STITCHING
+	cv::Mat m = params->K();
+	m.copyTo(*k);
+#else
+	throw_no_stitching();
+#endif		
 }

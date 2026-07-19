@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -38,14 +38,14 @@ namespace Emgu.CV.Features2D
             IInputArray mask = null,
             bool compactResult = false)
         {
-            using (InputArray iaQueryDesccriptor = queryDescriptors.GetInputArray())
-            using (InputArray iaTrainDescriptot = trainDescriptors.GetInputArray())
+            using (InputArray iaQueryDescriptor = queryDescriptors.GetInputArray())
+            using (InputArray iaTrainDescriptor = trainDescriptors.GetInputArray())
             using (InputArray iaMask = mask == null ? InputArray.GetEmpty() : mask.GetInputArray())
             {
                 Features2DInvoke.cveDescriptorMatcherKnnMatch1(
                     _descriptorMatcherPtr, 
-                    iaQueryDesccriptor, 
-                    iaTrainDescriptot, 
+                    iaQueryDescriptor, 
+                    iaTrainDescriptor, 
                     matches,
                     k,
                     iaMask,
@@ -72,9 +72,9 @@ namespace Emgu.CV.Features2D
             IInputArray mask = null, 
             bool compactResult = false)
         {
-            using (InputArray iaQueryDesccriptor = queryDescriptor.GetInputArray())
+            using (InputArray iaQueryDescriptor = queryDescriptor.GetInputArray())
             using (InputArray iaMask = mask == null ? InputArray.GetEmpty() : mask.GetInputArray())
-                Features2DInvoke.cveDescriptorMatcherKnnMatch2(_descriptorMatcherPtr, iaQueryDesccriptor, matches, k, iaMask, compactResult);
+                Features2DInvoke.cveDescriptorMatcherKnnMatch2(_descriptorMatcherPtr, iaQueryDescriptor, matches, k, iaMask, compactResult);
         }
 
         /// <summary>
@@ -221,10 +221,10 @@ namespace Emgu.CV.Features2D
             IInputArray masks = null,
             bool compactResult = false)
         {
-            using (InputArray iaQueryDesccriptor = queryDescriptors.GetInputArray())
+            using (InputArray iaQueryDescriptor = queryDescriptors.GetInputArray())
             using (InputArray iaMasks = masks == null ? InputArray.GetEmpty() : masks.GetInputArray())
             {
-                Features2DInvoke.cveDescriptorMatcherRadiusMatch2(_descriptorMatcherPtr, iaQueryDesccriptor, matches, maxDistance, iaMasks, compactResult);
+                Features2DInvoke.cveDescriptorMatcherRadiusMatch2(_descriptorMatcherPtr, iaQueryDescriptor, matches, maxDistance, iaMasks, compactResult);
             }
         }
     }
@@ -233,10 +233,10 @@ namespace Emgu.CV.Features2D
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherAdd(IntPtr matcher, IntPtr trainDescriptor);
+        internal static extern void cveDescriptorMatcherAdd(IntPtr matcher, IntPtr trainDescriptor);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherKnnMatch1(
+        internal static extern void cveDescriptorMatcherKnnMatch1(
             IntPtr matcher,
             IntPtr queryDescriptors,
             IntPtr trainDescriptors,
@@ -247,7 +247,7 @@ namespace Emgu.CV.Features2D
             bool compactResult);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherKnnMatch2(
+        internal static extern void cveDescriptorMatcherKnnMatch2(
             IntPtr matcher, 
             IntPtr queryDescriptors,
             IntPtr matches, 
@@ -257,24 +257,24 @@ namespace Emgu.CV.Features2D
             bool compactResult);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveDescriptorMatcherGetAlgorithm(IntPtr matcher);
+        internal static extern IntPtr cveDescriptorMatcherGetAlgorithm(IntPtr matcher);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherClear(IntPtr matcher);
-
-        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        [return: MarshalAs(CvInvoke.BoolMarshalType)]
-        internal extern static bool cveDescriptorMatcherEmpty(IntPtr matcher);
+        internal static extern void cveDescriptorMatcherClear(IntPtr matcher);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         [return: MarshalAs(CvInvoke.BoolMarshalType)]
-        internal extern static bool cveDescriptorMatcherIsMaskSupported(IntPtr matcher);
+        internal static extern bool cveDescriptorMatcherEmpty(IntPtr matcher);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherTrain(IntPtr matcher);
+        [return: MarshalAs(CvInvoke.BoolMarshalType)]
+        internal static extern bool cveDescriptorMatcherIsMaskSupported(IntPtr matcher);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherMatch1(
+        internal static extern void cveDescriptorMatcherTrain(IntPtr matcher);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveDescriptorMatcherMatch1(
             IntPtr matcher,
             IntPtr queryDescriptors,
             IntPtr trainDescriptors,
@@ -282,14 +282,14 @@ namespace Emgu.CV.Features2D
             IntPtr mask);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherMatch2(
+        internal static extern void cveDescriptorMatcherMatch2(
             IntPtr matcher,
             IntPtr queryDescriptors,
             IntPtr matches,
             IntPtr masks);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherRadiusMatch1(
+        internal static extern void cveDescriptorMatcherRadiusMatch1(
             IntPtr matcher,
             IntPtr queryDescriptors,
             IntPtr trainDescriptors,
@@ -299,7 +299,7 @@ namespace Emgu.CV.Features2D
             [MarshalAs(CvInvoke.BoolMarshalType)]
             bool compactResult);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDescriptorMatcherRadiusMatch2(
+        internal static extern void cveDescriptorMatcherRadiusMatch2(
             IntPtr matcher,
             IntPtr queryDescriptors,
             IntPtr matches,

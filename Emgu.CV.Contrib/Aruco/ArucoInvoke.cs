@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -26,6 +26,7 @@ namespace Emgu.CV.Aruco
             CvInvoke.Init();
         }
 
+        /*
         /// <summary>
         /// Draw a canonical marker image.
         /// </summary>
@@ -46,7 +47,7 @@ namespace Emgu.CV.Aruco
             int sidePixels, 
             IntPtr img, 
             int borderBits);
-
+        */
 
         /// <summary>
         /// Performs marker detection in the input image. Only markers included in the specific dictionary are searched. For each detected marker, it returns the 2D position of its corner in the image and its corresponding identifier. Note that this function does not perform pose estimation.
@@ -76,6 +77,7 @@ namespace Emgu.CV.Aruco
            IntPtr ids, ref DetectorParameters parameters,
            IntPtr rejectedImgPoints);
 
+        /*
         /// <summary>
         /// Given the pose estimation of a marker or board, this function draws the axis of the world coordinate system, i.e. the system centered on the marker/board. Useful for debugging purposes.
         /// </summary>
@@ -100,6 +102,7 @@ namespace Emgu.CV.Aruco
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern void cveArucoDrawAxis(IntPtr image, IntPtr cameraMatrix, IntPtr distCoeffs, IntPtr rvec, IntPtr tvec, float length);
+        */
 
         /// <summary>
         /// This function receives the detected markers and returns their pose estimation respect to the camera individually. So for each marker, one rotation and translation vector is returned. The returned transformation is the one that transforms points from each marker coordinate system to the camera coordinate system. The marker corrdinate system is centered on the middle of the marker, with the Z axis perpendicular to the marker plane. The coordinates of the four corners of the marker in its own coordinate system are: (-markerLength/2, markerLength/2, 0), (markerLength/2, markerLength/2, 0), (markerLength/2, -markerLength/2, 0), (-markerLength/2, -markerLength/2, 0)
@@ -654,6 +657,31 @@ namespace Emgu.CV.Aruco
             IntPtr img,
             int marginSize,
             int borderBits);
+
+        /// <summary>
+        /// Draw a planar board.
+        /// </summary>
+        /// <param name="board">Layout of the board that will be drawn. The board should be planar, z coordinate is ignored</param>
+        /// <param name="outSize">Size of the output image in pixels.</param>
+        /// <param name="img">Output image with the board. The size of this image will be outSize and the board will be on the center, keeping the board proportions.</param>
+        /// <param name="marginSize">Minimum margins (in pixels) of the board in the output image</param>
+        /// <param name="borderBits">Width of the marker borders.</param>
+        public static void GenerateImage(
+            this IBoard board,
+            Size outSize,
+            IOutputArray img,
+            int marginSize = 0,
+            int borderBits = 1)
+        {
+            using (OutputArray oaImg = img.GetOutputArray())
+            {
+                cveArucoBoardGenerateImage(board.BoardPtr, ref outSize, oaImg, marginSize, borderBits);
+            }
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveArucoBoardGenerateImage(IntPtr board, ref Size outSize, IntPtr img, int marginSize, int borderBits);
+
 
         /// <summary>
         /// Pose estimation for a board of markers.

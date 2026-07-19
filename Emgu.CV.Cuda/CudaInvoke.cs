@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -28,7 +28,9 @@ namespace Emgu.CV.Cuda
 
         #region device info
         #region HasCuda
+#if !__IOS__
         private static bool _testedCuda = false;
+#endif
         private static bool _hasCuda = false;
         /// <summary>
         /// Return true if Cuda is found on the system
@@ -37,8 +39,8 @@ namespace Emgu.CV.Cuda
         {
             get
             {
-#if IOS
-            return _hasCuda;
+#if __IOS__
+                return _hasCuda;
 #else
                 if (_testedCuda)
                     return _hasCuda;

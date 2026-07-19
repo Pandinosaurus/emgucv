@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -16,7 +16,7 @@ namespace Emgu.CV.Cuda
     /// Passed to each function that supports async kernel execution.
     /// Reference counting is enabled
     /// </summary>
-    public class Stream : UnmanagedObject
+    public partial class Stream : UnmanagedObject
     {
         /// <summary>
         /// Create a new Cuda Stream
@@ -29,6 +29,7 @@ namespace Emgu.CV.Cuda
         /// <summary>
         /// Create a new Cuda Stream
         /// </summary>
+        /// <param name="flag">The cuda flags argument that determine the behaviors of the stream</param>
         public Stream(int flag)
         {
             _ptr = CudaInvoke.streamCreateWithFlag(flag);
@@ -67,7 +68,8 @@ namespace Emgu.CV.Cuda
         /// </summary>
         protected override void DisposeObject()
         {
-            CudaInvoke.streamRelease(ref _ptr);
+            if (!IntPtr.Zero.Equals(_ptr))
+                CudaInvoke.streamRelease(ref _ptr);
         }
     }
 

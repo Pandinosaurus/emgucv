@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -30,16 +30,16 @@ namespace Emgu.CV
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveStereoMatcherCompute(IntPtr disparitySolver, IntPtr left, IntPtr right, IntPtr disparity);
+        internal static extern void cveStereoMatcherCompute(IntPtr disparitySolver, IntPtr left, IntPtr right, IntPtr disparity);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveStereoMatcherRelease(ref IntPtr sharedPtr);
+        internal static extern void cveStereoMatcherRelease(ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveStereoBMCreate(int numberOfDisparities, int blockSize, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveStereoBMCreate(int numberOfDisparities, int blockSize, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveStereoSGBMCreate(
+        internal static extern IntPtr cveStereoSGBMCreate(
            int minDisparity, int numDisparities, int blockSize,
            int P1, int P2, int disp12MaxDiff,
            int preFilterCap, int uniquenessRatio,
@@ -48,7 +48,7 @@ namespace Emgu.CV
            ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveStereoSGBMRelease(ref IntPtr sharedPtr);
+        internal static extern void cveStereoSGBMRelease(ref IntPtr sharedPtr);
 
         /// <summary>
         /// Transforms the image to compensate radial and tangential lens distortion. 
@@ -88,7 +88,8 @@ namespace Emgu.CV
         /// <param name="distCoeffs">The vector of distortion coefficients, 4x1, 1x4, 5x1 or 1x5</param>
         /// <param name="R">The rectification transformation in object space (3x3 matrix). R1 or R2, computed by cvStereoRectify can be passed here. If the parameter is IntPtr.Zero, the identity matrix is used</param>
         /// <param name="newCameraMatrix">The new camera matrix A'=[fx' 0 cx'; 0 fy' cy'; 0 0 1]</param>
-        /// <param name="depthType">Depth type of the first output map that can be CV_32FC1 or CV_16SC2 .</param>
+        /// <param name="depthType">Depth type of the first output map. (The combination with <paramref name="channels"/> can be one of CV_32FC1, CV_32FC2 or CV_16SC2)</param>
+        /// <param name="channels">Number of channels of the first output map. (The combination with <paramref name="depthType"/> can be one of CV_32FC1, CV_32FC2 or CV_16SC2)</param>
         /// <param name="map1">The first output map.</param>
         /// <param name="map2">The second output map.</param>
         /// <param name="size">Undistorted image size.</param>
@@ -99,10 +100,10 @@ namespace Emgu.CV
            IInputArray newCameraMatrix,
            Size size,
            CvEnum.DepthType depthType,
+           int channels,
            IOutputArray map1,
-           IOutputArray map2 = null)
+           IOutputArray map2)
         {
-            int channels = map2 == null ? 2 : 1;
             using (InputArray iaCameraMatrix = cameraMatrix.GetInputArray())
             using (InputArray iaDistCoeffs = distCoeffs.GetInputArray())
             using (InputArray iaR = R == null ? InputArray.GetEmpty() : R.GetInputArray())
@@ -311,6 +312,62 @@ namespace Emgu.CV
             IntPtr affine);
 
         /// <summary>
+        /// Computes a pure 2D translation between two 2D point sets.
+        /// </summary>
+        /// <param name="from">First input 2D point set</param>
+        /// <param name="to">Second input 2D point set</param>
+        /// <param name="inliners">Output vector indicating which points are inliers (1-inlier, 0-outlier).</param>
+        /// <param name="method">Robust method used to compute the transformation. The following methods are possible:
+        /// RANSAC - RANSAC-based robust method;
+        /// LMEDS - Least-Median robust method RANSAC is the default method.</param>
+        /// <param name="ransacReprojThreshold">Maximum reprojection error in the RANSAC algorithm to consider a point as an inlier. Applies only to RANSAC.</param>
+        /// <param name="maxIters">The maximum number of robust method iterations.</param>
+        /// <param name="confidence">Confidence level, between 0 and 1, for the estimated transformation. Anything between 0.95 and 0.99 is usually good enough. Values too close to 1 can slow down the estimation significantly. Values lower than 0.8–0.9 can result in an incorrectly estimated transformation.</param>
+        /// <param name="refineIters">Maximum number of iterations of the refining algorithm. For pure translation the least-squares solution on inliers is closed-form, so passing 0 is recommended (no additional refine).</param>
+        /// <returns>A 2D translation vector. If the translation could not be estimated, both components are set to NaN and, if inliers is provided, the mask is filled with zeros.</returns>
+        public static MCvPoint2D64f EstimateTranslation2D(
+            IInputArray from, 
+            IInputArray to,
+            IOutputArray inliners,
+            CvEnum.RobustEstimationAlgorithm method,
+            double ransacReprojThreshold,
+            int maxIters, 
+            double confidence,
+            int refineIters)
+        {
+            MCvPoint2D64f result = new MCvPoint2D64f();
+            using (InputArray iaFrom = from.GetInputArray())
+            using (InputArray iaTo = to.GetInputArray())
+            using (OutputArray oaInliners = inliners == null ? OutputArray.GetEmpty() : inliners.GetOutputArray())
+            {
+                cveEstimateTranslation2D(
+                    iaFrom,
+                    iaTo,
+                    oaInliners,
+                    method,
+                    ransacReprojThreshold,
+                    maxIters,
+                    confidence,
+                    refineIters,
+                    ref result
+                );
+            }
+            return result;
+        }
+
+        [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern void cveEstimateTranslation2D(
+            IntPtr from,
+            IntPtr to,
+            IntPtr inliers,
+            CvEnum.RobustEstimationAlgorithm method,
+            double ransacReprojThreshold,
+            int maxIters,
+            double confidence,
+            int refineIters,
+            ref MCvPoint2D64f result);
+
+        /// <summary>
         /// Computes Hand-Eye calibration
         /// </summary>
         /// <param name="rGripper2base">
@@ -477,5 +534,104 @@ namespace Emgu.CV
             IntPtr rotMatrixY,
             IntPtr rotMatrixZ,
             IntPtr eulerAngles);
+
+        /// <summary>
+        /// Decompose an essential matrix to possible rotations and translation.
+        /// </summary>
+        /// <param name="e">The input essential matrix.</param>
+        /// <param name="r1">One possible rotation matrix.</param>
+        /// <param name="r2">Another possible rotation matrix.</param>
+        /// <param name="t">One possible translation.</param>
+        /// <remarks>This function decomposes the essential matrix E using svd decomposition. In general, four possible poses exist for the decomposition of E. They are [R1,t], [R1,−t], [R2,t], [R2,−t]</remarks>
+        public static void DecomposeEssentialMat(IInputArray e, IOutputArray r1, IOutputArray r2, IOutputArray t)
+        {
+            using (InputArray iaE = e.GetInputArray())
+            using (OutputArray oaR1 = r1.GetOutputArray())
+            using (OutputArray oaR2 = r2.GetOutputArray())
+            using (OutputArray oaT = t.GetOutputArray())
+            {
+                cveDecomposeEssentialMat(iaE, oaR1, oaR2, oaT);
+            }
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveDecomposeEssentialMat(
+            IntPtr e,
+            IntPtr r1,
+            IntPtr r2,
+            IntPtr t);
+
+        /// <summary>
+        /// Decompose a homography matrix to rotation(s), translation(s) and plane normal(s).
+        /// </summary>
+        /// <param name="h">The input homography matrix between two images.</param>
+        /// <param name="k">The input camera intrinsic matrix.</param>
+        /// <param name="rotations">Array of rotation matrices.</param>
+        /// <param name="translations">Array of translation matrices.</param>
+        /// <param name="normals">Array of plane normal matrices.</param>
+        /// <returns>Number of solutions</returns>
+        public static int DecomposeHomographyMat(
+            IInputArray h,
+            IInputArray k,
+            IOutputArrayOfArrays rotations,
+            IOutputArrayOfArrays translations,
+            IOutputArrayOfArrays normals)
+        {
+            using (InputArray iaH = h.GetInputArray())
+            using (InputArray iaK = k.GetInputArray())
+            using (OutputArray oaRotations = rotations.GetOutputArray())
+            using (OutputArray oaTranslations = translations.GetOutputArray())
+            using (OutputArray oaNormals = normals.GetOutputArray())
+            {
+                return cveDecomposeHomographyMat(iaH, iaK, oaRotations, oaTranslations, oaNormals);
+            }
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern int cveDecomposeHomographyMat(
+            IntPtr h,
+            IntPtr k,
+            IntPtr rotations,
+            IntPtr translations,
+            IntPtr normals);
+
+        /// <summary>
+        /// Draw axes of the world/object coordinate system from pose estimation.
+        /// </summary>
+        /// <param name="image">Input/output image. It must have 1 or 3 channels. The number of channels is not altered.</param>
+        /// <param name="cameraMatrix">Input 3x3 floating-point matrix of camera intrinsic parameters.</param>
+        /// <param name="distCoeffs">Input vector of distortion coefficients. If the vector is empty, the zero distortion coefficients are assumed.</param>
+        /// <param name="rvec">Rotation vector, together with tvec, brings points from the model coordinate system to the camera coordinate system.</param>
+        /// <param name="tvec">Translation vector.</param>
+        /// <param name="length">Length of the painted axes in the same unit than tvec (usually in meters).</param>
+        /// <param name="thickness">Line thickness of the painted axes.</param>
+        public static void DrawFrameAxes(
+            IInputOutputArray image, 
+            IInputArray cameraMatrix, 
+            IInputArray distCoeffs, 
+            IInputArray rvec,
+            IInputArray tvec, 
+            float length, 
+            int thickness = 3)
+        {
+            using (var iaImage = image.GetInputOutputArray())
+            using (var iaCameraMatrix = cameraMatrix.GetInputArray())
+            using (var iaDistCoeffs = distCoeffs.GetInputArray())
+            using (var iaRvec = rvec.GetInputArray())
+            using (var iaTvec = tvec.GetInputArray())
+            {
+                cveDrawFrameAxes(iaImage, iaCameraMatrix, iaDistCoeffs, iaRvec, iaTvec, length, thickness);
+            }
+        }
+        
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveDrawFrameAxes(
+            IntPtr image,
+            IntPtr cameraMatrix,
+            IntPtr distCoeffs,
+            IntPtr rvec,
+            IntPtr tvec,
+            float length,
+            int thickness);
     }
 }

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -93,7 +93,7 @@ namespace Aruco
             int borderBits = 1;
 
             Mat boardImage = new Mat();
-            ArucoBoard.Draw(imageSize, boardImage, margins, borderBits);
+            ArucoBoard.GenerateImage(imageSize, boardImage, margins, borderBits);
             bmIm = boardImage.ToBitmap();
             PrintImage();
 
@@ -183,8 +183,7 @@ namespace Aruco
                                     tvec.Push(values);
 
 
-                                    ArucoInvoke.DrawAxis(_frameCopy, _cameraMatrix, _distCoeffs, rvec, tvec,
-                                       markersLength * 0.5f);
+                                    //ArucoInvoke.DrawAxis(_frameCopy, _cameraMatrix, _distCoeffs, rvec, tvec, markersLength * 0.5f);
 
                                 }
                             }

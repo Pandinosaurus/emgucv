@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;  
+using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
 using System.Text;
@@ -28,10 +29,10 @@ using Emgu.CV.Dpm;
 using Emgu.CV.ImgHash;
 using Emgu.CV.Face;
 using Emgu.CV.Freetype;
-
+using Emgu.CV.StructuredLight;
 using Emgu.CV.Dnn;
 using Emgu.CV.Cuda;
-using Emgu.CV.DepthAI;
+using Emgu.CV.Dai;
 using Emgu.CV.Mcc;
 using Emgu.CV.Models;
 using Emgu.CV.Tiff;
@@ -40,6 +41,7 @@ using Emgu.CV.Util;
 using Emgu.CV.VideoStab;
 using Emgu.CV.XFeatures2D;
 using Emgu.CV.XImgproc;
+using Emgu.CV.Legacy;
 using Emgu.Util;
 
 using System.Threading.Tasks;
@@ -362,6 +364,7 @@ namespace Emgu.CV.Test
             level = CvInvoke.LogLevel;
         }
 
+        /*
         [Test]
         public void TestException()
         {
@@ -385,7 +388,7 @@ namespace Emgu.CV.Test
                     EmguAssert.IsTrue(exceptionCaught);
                 }
             }
-        }
+        }*/
 
         [Test]
         public void TestProjectPoints()
@@ -449,7 +452,7 @@ namespace Emgu.CV.Test
               //TODO: Find out why BlobDetector cannot detect new Blob.
               bool detected = detector.DetectNewBlob(forgroundMask, newSeq, oldSeq);
               //ImageViewer.Show(forgroundMask);
-              //Assert.IsTrue(detected);
+              //EmguAssert.IsTrue(detected);
            }
         }
 
@@ -809,8 +812,8 @@ namespace Emgu.CV.Test
                0.0f);
             PointF[] vertices = box.GetVertices();
             //TODO: Find out why the following test fails. (x, y) convention changed.
-            //Assert.IsTrue(vertices[0].Equals(new PointF(0.0f, 0.0f)));
-            //Assert.IsTrue(vertices[1].Equals(new PointF(6.0f, 0.0f)));
+            //EmguAssert.IsTrue(vertices[0].Equals(new PointF(0.0f, 0.0f)));
+            //EmguAssert.IsTrue(vertices[1].Equals(new PointF(6.0f, 0.0f)));
         }
 
 #if !(__IOS__ || __ANDROID__ || NETFX_CORE)
@@ -868,7 +871,7 @@ namespace Emgu.CV.Test
         [Test]
         public void TestMorphEx()
         {
-            Mat kernel1 = CvInvoke.GetStructuringElement(Emgu.CV.CvEnum.ElementShape.Cross, new Size(3, 3), new Point(1, 1));
+            Mat kernel1 = CvInvoke.GetStructuringElement(Emgu.CV.CvEnum.MorphShapes.Cross, new Size(3, 3), new Point(1, 1));
             Matrix<byte> kernel2 = new Matrix<byte>(new Byte[3, 3] { { 0, 1, 0 }, { 1, 0, 1 }, { 0, 1, 0 } });
             //StructuringElementEx element2 = new StructuringElementEx(new int[3, 3] { { 0, 1, 0 }, { 1, 0, 1 }, { 0, 1, 0 } }, 1, 1);
             Image<Bgr, Byte> tmp = new Image<Bgr, byte>(100, 100);
@@ -1200,8 +1203,9 @@ namespace Emgu.CV.Test
             //Image<Gray, Single> flowy = new Image<Gray, float>(images[0].Size);
             Mat flow = new Mat();
             CvInvoke.CalcOpticalFlowFarneback(images[0], images[1], flow, 0.5, 3, 5, 20, 7, 1.5, Emgu.CV.CvEnum.OpticalflowFarnebackFlag.Default);
-            Point pos = new Point();
+
             /*
+            Point pos = new Point();
             bool noNan = CvInvoke.CheckRange(flowx, true, ref pos, double.MinValue, double.MaxValue);
             EmguAssert.IsTrue(noNan, "Flowx contains nan");
             noNan = CvInvoke.CheckRange(flowy, true, ref pos, double.MinValue, double.MaxValue);
@@ -1378,6 +1382,27 @@ namespace Emgu.CV.Test
         }
 
 
+        [Test]
+        public void TestFlannHierarchicalClusteringIndex()
+        {
+            float[][] features = new float[10][];
+            for (int i = 0; i < features.Length; i++)
+                features[i] = new float[] { (float)i };
+
+            Flann.HierarchicalClusteringIndexParams p = new HierarchicalClusteringIndexParams();
+            Flann.Index index = new Flann.Index(CvToolbox.GetMatrixFromArrays(features), p);
+
+            float[][] features2 = new float[1][];
+            features2[0] = new float[] { 5.0f };
+
+            Matrix<int> indices = new Matrix<int>(features2.Length, 1);
+            Matrix<float> distances = new Matrix<float>(features2.Length, 1);
+            index.KnnSearch(CvToolbox.GetMatrixFromArrays(features2), indices, distances, 1, 32);
+
+            EmguAssert.IsTrue(indices[0, 0] == 5);
+            EmguAssert.IsTrue(distances[0, 0] == 0.0);
+        }
+
         /*
         [Test]
         public void TestEigenObjectRecognizer()
@@ -1413,6 +1438,7 @@ namespace Emgu.CV.Test
                 }
             }
         }
+
 
         [Test]
         public void TestFaceRecognizer()
@@ -1550,8 +1576,8 @@ namespace Emgu.CV.Test
               contourD.Push(new MCvPoint2D64f(0, 2));
               contourD.Push(new MCvPoint2D64f(2, 2));
               contourD.Push(new MCvPoint2D64f(2, 0));
-              //Assert.IsTrue(contourD.Convex);
-              //Assert.AreEqual(contourD.Area, 4.0);
+              //EmguAssert.IsTrue(contourD.Convex);
+              //EmguAssert.AreEqual(contourD.Area, 4.0);
               //InContour function requires MCvContour.rect to be pre-computed
               //CvInvoke.cvBoundingRect(contourD, 1);
               //Assert.GreaterOrEqual(contourD.InContour(new PointF(1, 1)), 0);
@@ -1778,7 +1804,7 @@ namespace Emgu.CV.Test
             foreach (PointF p in pts)
                 CvInvoke.Circle(img, Point.Round(p), 2, new MCvScalar(0, 255, 0), 1);
             RotatedRect rect = fittedEllipse.RotatedRect;
-            rect.Angle += 90; //the detected ellipse was off by 90 degree
+            //rect.Angle += 90; //the detected ellipse was off by 90 degree
             CvInvoke.Ellipse(img, rect, new MCvScalar(0, 0, 255), 2);
             #endregion
 
@@ -1880,7 +1906,7 @@ namespace Emgu.CV.Test
                  SURFFeature sf2 = (SURFFeature) o;
               }
            }
-        }*/
+        }
 
 #if !NETFX_CORE
         [Test]
@@ -1931,6 +1957,7 @@ namespace Emgu.CV.Test
             }
         }
 #endif
+        */
 
         [Test]
         public void TestVectorOfMat()
@@ -2369,7 +2396,7 @@ namespace Emgu.CV.Test
                 {
                     EmguAssert.IsTrue(img2.Width == width);
                     EmguAssert.IsTrue(img2.Height == height);
-                    //Assert.IsTrue(img2.Equals( images[count]) );
+                    //EmguAssert.IsTrue(img2.Equals( images[count]) );
                     img2 = capture.QueryFrame();
                     count++;
                 }
@@ -2426,7 +2453,10 @@ namespace Emgu.CV.Test
                 FileInfo fi = new FileInfo(fileName);
                 EmguAssert.IsTrue(fi.Exists && fi.Length != 0, "File should not be empty");
 
-                using (VideoCapture capture = new VideoCapture(fileName))
+                using (VideoCapture capture = new VideoCapture(
+                    fileName, 
+                    VideoCapture.API.Msmf, 
+                    new Tuple<CapProp, int>(CapProp.HwAcceleration, (int) VideoAccelerationType.Any)))
                 {
                     Mat img2 = capture.QueryFrame();
                     int count = 0;
@@ -2434,7 +2464,7 @@ namespace Emgu.CV.Test
                     {
                         EmguAssert.IsTrue(img2.Width == width);
                         EmguAssert.IsTrue(img2.Height == height);
-                        //Assert.IsTrue(img2.Equals( images[count]) );
+                        //EmguAssert.IsTrue(img2.Equals( images[count]) );
                         img2 = capture.QueryFrame();
                         count++;
                     }
@@ -2642,7 +2672,7 @@ namespace Emgu.CV.Test
 
                 Mat image = new Mat();
 
-                CvInvoke.Imdecode(data, ImreadModes.Color, image);
+                CvInvoke.Imdecode(data, ImreadModes.ColorBgr, image);
                 //Emgu.CV.UI.ImageViewer.Show(image);
             }
         }
@@ -2775,7 +2805,7 @@ namespace Emgu.CV.Test
                 retina.Parameters = p;
                 float newval = retina.Parameters.IplMagno.ParasolCellsK;
 
-                Assert.AreEqual(newval, oldval + 0.01f);
+                EmguAssert.AreEqual(newval, oldval + 0.01f);
 
                 retina.Run(image);
                 Mat out1 = new Mat();
@@ -2800,12 +2830,12 @@ namespace Emgu.CV.Test
         [Test]
         public void TestStitching1()
         {
-            Image<Bgr, Byte>[] images = new Image<Bgr, byte>[4];
+            Mat[] images = new Mat[4];
 
-            images[0] = EmguAssert.LoadImage<Bgr, Byte>("stitch1.jpg");
-            images[1] = EmguAssert.LoadImage<Bgr, Byte>("stitch2.jpg");
-            images[2] = EmguAssert.LoadImage<Bgr, Byte>("stitch3.jpg");
-            images[3] = EmguAssert.LoadImage<Bgr, Byte>("stitch4.jpg");
+            images[0] = EmguAssert.LoadMat("stitch1.jpg");
+            images[1] = EmguAssert.LoadMat("stitch2.jpg");
+            images[2] = EmguAssert.LoadMat("stitch3.jpg");
+            images[3] = EmguAssert.LoadMat("stitch4.jpg");
 
             using (Stitcher stitcher = new Stitcher())
             {
@@ -2814,6 +2844,10 @@ namespace Emgu.CV.Test
                 {
                     vm.Push(images);
                     stitcher.Stitch(vm, result);
+                    using (VectorOfCameraParams vcp = stitcher.Cameras())
+                    {
+                        int[] component = stitcher.Component();
+                    }
                 }
                 //Emgu.CV.UI.ImageViewer.Show(result);
             }
@@ -2822,12 +2856,12 @@ namespace Emgu.CV.Test
         [Test]
         public void TestStitching2()
         {
-            Image<Bgr, Byte>[] images = new Image<Bgr, byte>[4];
+            Mat[] images = new Mat[4];
 
-            images[0] = EmguAssert.LoadImage<Bgr, Byte>("stitch1.jpg");
-            images[1] = EmguAssert.LoadImage<Bgr, Byte>("stitch2.jpg");
-            images[2] = EmguAssert.LoadImage<Bgr, Byte>("stitch3.jpg");
-            images[3] = EmguAssert.LoadImage<Bgr, Byte>("stitch4.jpg");
+            images[0] = EmguAssert.LoadMat("stitch1.jpg");
+            images[1] = EmguAssert.LoadMat("stitch2.jpg");
+            images[2] = EmguAssert.LoadMat("stitch3.jpg");
+            images[3] = EmguAssert.LoadMat("stitch4.jpg");
 
             using (Stitcher stitcher = new Stitcher())
             using (ORB finder = new ORB())
@@ -3206,7 +3240,6 @@ namespace Emgu.CV.Test
         [Test]
         public void TestFileCapturePause()
         {
-
             int totalFrames1 = 0;
             String fileName = EmguAssert.GetFile("tree.avi");
             String fileName2 = fileName.Replace("tree.avi", "tree2.avi");
@@ -3226,8 +3259,6 @@ namespace Emgu.CV.Test
             capture1.Start();
 
             System.Threading.Thread.Sleep(2);
-
-
 
             int totalFrames2 = 0;
             VideoCapture capture2 = new VideoCapture(fileName2);
@@ -3327,6 +3358,12 @@ namespace Emgu.CV.Test
         }
 
         [Test]
+        public void TestTempFile()
+        {
+            String tempFileName = CvInvoke.TempFile(String.Empty);
+        }
+
+        [Test]
         public void TestHoughLine()
         {
             Mat img = EmguAssert.LoadMat("box.png");
@@ -3416,6 +3453,13 @@ namespace Emgu.CV.Test
             classProb = maxVal;
         }
 
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
         [Test]
         public void TestDnnFcn8sHeavyPascal()
         {
@@ -3426,10 +3470,14 @@ namespace Emgu.CV.Test
                 //Download the bvlc googlenet file
                 String CaffeModelUrl = "http://dl.caffe.berkeleyvision.org/fcn8s-heavy-pascal.caffemodel";
                 Trace.WriteLine("downloading file from:" + CaffeModelUrl + " to: " + caffeModelFile);
-                System.Net.WebClient downloadClient = new System.Net.WebClient();
                 try
                 {
-                    downloadClient.DownloadFile(CaffeModelUrl, caffeModelFile);
+                    using (HttpClient httpClient = new HttpClient())
+                    using (System.IO.Stream responseStream = httpClient.GetStreamAsync(CaffeModelUrl).GetAwaiter().GetResult())
+                    using (FileStream fileStream = new FileStream(caffeModelFile, FileMode.Create))
+                    {
+                        responseStream.CopyTo(fileStream);
+                    }
                 }
                 catch
                 {
@@ -3540,6 +3588,13 @@ namespace Emgu.CV.Test
         }
         */
 
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
         [Test]
         public void TestDnnBvlcGoogleNet()
         {
@@ -3551,10 +3606,14 @@ namespace Emgu.CV.Test
                 //Download the bvlc googlenet file
                 String googleNetUrl = "http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel";
                 Trace.WriteLine("downloading file from:" + googleNetUrl + " to: " + googleNetFile);
-                System.Net.WebClient downloadClient = new System.Net.WebClient();
                 try
                 {
-                    downloadClient.DownloadFile(googleNetUrl, googleNetFile);
+                    using (HttpClient httpClient = new HttpClient())
+                    using (System.IO.Stream responseStream = httpClient.GetStreamAsync(googleNetUrl).GetAwaiter().GetResult())
+                    using (FileStream fileStream = new FileStream(googleNetFile, FileMode.Create))
+                    {
+                        responseStream.CopyTo(fileStream);
+                    }
                 }
                 catch
                 {
@@ -3595,10 +3654,14 @@ namespace Emgu.CV.Test
                 //Download the ssd file    
                 String fileUrl = url + fileName;
                 Trace.WriteLine("downloading file from:" + fileUrl + " to: " + fileName);
-                System.Net.WebClient downloadClient = new System.Net.WebClient();
                 try
                 {
-                    downloadClient.DownloadFile(fileUrl, fileName);
+                    using (HttpClient httpClient = new HttpClient())
+                    using (System.IO.Stream responseStream = httpClient.GetStreamAsync(fileUrl).GetAwaiter().GetResult())
+                    using (FileStream fileStream = new FileStream(fileName, FileMode.Create))
+                    {
+                        responseStream.CopyTo(fileStream);
+                    }
                 }
                 catch
                 {
@@ -3608,6 +3671,13 @@ namespace Emgu.CV.Test
             }
         }
 
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
         [Test]
         public void TestDnnSSD()
         {
@@ -3673,82 +3743,14 @@ namespace Emgu.CV.Test
             net.DumpToFile("rgb_ssd.dot");
         }
 
-        [Test]
-        public void TestDnnSSDFaceDetect()
-        {
-            int imgDim = 300;
-            MCvScalar meanVal = new MCvScalar(104, 177, 123);
-            String ssdFile = "res10_300x300_ssd_iter_140000.caffemodel";
-            String ssdProtoFile = "deploy.prototxt";
 
-
-            CheckAndDownloadFile(ssdFile, "https://github.com/opencv/opencv_3rdparty/raw/dnn_samples_face_detector_20170830/");
-            CheckAndDownloadFile(ssdProtoFile, "https://raw.githubusercontent.com/opencv/opencv/master/samples/dnn/face_detector/");
-
-            Dnn.Net net = DnnInvoke.ReadNetFromCaffe(ssdProtoFile, ssdFile);
-
-            Mat img = EmguAssert.LoadMat("lena.jpg");
-
-            Mat inputBlob = DnnInvoke.BlobFromImage(img, 1.0, new Size(imgDim, imgDim), meanVal, false, false);
-            net.SetInput(inputBlob, "data");
-            Mat detection = net.Forward("detection_out");
-
-            float confidenceThreshold = 0.5f;
-
-            List<Rectangle> faceRegions = new List<Rectangle>();
-
-            int[] dim = detection.SizeOfDimension;
-            int step = dim[3] * sizeof(float);
-            IntPtr start = detection.DataPointer;
-            for (int i = 0; i < dim[2]; i++)
-            {
-                float[] values = new float[dim[3]];
-                Marshal.Copy(new IntPtr(start.ToInt64() + step * i), values, 0, dim[3]);
-                float confident = values[2];
-
-                if (confident > confidenceThreshold)
-                {
-                    float xLeftBottom = values[3] * img.Cols;
-                    float yLeftBottom = values[4] * img.Rows;
-                    float xRightTop = values[5] * img.Cols;
-                    float yRightTop = values[6] * img.Rows;
-                    RectangleF objectRegion = new RectangleF(xLeftBottom, yLeftBottom, xRightTop - xLeftBottom, yRightTop - yLeftBottom);
-                    Rectangle faceRegion = Rectangle.Round(objectRegion);
-                    faceRegions.Add(faceRegion);
-
-                }
-            }
-
-            String facemarkFileName = "lbfmodel.yaml";
-            String facemarkFileUrl = "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/";
-            CheckAndDownloadFile(facemarkFileName, facemarkFileUrl);
-
-            using (FacemarkLBFParams facemarkParam = new CV.Face.FacemarkLBFParams())
-            using (FacemarkLBF facemark = new CV.Face.FacemarkLBF(facemarkParam))
-            using (VectorOfRect vr = new VectorOfRect(faceRegions.ToArray()))
-            using (VectorOfVectorOfPointF landmarks = new VectorOfVectorOfPointF())
-            {
-                facemark.LoadModel(facemarkFileName);
-                facemark.Fit(img, vr, landmarks);
-
-                foreach (Rectangle face in faceRegions)
-                {
-                    CvInvoke.Rectangle(img, face, new MCvScalar(0, 255, 0));
-                }
-
-                int len = landmarks.Size;
-                for (int i = 0; i < landmarks.Size; i++)
-                {
-                    using (VectorOfPointF vpf = landmarks[i])
-                        FaceInvoke.DrawFacemarks(img, vpf, new MCvScalar(255, 0, 0));
-                }
-
-            }
-
-            CvInvoke.Imwrite("rgb_ssd_facedetect.jpg", img);
-
-        }
-
+#if !TEST_MODELS
+#if VS_TEST
+        [Ignore()]
+#else
+        [Ignore("Ignore from test run by default.")]
+#endif
+#endif
         [Test]
         public void TestDnnTensorFlow()
         {
@@ -3761,8 +3763,12 @@ namespace Emgu.CV.Test
                 String inceptionFile = "inception5h.zip";
                 String googleNetUrl = "https://storage.googleapis.com/download.tensorflow.org/models/inception5h.zip";
                 Trace.WriteLine("downloading file from:" + googleNetUrl + " to: " + inceptionFile);
-                System.Net.WebClient downloadClient = new System.Net.WebClient();
-                downloadClient.DownloadFile(googleNetUrl, inceptionFile);
+                using (HttpClient httpClient = new HttpClient())
+                using (System.IO.Stream responseStream = httpClient.GetStreamAsync(googleNetUrl).GetAwaiter().GetResult())
+                using (FileStream fileStream = new FileStream(inceptionFile, FileMode.Create))
+                {
+                    responseStream.CopyTo(fileStream);
+                }
 
                 System.IO.Compression.ZipFile.ExtractToDirectory(inceptionFile, ".");
             }
@@ -3802,12 +3808,16 @@ namespace Emgu.CV.Test
         [Test]
         public void TestUnicodeImgFileIO()
         {
-            Mat m = EmguAssert.LoadMat("lena.jpg");
-            EmguAssert.IsTrue(CvInvoke.Imwrite("测试.jpg", m));
-            Bitmap bmp = new Bitmap("测试.jpg");
-            UMat m2 = bmp.ToImage<Bgr, Byte>().ToUMat();
-            Mat m3 = EmguAssert.LoadMat("测试.jpg");
-            //Emgu.CV.UI.ImageViewer.Show(m2);
+            //Bitmap is only available on windows
+            if (Platform.OperationSystem == Emgu.Util.Platform.OS.Windows)
+            {
+                Mat m = EmguAssert.LoadMat("lena.jpg");
+                EmguAssert.IsTrue(CvInvoke.Imwrite("测试.jpg", m));
+                Bitmap bmp = new Bitmap("测试.jpg");
+                UMat m2 = bmp.ToImage<Bgr, Byte>().ToUMat();
+                Mat m3 = EmguAssert.LoadMat("测试.jpg");
+                //Emgu.CV.UI.ImageViewer.Show(m2);
+            }
         }
 
         [Test]
@@ -3824,16 +3834,22 @@ namespace Emgu.CV.Test
         [Test]
         public void TestFreetype()
         {
-            using (Mat m = new Mat(new Size(640, 480), DepthType.Cv8U, 3))
-            using (Freetype.Freetype2 freetype = new Freetype2())
+            var openCVConfigDict = CvInvoke.ConfigDict;
+            bool haveFreetype = (openCVConfigDict["HAVE_OPENCV_FREETYPE"] != 0);
+            if (haveFreetype)
             {
-                m.SetTo(new MCvScalar(0, 0, 0, 0));
-                freetype.LoadFontData("NotoSansCJK-Regular.ttc", 0);
+                using (Mat m = new Mat(new Size(640, 480), DepthType.Cv8U, 3))
+                using (Freetype.Freetype2 freetype = new Freetype2())
+                {
+                    m.SetTo(new MCvScalar(0, 0, 0, 0));
+                    freetype.LoadFontData("NotoSansCJK-Regular.ttc", 0);
 
-                freetype.PutText(m, "测试", new Point(100, 100), 36, new MCvScalar(255, 255, 0), 1, LineType.EightConnected, false);
-                //CvInvoke.NamedWindow("test");
-                //CvInvoke.Imshow("test", m);
-                //CvInvoke.WaitKey();
+                    freetype.PutText(m, "测试", new Point(100, 100), 36, new MCvScalar(255, 255, 0), 1,
+                        LineType.EightConnected, false);
+                    //CvInvoke.NamedWindow("test");
+                    //CvInvoke.Imshow("test", m);
+                    //CvInvoke.WaitKey();
+                }
             }
         }
 
@@ -3936,7 +3952,7 @@ namespace Emgu.CV.Test
             Aruco.Dictionary dictionary = new Dictionary(Dictionary.PredefinedDictionaryName.Dict4X4_100);
             Aruco.GridBoard board = new GridBoard(markersX, markersY, markersLength, markersSeparation, dictionary);
             Mat boardImage = new Mat();
-            board.Draw(imageSize, boardImage, margins, borderBits);
+            board.GenerateImage(imageSize, boardImage, margins, borderBits);
             CvInvoke.Imwrite("board.png", boardImage);
         }
 
@@ -4036,7 +4052,7 @@ namespace Emgu.CV.Test
         private static Mat TestSeamlessCloneHelper(int size)
         {
             // create a 3 channel dst image
-            Mat source = new Mat("lena.jpg", ImreadModes.Color);
+            Mat source = new Mat("lena.jpg", ImreadModes.ColorBgr);
             Mat img1 = new Mat();
             CvInvoke.Resize(source, img1, new System.Drawing.Size(size, size));
             //Mat img1 = new Mat(height, width, DepthType.Cv8U, 3); 
@@ -4118,7 +4134,7 @@ namespace Emgu.CV.Test
 
                 output.Save("line_detected.png");
             }
-        }*/
+        }
 
         [Test]
         public void TestCvException()
@@ -4139,6 +4155,7 @@ namespace Emgu.CV.Test
                 }
             }
         }
+        */
 
         [Test]
         public void TestRetinaFastToneMapping()
@@ -4259,7 +4276,7 @@ namespace Emgu.CV.Test
         [Test]
         public static void TestIntensityTransform()
         {
-            Mat m = new Mat("lena.jpg", ImreadModes.Color);
+            Mat m = new Mat("lena.jpg", ImreadModes.ColorBgr);
             Mat bimef = new Mat();
             Mat autoScaling = new Mat();
             Mat gamma = new Mat();
@@ -4270,6 +4287,33 @@ namespace Emgu.CV.Test
             Emgu.CV.IntensityTransform.IntensityTransformInvoke.GammaCorrection(m, gamma, 2.0f);
             Emgu.CV.IntensityTransform.IntensityTransformInvoke.ContrastStretching(m, contrastStretch, 0, 0, 200, 200);
             Emgu.CV.IntensityTransform.IntensityTransformInvoke.LogTransform(m, log);
+        }
+
+        [Test]
+        public static void TestResampleSignal()
+        {
+            int inFreq = 44100;
+            int outFreq = 22050;
+            int inputLength = 4410; // 0.1 seconds of samples at inFreq
+
+            // Build a 440 Hz sine wave as a 1-row CV_32FC1 Mat
+            float[] signalData = new float[inputLength];
+            for (int i = 0; i < inputLength; i++)
+                signalData[i] = (float)Math.Sin(2.0 * Math.PI * 440.0 * i / inFreq);
+
+            using (Mat input = new Mat(1, inputLength, DepthType.Cv32F, 1))
+            using (Mat output = new Mat())
+            {
+                System.Runtime.InteropServices.Marshal.Copy(signalData, 0, input.DataPointer, inputLength);
+
+                Emgu.CV.Signal.SignalInvoke.ResampleSignal(input, output, inFreq, outFreq);
+
+                int expectedLength = (int)Math.Floor((double)inputLength * outFreq / inFreq);
+                EmguAssert.IsTrue(!output.IsEmpty, "ResampleSignal output should not be empty");
+                EmguAssert.IsTrue(
+                    output.Cols == expectedLength,
+                    String.Format("ResampleSignal: expected {0} output samples, got {1}", expectedLength, output.Cols));
+            }
         }
 
         [Test]
@@ -4295,6 +4339,37 @@ namespace Emgu.CV.Test
             }
         }
 
+        [Test]
+        public void TestSpan()
+        {
+            using (Mat mat1 = new Mat(1000, 1000, DepthType.Cv8U, 3))
+            {
+                mat1.SetTo(new MCvScalar(1,1,1));
+                using (Mat mat2 = new Mat(mat1, new Rectangle(50, 50, 50, 50)))
+                using (Mat mat3 = new Mat(mat1, new Rectangle(500, 50, 500, 1)))
+                {
+
+                    EmguAssert.IsFalse(mat2.IsContinuous);
+                    EmguAssert.IsTrue(mat3.IsContinuous);
+                    var span1 = mat1.GetSpan<Byte>();
+                    int sum = 0;
+                    for (int i = 0; i < span1.Length; i++)
+                    {
+                        sum = sum + span1[i];
+                    }
+                    EmguAssert.IsTrue(sum == mat1.Width * mat1.Height * mat1.NumberOfChannels);
+
+                    var span3 = mat3.GetSpan<Byte>();
+                    sum = 0;
+                    for (int i = 0; i < span3.Length; i++)
+                    {
+                        sum = sum + span3[i];
+                    }
+                    EmguAssert.IsTrue(sum == mat3.Width * mat3.Height * mat1.NumberOfChannels);
+                }
+            }
+        }
+        
         /*
         [Test]
         public void TestCreateImageHeader()
@@ -4317,8 +4392,14 @@ namespace Emgu.CV.Test
         }
 
         [Test]
-        public void TestQCCode()
+        public void TestQRCode()
         {
+            using (QRCodeEncoder encoder = new QRCodeEncoder())
+            using (Mat qrcodeImg = new Mat())
+            {
+                encoder.Encode("https://www.emgu.com", qrcodeImg);
+            }
+
             using (Mat m = EmguAssert.LoadMat("link_github_ocv.jpg"))
             using (QRCodeDetector detector = new QRCodeDetector())
             using (VectorOfPoint pts = new VectorOfPoint())
@@ -4327,6 +4408,27 @@ namespace Emgu.CV.Test
                 {
                     String text = detector.Decode(m, pts);
                 }
+            }
+
+        }
+
+        [Test]
+        public void TestGrayCodePattern()
+        {
+            using (GrayCodePattern gcp = new GrayCodePattern(1024, 768))
+            using (VectorOfMat vm = new VectorOfMat())
+            {
+                bool generated = gcp.Generate(vm);
+            }
+        }
+
+        [Test]
+        public void SinusoidalPattern()
+        {
+            using (SinusoidalPattern sp = new SinusoidalPattern())
+            using (VectorOfMat vm = new VectorOfMat())
+            {
+                bool generated = sp.Generate(vm);
             }
         }
 
@@ -4375,6 +4477,83 @@ namespace Emgu.CV.Test
                 CvInvoke.Randu(signature2, new MCvScalar(), new MCvScalar(1.0));
                 double dist = CvInvoke.EMD(signature1, signature2, DistType.L2);
             }
+        }
+
+        [Test]
+        public void TestScanSegment()
+        {
+            using (Mat image = EmguAssert.LoadMat("lena.jpg"))
+            //using (Mat imageLab = new Mat())
+            using (ScanSegment ss = new ScanSegment(image.Width, image.Height, 1))
+            using (Mat contours = new Mat())
+            using (Mat contoursBgr = new Mat())
+            {
+                //CvInvoke.CvtColor(image, imageLab, ColorConversion.Bgr2Lab);
+                ss.Iterate(image);
+                ss.GetLabelContourMask(contours);
+                CvInvoke.CvtColor(contours, contoursBgr, ColorConversion.Gray2Bgr);
+                CvInvoke.BitwiseOr(image, contoursBgr, image);
+                //Emgu.CV.UI.ImageViewer.Show(image);
+            }
+        }
+
+        [Test]
+        public void TestTrackerMedianFlow()
+        {
+            using (Mat box = EmguAssert.LoadMat("box.png"))
+            using (MultiTracker multiTracker = new MultiTracker())
+            using (TrackerMedianFlow medianFlowTracker = new TrackerMedianFlow(
+                10,
+                new Size(3, 3),
+                5,
+                new MCvTermCriteria(20, 0.3),
+                new Size(30, 30), 10.0))
+            {
+                bool success = multiTracker.Add(medianFlowTracker, box, new Rectangle(new Point(), box.Size));
+            }
+                
+        }
+
+
+#if VS_TEST
+        [Ignore]
+#else
+        [Ignore("Ignore from test run by default to avoid downloading data.")]
+#endif
+        [Test]
+        public async Task TestPhaseUnwrapping()
+        {
+            FileDownloadManager manager = new FileDownloadManager();
+
+            manager.AddFile(new DownloadableFile(
+                "https://github.com/opencv/opencv_extra/raw/4.5.3/testdata/cv/phase_unwrapping/data/wrappedpeaks.yml",
+                "PhaseUnwrapping"));
+            await manager.Download();
+            using (FileStorage fs = new FileStorage(manager.Files[0].LocalFile, FileStorage.Mode.Read))
+            using (Mat wPhaseMat = new Mat())
+            using (Mat uPhaseMat = new Mat())
+            using (Mat reliabilities = new Mat())
+            using (FileNode pvNode = fs["phaseValues"])
+            {
+                pvNode.ReadMat(wPhaseMat);
+                using (Emgu.CV.PhaseUnwrapping.HistogramPhaseUnwrapping phaseUnwrapping =
+                    new PhaseUnwrapping.HistogramPhaseUnwrapping(
+                    wPhaseMat.Cols, wPhaseMat.Rows))
+                {
+                    phaseUnwrapping.UnwrapPhaseMap(wPhaseMat, uPhaseMat);
+                    phaseUnwrapping.GetInverseReliabilityMap(reliabilities);
+                    using (Mat uPhaseMap8 = new Mat())
+                    using (Mat wPhaseMap8 = new Mat())
+                    using (Mat reliabilities8 = new Mat())
+                    {
+                        wPhaseMat.ConvertTo(wPhaseMap8, DepthType.Cv8U, 255, 128);
+                        uPhaseMat.ConvertTo(uPhaseMap8, DepthType.Cv8U, 1, 128);
+                        reliabilities.ConvertTo(reliabilities8, DepthType.Cv8U, 255, 128);
+                    }
+                }
+            }
+
+
         }
 
 

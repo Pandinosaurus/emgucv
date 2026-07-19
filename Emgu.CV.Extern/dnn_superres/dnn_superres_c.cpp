@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -14,6 +14,16 @@ cv::dnn_superres::DnnSuperResImpl* cveDnnSuperResImplCreate()
 	throw_no_dnn_superres();
 #endif
 }
+
+cv::dnn_superres::DnnSuperResImpl* cveDnnSuperResImplCreate2(cv::String* algo, int scale)
+{
+#ifdef HAVE_OPENCV_DNN_SUPERRES
+	return new cv::dnn_superres::DnnSuperResImpl(*algo, scale);
+#else
+	throw_no_dnn_superres();
+#endif
+}
+
 void cveDnnSuperResImplSetModel(cv::dnn_superres::DnnSuperResImpl* dnnSuperRes, const cv::String* algo, int scale)
 {
 #ifdef HAVE_OPENCV_DNN_SUPERRES
@@ -68,6 +78,24 @@ void cveDnnSuperResImplRelease(cv::dnn_superres::DnnSuperResImpl** dnnSuperRes)
 #ifdef HAVE_OPENCV_DNN_SUPERRES
 	delete* dnnSuperRes;
 	*dnnSuperRes = 0;
+#else
+	throw_no_dnn_superres();
+#endif
+}
+
+
+void cveDnnSuperResImplSetPreferableBackend(cv::dnn_superres::DnnSuperResImpl* dnnSuperRes, int backendId)
+{
+#ifdef HAVE_OPENCV_DNN_SUPERRES
+	dnnSuperRes->setPreferableBackend(backendId);
+#else
+	throw_no_dnn_superres();
+#endif
+}
+void cveDnnSuperResImplSetPreferableTarget(cv::dnn_superres::DnnSuperResImpl* dnnSuperRes, int targetId)
+{
+#ifdef HAVE_OPENCV_DNN_SUPERRES
+	dnnSuperRes->setPreferableTarget(targetId);
 #else
 	throw_no_dnn_superres();
 #endif

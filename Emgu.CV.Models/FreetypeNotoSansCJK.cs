@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -14,6 +14,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Dnn;
 using Emgu.CV.Freetype;
 using Emgu.Util;
+using System.IO;
 
 namespace Emgu.CV.Models
 {
@@ -22,16 +23,17 @@ namespace Emgu.CV.Models
     /// </summary>
     public class FreetypeNotoSansCJK : Freetype2
     {
-        private String _modelFolderName;
+        private String _modelFolderName = Path.Combine("emgu", "freetype");
 
         /// <summary>
         /// Create a freetype model using NotoSansCJK font.
         /// </summary>
         /// <param name="modelFolderName">The subfolder name where the model will be saved to.</param>
-        public FreetypeNotoSansCJK(String modelFolderName = "Freetype")
+        public FreetypeNotoSansCJK(String modelFolderName = null)
         : base()
         {
-            _modelFolderName = modelFolderName;
+            if (modelFolderName != null)
+                _modelFolderName = modelFolderName;
         }
 
         /// <summary>
@@ -40,9 +42,9 @@ namespace Emgu.CV.Models
         /// <param name="onDownloadProgressChanged">Callback when download progress has been changed</param>
         /// <returns>Async task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        public IEnumerator Init(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        public IEnumerator Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        public async Task Init(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        public async Task Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
 

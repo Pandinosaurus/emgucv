@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -63,7 +63,7 @@ namespace Emgu.CV.XFeatures2D
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveHarrisLaplaceFeatureDetectorCreate(
+        internal static extern IntPtr cveHarrisLaplaceFeatureDetectorCreate(
             int numOctaves,
             float cornThresh,
             float DOGThresh,
@@ -72,7 +72,7 @@ namespace Emgu.CV.XFeatures2D
             ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveHarrisLaplaceFeatureDetectorRelease(ref IntPtr sharedPtr);
+        internal static extern void cveHarrisLaplaceFeatureDetectorRelease(ref IntPtr sharedPtr);
     }
 }
 

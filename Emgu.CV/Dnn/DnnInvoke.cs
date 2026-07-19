@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -11,6 +11,7 @@ using Emgu.CV.Util;
 using Emgu.Util;
 using System.Diagnostics;
 using System.Drawing;
+using Emgu.CV.CvEnum;
 
 namespace Emgu.CV.Dnn
 {
@@ -292,7 +293,7 @@ namespace Emgu.CV.Dnn
         /// </summary>
         /// <param name="model">buffer containing the content of the pb file</param>
         /// <param name="config">buffer containing the content of the pbtxt file</param>
-        /// <returns>Net object.</returns>
+        /// <returns>Net object</returns>
         public static Net ReadNetFromTensorflow(byte[] model, byte[] config = null)
         {
             GCHandle modelHandle = GCHandle.Alloc(model, GCHandleType.Pinned);
@@ -318,6 +319,98 @@ namespace Emgu.CV.Dnn
         private static extern IntPtr cveReadNetFromTensorflow2(IntPtr bufferModel, int lenModel, IntPtr bufferConfig, int lenConfig);
 
         /// <summary>
+        /// Reads a network model stored in the TensorFlow Lite (TFLite) framework's format.
+        /// </summary>
+        /// <param name="model">
+        /// The file path to the TFLite model.
+        /// </param>
+        /// <returns>
+        /// A <see cref="Net"/> object representing the loaded network.
+        /// </returns>
+        /// <remarks>
+        /// This method loads a pre-trained neural network model stored in the TFLite format.
+        /// The model can then be used for inference or further processing.
+        /// </remarks>
+        public static Net ReadNetFromTFLite(String model)
+        {
+            using (CvString modelStr = new CvString(model))
+            {
+                return new Net(cveReadNetFromTFLite(modelStr));
+            }
+        }
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern IntPtr cveReadNetFromTFLite(IntPtr model);
+
+        /// <summary>
+        /// Reads a network model stored in TFLite framework's format.
+        /// </summary>
+        /// <param name="model">buffer containing the content of the tflite file</param>
+        /// <returns>Net object</returns>
+        public static Net ReadNetFromTFLite(byte[] model)
+        {
+            GCHandle modelHandle = GCHandle.Alloc(model, GCHandleType.Pinned);
+
+            try
+            {
+                return new Net(cveReadNetFromTFLite2(
+                    modelHandle.AddrOfPinnedObject(),
+                    model.Length));
+            }
+            finally
+            {
+                modelHandle.Free();
+            }
+
+        }
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern IntPtr cveReadNetFromTFLite2(IntPtr bufferModel, int lenModel);
+
+
+        /// <summary>
+        /// Reads a network model stored in Torch7 framework's format.
+        /// </summary>
+        /// <param name="model">Path to the file, dumped from Torch by using torch.save() function.</param>
+        /// <param name="isBinary">Specifies whether the network was serialized in ascii mode or binary.</param>
+        /// <param name="evaluate">Specifies testing phase of network. If true, it's similar to evaluate() method in Torch.</param>
+        /// <returns>Net object.</returns>
+        public static Net ReadNetFromTorch(String model, bool isBinary=true, bool evaluate=true)
+        {
+            using (CvString modelStr = new CvString(model))
+            {
+                return new Net(cveReadNetFromTorch(modelStr, isBinary, evaluate));
+            }
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern IntPtr cveReadNetFromTorch(
+            IntPtr model,
+            [MarshalAs(CvInvoke.BoolMarshalType)]
+            bool isBinary,
+            [MarshalAs(CvInvoke.BoolMarshalType)]
+            bool evaluate);
+
+
+        /// <summary>
+        /// Loads blob which was serialized as torch.Tensor object of Torch7 framework.
+        /// </summary>
+        /// <param name="fileName">The file name</param>
+        /// <param name="isBinary">Specifies whether the blob was serialized in ascii mode or binary.</param>
+        /// <returns>The tensor</returns>
+        public static Mat ReadTorchBlob(String fileName, bool isBinary=true)
+        {
+            Mat tensor = new Mat();
+            using (CvString csFileName = new CvString(fileName))
+            {
+                cveReadTorchBlob(csFileName, isBinary, tensor);
+            }
+            return tensor;
+        }
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern void cveReadTorchBlob(IntPtr filename, bool isBinary, IntPtr tensor);
+
+
+
+        /// <summary>
         /// Reads a network model ONNX.
         /// </summary>
         /// <param name="onnxFile">Path to the .onnx file with text description of the network architecture.</param>
@@ -331,6 +424,31 @@ namespace Emgu.CV.Dnn
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         private static extern IntPtr cveReadNetFromONNX(IntPtr onnxFile);
+
+        /// <summary>
+        /// Reads a network model from ONNX in-memory buffer.
+        /// </summary>
+        /// <param name="model">Memory address of the first byte of the buffer.</param>
+        /// <returns>Net object</returns>
+        public static Net ReadNetFromONNX(byte[] model)
+        {
+            GCHandle modelHandle = GCHandle.Alloc(model, GCHandleType.Pinned);
+            
+            try
+            {
+                return new Net(cveReadNetFromONNX2(
+                    modelHandle.AddrOfPinnedObject(),
+                    model.Length));
+            }
+            finally
+            {
+                modelHandle.Free();
+                
+            }
+
+        }
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern IntPtr cveReadNetFromONNX2(IntPtr bufferModel, int lenModel);
 
         /// <summary>
         /// Creates blob from .pb file.
@@ -519,6 +637,43 @@ namespace Emgu.CV.Dnn
             float eta,
             int topK);
 
+        /// <summary>
+        /// Performs soft non maximum suppression given boxes and corresponding scores. Reference: https://arxiv.org/abs/1704.04503
+        /// </summary>
+        /// <param name="bboxes">A set of bounding boxes to apply Soft NMS.</param>
+        /// <param name="scores">A set of corresponding confidences.</param>
+        /// <param name="updatedScores">A set of corresponding updated confidences.</param>
+        /// <param name="scoreThreshold">A threshold used to filter boxes by score.</param>
+        /// <param name="nmsThreshold">A threshold used in non maximum suppression.</param>
+        /// <param name="indices">The kept indices of bboxes after NMS.</param>
+        /// <param name="topK">Keep at most <paramref name="topK"/> picked indices.</param>
+        /// <param name="sigma">Parameter of Gaussian weighting.</param>
+        /// <param name="method">Gaussian or linear.</param>
+        public static void SoftNMSBoxes(
+            VectorOfRect bboxes, 
+            VectorOfFloat scores, 
+            VectorOfFloat updatedScores,
+            float scoreThreshold, 
+            float nmsThreshold, 
+            VectorOfInt indices, 
+            int topK = 0,
+            float sigma = 0.5f, 
+            SoftNMSMethod method = SoftNMSMethod.Gaussian)
+        {
+            cveDnnSoftNMSBoxes(bboxes, scores, updatedScores, scoreThreshold, nmsThreshold, indices, topK, sigma, method);
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern void cveDnnSoftNMSBoxes(
+            IntPtr bboxes,
+            IntPtr scores,
+            IntPtr updatedScores,
+            float scoreThreshold,
+            float nmsThreshold,
+            IntPtr indices,
+            int topK,
+            float sigma,
+            SoftNMSMethod method);
 
         /// <summary>
         /// Get the list of available DNN Backends
@@ -527,25 +682,69 @@ namespace Emgu.CV.Dnn
         {
             get
             {
-                using (VectorOfInt viBackends = new VectorOfInt())
-                using (VectorOfInt viTargets = new VectorOfInt())
+                if (Emgu.Util.Platform.OperationSystem == Emgu.Util.Platform.OS.Android)
                 {
-                    cveDNNGetAvailableBackends(viBackends, viTargets);
-                    int[] backendArr = viBackends.ToArray();
-                    int[] targetArr = viTargets.ToArray();
-
-                    BackendTargetPair[] availableBackends = new BackendTargetPair[backendArr.Length];
-                    for (int i = 0; i < backendArr.Length; i++)
+                    //TODO: removed this once Open CV Android's cveDnnGetAvailableBackends is fixed.
+                    return new BackendTargetPair[] {new BackendTargetPair(Backend.OpenCV, Target.Cpu)};
+                }
+                else
+                {
+                    using (VectorOfInt viBackends = new VectorOfInt())
+                    using (VectorOfInt viTargets = new VectorOfInt())
                     {
-                        availableBackends[i] = new BackendTargetPair((Backend) backendArr[i], (Target) targetArr[i]);
-                    }
+                        cveDnnGetAvailableBackends(viBackends, viTargets);
+                        int[] backendArr = viBackends.ToArray();
+                        int[] targetArr = viTargets.ToArray();
 
-                    return availableBackends;
+                        BackendTargetPair[] availableBackends = new BackendTargetPair[backendArr.Length];
+                        for (int i = 0; i < backendArr.Length; i++)
+                        {
+                            availableBackends[i] =
+                                new BackendTargetPair((Backend) backendArr[i], (Target) targetArr[i]);
+                        }
+
+                        return availableBackends;
+                    }
                 }
             }
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        private static extern void cveDNNGetAvailableBackends(IntPtr backends, IntPtr targets);
+        private static extern void cveDnnGetAvailableBackends(IntPtr backends, IntPtr targets);
+
+        /// <summary>
+        /// Enables detailed logging of the DNN model loading with CV DNN API. Diagnostic mode provides detailed logging of the model loading stage to explore
+        /// potential problems(ex.: not implemented layer type).
+        /// </summary>
+        /// <param name="isDiagnosticsMode">Indicates whether diagnostic mode should be set.</param>
+        /// <remarks>In diagnostic mode series of assertions will be skipped, it can lead to the
+        /// expected application crash.</remarks>
+        public static void EnableModelDiagnostics(bool isDiagnosticsMode)
+        {
+            cveDnnEnableModelDiagnostics(isDiagnosticsMode);
+        }
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        private static extern void cveDnnEnableModelDiagnostics(
+            [MarshalAs(CvInvoke.BoolMarshalType)]
+            bool isDiagnosticsMode);
+
+        /*
+        /// <summary>
+        /// Checks if the current system has CUDA (Compute Unified Device Architecture) support enabled for DNN.
+        /// </summary>
+        /// <returns>
+        /// A boolean value indicating whether CUDA is available on the system for DNN.
+        /// Returns <c>true</c> if CUDA is supported; otherwise, <c>false</c>.
+        /// </returns>
+        public static bool HaveCUDA()
+        {
+            return cveDnnHaveCUDA();
+        }
+        
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        [return: MarshalAs(CvInvoke.BoolMarshalType)]
+        private static extern  bool cveDnnHaveCUDA();
+        */
     }
 }

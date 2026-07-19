@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -75,39 +75,53 @@ namespace Emgu.Util
                 if (fi.Length == 0)
                     return false;
 
-                if (_sha256Hash != null)
+                using (SHA256 sha256 = SHA256.Create())
                 {
-                    using (SHA256 sha256 = SHA256.Create())
+                    try
                     {
-                        try
+                        // Create a fileStream for the file.
+                        using (FileStream fileStream = fi.Open(FileMode.Open))
                         {
-                            // Create a fileStream for the file.
-                            using (FileStream fileStream = fi.Open(FileMode.Open))
+                            // Be sure it's positioned to the beginning of the stream.
+                            fileStream.Position = 0;
+                            // Compute the hash of the fileStream.
+                            byte[] hashValue = sha256.ComputeHash(fileStream);
+                            String hashStr = ByteArrayToString(hashValue);
+
+                            if (_sha256Hash == null)
                             {
-                                // Be sure it's positioned to the beginning of the stream.
-                                fileStream.Position = 0;
-                                // Compute the hash of the fileStream.
-                                byte[] hashValue = sha256.ComputeHash(fileStream);
-                                String hashStr = ByteArrayToString(hashValue);
-                                if (hashStr != _sha256Hash)
+                                Trace.WriteLine(String.Format("WARNING - {0}: SHA256 is not set, file SHA256 is \"{1}\". Please set SHA256 value in Downloadable file.", localFile, hashStr));
+                                Trace.WriteLine(String.Format("File {0} contains {1} bytes.", localFile, fileStream.Length));
+                                return true;
+                            }
+                            else if (hashStr != _sha256Hash)
+                            {
+                                Trace.WriteLine(String.Format("{0}: expecting SHA256 of \"{1}\", actual SHA256 is \"{2}\"", localFile, _sha256Hash, hashStr));
+                                Trace.WriteLine(String.Format("File {0} contains {1} bytes.", localFile, fileStream.Length));
+                                if (fileStream.Length < 1024)
                                 {
-                                    Trace.WriteLine(String.Format("{0}: expecting SHA256 of \"{1}\", got \"{2}\"", localFile, _sha256Hash, hashStr));
-                                    return false;
+                                    using (StreamReader sr = new StreamReader(fileStream))
+                                    {
+                                        Trace.WriteLine(String.Format("=====FILE CONTENT====={0}{1}{0}=================", Environment.NewLine, sr.ReadToEnd()));
+                                    }
                                 }
+                                return false;
                             }
                         }
-                        catch (IOException e)
-                        {
-                            Trace.WriteLine($"I/O Exception: {e.Message}");
-                            return false;
-                        }
-                        catch (UnauthorizedAccessException e)
-                        {
-                            Trace.WriteLine($"Access Exception: {e.Message}");
-                            return false;
-                        }
+                    }
+                    catch (IOException e)
+                    {
+                        Trace.WriteLine($"I/O Exception: {e.Message}");
+                        return false;
+                    }
+                    catch (UnauthorizedAccessException e)
+                    {
+                        Trace.WriteLine($"Access Exception: {e.Message}");
+                        return false;
                     }
                 }
+
+
 
                 return true;
             }

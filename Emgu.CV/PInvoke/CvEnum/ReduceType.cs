@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -26,7 +26,12 @@ namespace Emgu.CV.CvEnum
         /// <summary>
         /// The output is the minimum (column/row-wise) of all the matrix rows/columns
         /// </summary>
-        ReduceMin = 3
+        ReduceMin = 3,
+        /// <summary>
+        /// the output is the sum of all squared rows/columns of the matrix.
+        /// </summary>
+        ReduceSum2 = 4
+
     }
 
 }

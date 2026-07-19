@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@
 #include "opencv2/face/bif.hpp"
 #include "opencv2/face.hpp"
 #else
-static inline CV_NORETURN void throw_no_face() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without face support"); }
+static inline CV_NORETURN void throw_no_face() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without face support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 	namespace face {
 		class FaceRecognizer {};
@@ -70,6 +70,8 @@ CVAPI(void) cveFaceRecognizerUpdate(cv::face::FaceRecognizer* recognizer, cv::_I
 CVAPI(void) cveFaceRecognizerPredict(cv::face::FaceRecognizer* recognizer, cv::_InputArray* image, int* label, double* distance);
 CVAPI(void) cveFaceRecognizerWrite(cv::face::FaceRecognizer* recognizer, cv::String* fileName);
 CVAPI(void) cveFaceRecognizerRead(cv::face::FaceRecognizer* recognizer, cv::String* fileName);
+CVAPI(void) cveFaceRecognizerSetLabelInfo(cv::face::FaceRecognizer* recognizer, int label, cv::String* strInfo);
+CVAPI(void) cveFaceRecognizerGetLabelInfo(cv::face::FaceRecognizer* recognizer, int label, cv::String* strInfo);
 
 
 CVAPI(cv::face::BIF*) cveBIFCreate(int numBands, int numRotations, cv::Ptr<cv::face::BIF>** sharedPtr);
@@ -110,7 +112,8 @@ CVAPI(bool) cveFacemarkFit(cv::face::Facemark* facemark, cv::_InputArray* image,
 
 CVAPI(void) cveDrawFacemarks(cv::_InputOutputArray* image, cv::_InputArray* points, CvScalar* color);
 
-CVAPI(cv::face::MACE*) cveMaceCreate(int imgSize, cv::Ptr<cv::face::MACE>** sharedPtr);
+CVAPI(cv::face::MACE*) cveMaceCreate(int imgSize, cv::Ptr<cv::face::MACE>** sharedPtr, cv::Algorithm** algorithm);
+CVAPI(cv::face::MACE*) cveMaceCreate2(cv::String* fileName, cv::String* objName, cv::Ptr<cv::face::MACE>** sharedPtr, cv::Algorithm** algorithm);
 CVAPI(void) cveMaceSalt(cv::face::MACE* mace, cv::String* passphrase);
 CVAPI(void) cveMaceTrain(cv::face::MACE* mace, cv::_InputArray* images);
 CVAPI(bool) cveMaceSame(cv::face::MACE* mace, cv::_InputArray* query);

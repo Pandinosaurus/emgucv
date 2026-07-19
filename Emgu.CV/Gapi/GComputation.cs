@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -145,38 +145,38 @@ namespace Emgu.CV
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGComputationCreate1(IntPtr input, IntPtr output);
+        internal static extern IntPtr cveGComputationCreate1(IntPtr input, IntPtr output);
 
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGComputationCreate2(IntPtr input, IntPtr output);
+        internal static extern IntPtr cveGComputationCreate2(IntPtr input, IntPtr output);
 
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGComputationCreate3(IntPtr input1, IntPtr input2, IntPtr output);
+        internal static extern IntPtr cveGComputationCreate3(IntPtr input1, IntPtr input2, IntPtr output);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGComputationCreate4(IntPtr input1, IntPtr input2, IntPtr output);
+        internal static extern IntPtr cveGComputationCreate4(IntPtr input1, IntPtr input2, IntPtr output);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGComputationCreate5(IntPtr inputs, IntPtr outputs);
+        internal static extern IntPtr cveGComputationCreate5(IntPtr inputs, IntPtr outputs);
         
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationRelease(ref IntPtr computation);
+        internal static extern void cveGComputationRelease(ref IntPtr computation);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationApply1(IntPtr computation, IntPtr input, IntPtr output);
+        internal static extern void cveGComputationApply1(IntPtr computation, IntPtr input, IntPtr output);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationApply2(IntPtr computation, IntPtr input, ref MCvScalar output);
+        internal static extern void cveGComputationApply2(IntPtr computation, IntPtr input, ref MCvScalar output);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationApply3(IntPtr computation, IntPtr input1, IntPtr input2, IntPtr output);
+        internal static extern void cveGComputationApply3(IntPtr computation, IntPtr input1, IntPtr input2, IntPtr output);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationApply4(IntPtr computation, IntPtr input1, IntPtr input2, ref MCvScalar output);
+        internal static extern void cveGComputationApply4(IntPtr computation, IntPtr input1, IntPtr input2, ref MCvScalar output);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGComputationApply5(IntPtr computation, IntPtr inputs, IntPtr outputs);
+        internal static extern void cveGComputationApply5(IntPtr computation, IntPtr inputs, IntPtr outputs);
 
     }
 }

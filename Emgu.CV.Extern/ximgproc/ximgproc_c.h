@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@
 #ifdef HAVE_OPENCV_XIMGPROC
 #include "opencv2/ximgproc.hpp"
 #else
-static inline CV_NORETURN void throw_no_ximgproc() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without ximgproc support"); }
+static inline CV_NORETURN void throw_no_ximgproc() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without ximgproc support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 	namespace ximgproc {
 		class DTFilter {};
@@ -28,6 +28,7 @@ namespace cv {
 		class RidgeDetectionFilter {};
 		class EdgeBoxes {};
 		class EdgeDrawing {};
+		class ScanSegment {};
 		namespace  segmentation {
 			class GraphSegmentation {};
 				class SelectiveSearchSegmentation {};
@@ -190,4 +191,26 @@ CVAPI(void) cveEdgeDrawingGetGradientImage(cv::ximgproc::EdgeDrawing* edgeDrawin
 CVAPI(void) cveEdgeDrawingDetectLines(cv::ximgproc::EdgeDrawing* edgeDrawing, cv::_OutputArray* lines);
 CVAPI(void) cveEdgeDrawingDetectEllipses(cv::ximgproc::EdgeDrawing* edgeDrawing, cv::_OutputArray* ellipses);
 CVAPI(void) cveEdgeDrawingRelease(cv::Ptr<cv::ximgproc::EdgeDrawing>** sharedPtr);
+
+CVAPI(cv::ximgproc::ScanSegment*) cveScanSegmentCreate(
+	int imageWidth, 
+	int imageHeight, 
+	int numSuperpixels, 
+	int slices, 
+	bool mergeSmall,
+	cv::Algorithm** algorithm,
+	cv::Ptr< cv::ximgproc::ScanSegment > ** sharedPtr);
+CVAPI(void) cveScanSegmentIterate(cv::ximgproc::ScanSegment* scanSegment, cv::_InputArray* img);
+CVAPI(void) cveScanSegmentGetLabels(cv::ximgproc::ScanSegment* scanSegment, cv::_OutputArray* labelsOut);
+CVAPI(void) cveScanSegmentGetLabelContourMask(cv::ximgproc::ScanSegment* scanSegment, cv::_OutputArray* image, bool thickLine);
+CVAPI(void) cveScanSegmentRelease(cv::Ptr<cv::ximgproc::ScanSegment>** sharedPtr);
+
+CVAPI(void) cveRadonTransform(
+	cv::_InputArray* src,
+	cv::_OutputArray* dst,
+	double theta,
+	double startAngle,
+	double endAngle,
+	bool crop,
+	bool norm);
 #endif

@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -60,7 +60,11 @@ namespace Emgu.CV
         protected override void DisposeObject()
         {
             if (IntPtr.Zero != _ptr)
-                CvInvoke.cveTrackerMILRelease(ref _ptr, ref _sharedPtr);
+            {
+                CvInvoke.cveTrackerMILRelease(ref _sharedPtr);
+                _ptr = IntPtr.Zero;
+            }
+
             base.DisposeObject();
         }
     }
@@ -85,7 +89,7 @@ namespace Emgu.CV
             ref IntPtr tracker,
             ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern void cveTrackerMILRelease(ref IntPtr tracker, ref IntPtr sharedPtr);
+        internal static extern void cveTrackerMILRelease(ref IntPtr sharedPtr);
 
     }
 }

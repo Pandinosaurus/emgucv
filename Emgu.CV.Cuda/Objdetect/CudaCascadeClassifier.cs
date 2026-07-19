@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 
@@ -90,19 +90,19 @@ namespace Emgu.CV.Cuda
     public static partial class CudaInvoke
     {
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cudaCascadeClassifierCreate(IntPtr filename, ref IntPtr sharedPtr);
+        internal static extern IntPtr cudaCascadeClassifierCreate(IntPtr filename, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cudaCascadeClassifierCreateFromFileStorage(IntPtr filestorage, ref IntPtr sharedPtr);
+        internal static extern IntPtr cudaCascadeClassifierCreateFromFileStorage(IntPtr filestorage, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cudaCascadeClassifierRelease(ref IntPtr classified);
+        internal static extern void cudaCascadeClassifierRelease(ref IntPtr classified);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static int cudaCascadeClassifierDetectMultiScale(IntPtr classifier, IntPtr image, IntPtr objects, IntPtr stream);
+        internal static extern int cudaCascadeClassifierDetectMultiScale(IntPtr classifier, IntPtr image, IntPtr objects, IntPtr stream);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cudaCascadeClassifierConvert(IntPtr classifier, IntPtr gpuObjects, IntPtr objects);
+        internal static extern void cudaCascadeClassifierConvert(IntPtr classifier, IntPtr gpuObjects, IntPtr objects);
 
     }
 }

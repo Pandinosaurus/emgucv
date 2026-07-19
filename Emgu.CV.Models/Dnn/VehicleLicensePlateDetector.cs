@@ -1,6 +1,8 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
+
+/*
 
 using System;
 using System.Collections;
@@ -24,6 +26,17 @@ namespace Emgu.CV.Models
     /// </summary>
     public class VehicleLicensePlateDetector : DisposableObject, IProcessAndRenderModel
     {
+        /// <summary>
+        /// The rendering method
+        /// </summary>
+        public RenderType RenderMethod
+        {
+            get
+            {
+                return RenderType.Update;
+            }
+        }
+
         /// <summary>
         /// License plate
         /// </summary>
@@ -81,17 +94,34 @@ namespace Emgu.CV.Models
             }
         }
 
-        private String _modelFolderName = "vehicle-license-plate-detection-barrier-0106-openvino-2021.2";
+        private String _modelFolderName = "vehicle-license-plate-detection-barrier-0106-openvino-2023_1";
 
         private DetectionModel _vehicleLicensePlateDetectionModel = null;
         
         private Model _vehicleAttrRecognizerModel = null;
         private Net _ocr = null;
 
+        /// <summary>
+        /// Return true if the model is initialized
+        /// </summary>
+        public bool Initialized
+        {
+            get
+            {
+                if (_vehicleLicensePlateDetectionModel == null)
+                    return false;
+                if (_ocr == null)
+                    return false;
+                if (_vehicleAttrRecognizerModel == null)
+                    return false;
+                return true;
+            }
+        }
+
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitOCR(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitOCR(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitOCR(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitOCR(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_ocr == null)
@@ -99,13 +129,13 @@ namespace Emgu.CV.Models
                 FileDownloadManager manager = new FileDownloadManager();
 
                 manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/license-plate-recognition-barrier-0001/FP32/license-plate-recognition-barrier-0001.xml",
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/license-plate-recognition-barrier-0001/FP32/license-plate-recognition-barrier-0001.xml",
                     _modelFolderName,
-                    "B5B649B9566F5CF352554ACFFD44207F4AECEE1DA767F4B69F46060A102623FA");
+                    "35D77DE2F71AC340B5B065B67EB2B791550B4BC395F16AAC2E742496F35DD9D8");
                 manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/license-plate-recognition-barrier-0001/FP32/license-plate-recognition-barrier-0001.bin",
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/license-plate-recognition-barrier-0001/FP32/license-plate-recognition-barrier-0001.bin",
                     _modelFolderName,
-                    "685934518A930CC55D023A53AC2D5E47BBE81B80828354D8318DE6DC3AD5CFBA");
+                    "055CEA6236129BEBBC64852C69FDAEFE07E074800251147DDE0005A824BCFEBA");
 
                 if (onDownloadProgressChanged != null)
                 {
@@ -148,23 +178,33 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitVehicleAttributesRecognizer(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitVehicleAttributesRecognizer(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitVehicleAttributesRecognizer(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitVehicleAttributesRecognizer(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_vehicleAttrRecognizerModel == null)
             {
                 FileDownloadManager manager = new FileDownloadManager();
 
+                
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.xml",
+                //    _modelFolderName,
+                //    "9D1E877B153699CAF4547D08BFF7FE268F65B663441A42B929924B8D95DACDBB");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.bin",
+                //    _modelFolderName,
+                //    "492520E55F452223E767D54227D6EF6B60B0C1752DD7B9D747BE65D57B685A0E");
+                
                 manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.xml",
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.xml",
                     _modelFolderName,
-                    "9D1E877B153699CAF4547D08BFF7FE268F65B663441A42B929924B8D95DACDBB");
+                    "B669E6F98C66525F1849DB4D16DF8C92876164BB41D6420F84A8D3AE9B4DC699");
                 manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.bin",
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-attributes-recognition-barrier-0042/FP32/vehicle-attributes-recognition-barrier-0042.bin",
                     _modelFolderName,
-                    "492520E55F452223E767D54227D6EF6B60B0C1752DD7B9D747BE65D57B685A0E");
+                    "717BFD7413FFD5EE6D08C5E087CAA0A48CC69646BD68B7791C62C825399620B4");
 
                 manager.OnDownloadProgressChanged += onDownloadProgressChanged;
 
@@ -188,22 +228,75 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitLicensePlateDetector(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitLicensePlateDetector(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitLicensePlateDetector(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitLicensePlateDetector(Dnn.Backend preferredBackend, Dnn.Target preferredTarget, FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_vehicleLicensePlateDetectionModel == null)
             {
                 FileDownloadManager manager = new FileDownloadManager();
 
-                manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
-                    _modelFolderName);
-                manager.AddFile(
-                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
-                    _modelFolderName);
+                
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
+                //    _modelFolderName,
+                //    "E305DEA89C08501B66774FDCD31EEE279C3531CBAB04127C62AEAC34682C0330");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.2/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
+                //    _modelFolderName,
+                //    "DEF0179E5896B732D54654C369F1C0D896A457D7D3A50627DD9020E45FD6D6EB");
+                
 
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
+                //    _modelFolderName,
+                //    "45D82B40F48CE43E61188ED16A140C8A77C4340CF367FC18C491B1F1A1218DD7");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
+                //    _modelFolderName,
+                //    "F84139F97805D343273E840D47B81C89A7C96C6263226A5622670E66424FB2A1");
+                
+
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP16/vehicle-license-plate-detection-barrier-0106.xml",
+                //    _modelFolderName,
+                //    "69ED174CEE70E19B098215F53D1FE6F27EDC5B417790BBC44CDE7F37CC082FAE");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2023.0/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP16/vehicle-license-plate-detection-barrier-0106.bin",
+                //    _modelFolderName,
+                //    "7F96BFAA0AC3AF65D136F6A185D1D78D68D03BAB2E1F2FAAFE1D27CCD94B0DC1");
+                
+
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.3/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
+                //    _modelFolderName,
+                //    "3F162572ECA8E4F27A7345FD4FC2FB0DC2D36ABCF4EB31494433FDBF29D534CE");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.3/models_bin/1/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
+                //    _modelFolderName,
+                //    "F84139F97805D343273E840D47B81C89A7C96C6263226A5622670E66424FB2A1");
+                
+
+                manager.AddFile(
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
+                    _modelFolderName,
+                    "F750216ED67856CEEC5F1C39186B5BD0BC8220954D169EA1EE7EC1E51929707C");
+                manager.AddFile(
+                    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
+                    _modelFolderName,
+                    "81E0B494FE469A157EDAAFF1E2325C69E66D835F94B22258B774E9228E43BCE2");
+                
+                
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.4/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.xml",
+                //    _modelFolderName,
+                //    "74FECD516D990371613330E4386D66879C7FBB445E45A6ABEB043F022F323A45");
+                //manager.AddFile(
+                //    "https://storage.openvinotoolkit.org/repositories/open_model_zoo/2021.4/models_bin/3/vehicle-license-plate-detection-barrier-0106/FP32/vehicle-license-plate-detection-barrier-0106.bin",
+                //    _modelFolderName,
+                //    "7B19141E631ACD08B16D5940144343D4AFEAE66C13F9DAEB2CD3215ECE6CFBA0");
+                
                 manager.OnDownloadProgressChanged += onDownloadProgressChanged;
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
@@ -212,8 +305,15 @@ namespace Emgu.CV.Models
                 await manager.Download();
 #endif
 
+                
                 _vehicleLicensePlateDetectionModel =
                     new DetectionModel(manager.Files[1].LocalFile, manager.Files[0].LocalFile);
+                
+                
+                //_vehicleLicensePlateDetectionModel = new DetectionModel(
+                //    "D:\\tmp\\public\\vehicle-license-plate-detection-barrier-0123\\FP32\\vehicle-license-plate-detection-barrier-0123.bin",
+                //    "D:\\tmp\\public\\vehicle-license-plate-detection-barrier-0123\\FP32\\vehicle-license-plate-detection-barrier-0123.xml"
+                //    );
                 _vehicleLicensePlateDetectionModel.SetInputSize(new Size(300, 300));
                 _vehicleLicensePlateDetectionModel.SetInputMean(new MCvScalar());
                 _vehicleLicensePlateDetectionModel.SetInputScale(1.0);
@@ -221,8 +321,8 @@ namespace Emgu.CV.Models
                 _vehicleLicensePlateDetectionModel.SetInputCrop(false);
 
 
-                _vehicleLicensePlateDetectionModel.SetPreferableBackend(preferredBackend);
-                _vehicleLicensePlateDetectionModel.SetPreferableTarget(preferredTarget);
+                //_vehicleLicensePlateDetectionModel.SetPreferableBackend(preferredBackend);
+                //_vehicleLicensePlateDetectionModel.SetPreferableTarget(preferredTarget);
                 
             }
         }
@@ -255,15 +355,15 @@ namespace Emgu.CV.Models
         /// <returns>Async task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
         public IEnumerator Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
 #else
         public async Task Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null, 
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null, 
             Object initOptions = null)
 #endif
         {
-            Dnn.Backend backend = Dnn.Backend.OpenCV;
+            Dnn.Backend backend = Dnn.Backend.InferenceEngine;
             Dnn.Target target = Target.Cpu;
             if (initOptions != null && ((initOptions as String) != null))
             {
@@ -277,7 +377,7 @@ namespace Emgu.CV.Models
                         Enum.TryParse(targetStr, true, out target)))
                     {
                         //If failed to part either backend or target, use the following default
-                        backend = Dnn.Backend.OpenCV;
+                        backend = Dnn.Backend.InferenceEngine;
                         target = Target.Cpu;
                     }
                 }
@@ -298,20 +398,19 @@ namespace Emgu.CV.Models
         /// Process the input image and render into the output image
         /// </summary>
         /// <param name="imageIn">The input image</param>
-        /// <param name="imageOut">The output image, can be the same as imageIn, in which case we will render directly into the input image</param>
+        /// <param name="imageOut">
+        /// The output image, can be the same as <paramref name="imageIn"/>, in which case we will render directly into the input image.
+        /// Note that if no vehicle is detected, <paramref name="imageOut"/> will remain unchanged.
+        /// If vehicle / license plate are detected, we will draw the text and (rectangle) region on top of the existing pixels of <paramref name="imageOut"/>.
+        /// If the <paramref name="imageOut"/> is not the same object as <paramref name="imageIn"/>, it is a good idea to copy the pixels over from the input image before passing it to this function.
+        /// </param>
         /// <returns>The messages that we want to display.</returns>
         public string ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut)
         {
             Stopwatch watch = Stopwatch.StartNew();
             Vehicle[] detectionResult = Detect(imageIn);
             watch.Stop();
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
+
             Render(imageOut, detectionResult);
             return String.Format("Detected in {0} milliseconds.", watch.ElapsedMilliseconds);
         }
@@ -334,7 +433,7 @@ namespace Emgu.CV.Models
             List<LicensePlate> plates = new List<LicensePlate>();
             using (InputArray iaImage = image.GetInputArray())
             using (Mat iaImageMat = iaImage.GetMat())
-                foreach (DetectedObject vehicleOrPlate in _vehicleLicensePlateDetectionModel.Detect(image, 0.0f, 0.0f))
+                foreach (DetectedObject vehicleOrPlate in _vehicleLicensePlateDetectionModel.Detect(image, Math.Min(vehicleConfidenceThreshold, licensePlateConfidenceThreshold), 0.0f))
                 {
                     Rectangle region = vehicleOrPlate.Region;
 
@@ -424,6 +523,23 @@ namespace Emgu.CV.Models
             return vehicles.ToArray();
         }
 
+        private MCvScalar _renderColor = new MCvScalar(255, 0, 0);
+
+        /// <summary>
+        /// Get or Set the color used in rendering.
+        /// </summary>
+        public MCvScalar RenderColor
+        {
+            get
+            {
+                return _renderColor;
+            }
+            set
+            {
+                _renderColor = value;
+            }
+        }
+
         /// <summary>
         /// Draw the vehicles to the image.
         /// </summary>
@@ -433,7 +549,7 @@ namespace Emgu.CV.Models
         {
             foreach (Vehicle v in vehicles)
             {
-                CvInvoke.Rectangle(image, v.Region, new MCvScalar(0, 0, 255), 2);
+                CvInvoke.Rectangle(image, v.Region, RenderColor, 2);
                 String label = String.Format("{0} {1} {2}",
                     v.Color, v.Type, v.LicensePlate == null ? String.Empty : v.LicensePlate.Value.Text);
                 CvInvoke.PutText(
@@ -442,7 +558,7 @@ namespace Emgu.CV.Models
                     new Point(v.Region.Location.X, v.Region.Location.Y + 20),
                     FontFace.HersheyComplex,
                     1.0,
-                    new MCvScalar(0, 255, 0),
+                    RenderColor,
                     2);
             }
         }
@@ -480,3 +596,4 @@ namespace Emgu.CV.Models
         }
     }
 }
+*/

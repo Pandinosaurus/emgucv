@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -102,12 +102,12 @@ void cveSelectROI(cv::String* windowName, cv::_InputArray* img, bool showCrossha
 void cveSelectROIs(
 	cv::String* windowName,
 	cv::_InputArray* img,
-	std::vector< cv::Rect >* boundingBoxs,
+	std::vector< cv::Rect >* boundingBoxes,
 	bool showCrosshair,
 	bool fromCenter)
 {
 #ifdef HAVE_OPENCV_HIGHGUI
-	cv::selectROIs(*windowName, *img, *boundingBoxs, showCrosshair, fromCenter);
+	cv::selectROIs(*windowName, *img, *boundingBoxes, showCrosshair, fromCenter);
 #else
 	throw_no_highgui();
 #endif

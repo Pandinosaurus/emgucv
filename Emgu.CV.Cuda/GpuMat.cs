@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -30,6 +30,20 @@ namespace Emgu.CV.Cuda
         /// </summary>
         public GpuMat()
            : this(CudaInvoke.gpuMatCreateDefault(), true)
+        {
+        }
+
+        /// <summary>
+        /// Create a GpuMat pointing to user-allocated data
+        /// </summary>
+        /// <param name="rows">The number of rows (height)</param>
+        /// <param name="cols">The number of columns (width)</param>
+        /// <param name="channels">The number of channels</param>
+        /// <param name="depthType">The type of depth</param>
+        /// <param name="data">User allocated data</param>
+        /// <param name="step">Use 0 for auto matically calculated step. Or specify the data step here.</param>
+        public GpuMat(int rows, int cols, DepthType depthType, int channels, IntPtr data, int step=0)
+            : this(CudaInvoke.gpuMatCreateFromData(rows, cols, CvInvoke.MakeType(depthType, channels), data, step), true)
         {
         }
 
@@ -101,7 +115,7 @@ namespace Emgu.CV.Cuda
         /// </summary>
         protected override void DisposeObject()
         {
-            if (_ptr != IntPtr.Zero)
+            if (_needDispose && _ptr != IntPtr.Zero)
                 CudaInvoke.gpuMatRelease(ref _ptr);
         }
 
@@ -314,6 +328,9 @@ namespace Emgu.CV.Cuda
         /// <returns>True if the two GpuMat equals</returns>
         public bool Equals(GpuMat other)
         {
+            if (other == null)
+                return false;
+            
             if (this.IsEmpty)
             {
                 if (!other.IsEmpty)
@@ -520,13 +537,13 @@ namespace Emgu.CV.Cuda
     public static partial class CudaInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputArrayFromGpuMat(IntPtr mat);
+        internal static extern IntPtr cveInputArrayFromGpuMat(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveOutputArrayFromGpuMat(IntPtr mat);
+        internal static extern IntPtr cveOutputArrayFromGpuMat(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputOutputArrayFromGpuMat(IntPtr mat);
+        internal static extern IntPtr cveInputOutputArrayFromGpuMat(IntPtr mat);
 
         /// <summary>
         /// Release the GpuMat
@@ -542,6 +559,11 @@ namespace Emgu.CV.Cuda
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern IntPtr gpuMatCreateDefault();
 
+        /// <summary>
+        /// Create an new GpuMat pointing to user-allocated data
+        /// </summary>
+        [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern IntPtr gpuMatCreateFromData(int rows, int cols, int type, IntPtr data, int step);
 
         /// <summary>
         /// Convert a CvArr to a GpuMat

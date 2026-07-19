@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -49,14 +49,14 @@ namespace Emgu.CV.Face
     public static partial class FaceInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveFisherFaceRecognizerCreate(
+        internal static extern IntPtr cveFisherFaceRecognizerCreate(
             int numComponents,
             double threshold,
             ref IntPtr faceRecognizerPtr,
             ref IntPtr basicFaceRecognizerPtr,
             ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFisherFaceRecognizerRelease(ref IntPtr sharedPtr);
+        internal static extern void cveFisherFaceRecognizerRelease(ref IntPtr sharedPtr);
 
     }
 

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -67,7 +67,7 @@ namespace Emgu.CV.Features2D
     public static partial class Features2DInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveFASTFeatureDetectorCreate(
+        internal static extern IntPtr cveFASTFeatureDetectorCreate(
             int threshold,
             [MarshalAs(CvInvoke.BoolMarshalType)]
             bool nonmaxSupression,
@@ -76,7 +76,7 @@ namespace Emgu.CV.Features2D
             ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFASTFeatureDetectorRelease(ref IntPtr sharedPtr);
+        internal static extern void cveFASTFeatureDetectorRelease(ref IntPtr sharedPtr);
     }
 }
 

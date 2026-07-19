@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -26,21 +26,50 @@ namespace Emgu.CV.Models
     public class SceneTextDetector : DisposableObject, IProcessAndRenderModel
     {
         /// <summary>
+        /// The rendering method
+        /// </summary>
+        public RenderType RenderMethod
+        {
+            get
+            {
+                return RenderType.Update;
+            }
+        }
+
+        /// <summary>
         /// Create a new SceneTextDetector
         /// </summary>
         /// <param name="modelFolderName">The subfolder name where the model will be saved to.</param>
-        public SceneTextDetector(String modelFolderName = "scene_text_detector")
+        public SceneTextDetector(String modelFolderName = null)
         {
-            _modelFolderName = modelFolderName;
+            if (modelFolderName != null)
+                _modelFolderName = modelFolderName;
         }
 
-        private String _modelFolderName;
+        private String _modelFolderName = Path.Combine("emgu", "scene_text_detector");
 
         private TextDetectionModel_DB _textDetector = null;
 
         private TextRecognitionModel _ocr = null;
 
         private FreetypeNotoSansCJK _freetype = null;
+
+        /// <summary>
+        /// Return true if the model is initialized
+        /// </summary>
+        public bool Initialized
+        {
+            get
+            {
+                if (_textDetector == null)
+                    return false;
+                if (_ocr == null)
+                    return false;
+                if (_freetype == null)
+                    return false;
+                return true;
+            }
+        }
 
         /// <summary>
         /// Download and initialize the vehicle detector, the license plate detector and OCR.
@@ -50,11 +79,11 @@ namespace Emgu.CV.Models
         /// <returns>Async task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
         public IEnumerator Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
 #else
         public async Task Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
 #endif
         {
@@ -70,9 +99,9 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitFreetype(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitFreetype(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitFreetype(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitFreetype(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_freetype == null)
@@ -87,9 +116,9 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitTextDetector(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitTextDetector(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitTextDetector(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitTextDetector(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_textDetector == null)
@@ -130,9 +159,9 @@ namespace Emgu.CV.Models
         }
 
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        private IEnumerator InitTextRecognizer(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private IEnumerator InitTextRecognizer(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        private async Task InitTextRecognizer(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        private async Task InitTextRecognizer(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_ocr == null)
@@ -203,7 +232,11 @@ namespace Emgu.CV.Models
                 _textDetector.Detect(image, vvp, confidents);
 
                 Point[][] detectionResults = vvp.ToArrayOfArray();
+#if UNSAFE_ALLOWED
+                var confidentResult = confidents.GetSpan();
+#else
                 float[] confidentResult = confidents.ToArray();
+#endif
                 List<DetectedObject> results = new List<DetectedObject>();
                 for (int i = 0; i < detectionResults.Length; i++)
                 {
@@ -227,6 +260,23 @@ namespace Emgu.CV.Models
             }
         }
 
+        private MCvScalar _renderColor = new MCvScalar(0, 0, 255);
+
+        /// <summary>
+        /// Get or Set the color used in rendering.
+        /// </summary>
+        public MCvScalar RenderColor
+        {
+            get
+            {
+                return _renderColor;
+            }
+            set
+            {
+                _renderColor = value;
+            }
+        }
+
         /// <summary>
         /// Draw the vehicles to the image.
         /// </summary>
@@ -235,7 +285,7 @@ namespace Emgu.CV.Models
         public void Render(IInputOutputArray image, DetectedObject[] sceneTexts)
         {
             foreach (var detected in sceneTexts)
-                detected.Render(image, new MCvScalar(0, 0, 255), _freetype);
+                detected.Render(image, RenderColor, _freetype);
             /*
             foreach (SceneText st in sceneTexts)
             {
@@ -247,20 +297,19 @@ namespace Emgu.CV.Models
         /// Process the input image and render into the output image
         /// </summary>
         /// <param name="imageIn">The input image</param>
-        /// <param name="imageOut">The output image, can be the same as imageIn, in which case we will render directly into the input image</param>
+        /// <param name="imageOut">
+        /// The output image, can be the same as <paramref name="imageIn"/>, in which case we will render directly into the input image.
+        /// Note that if no text is detected, <paramref name="imageOut"/> will remain unchanged.
+        /// If text is detected, we will draw the text and (rectangle) region on top of the existing pixels of <paramref name="imageOut"/>.
+        /// If the <paramref name="imageOut"/> is not the same object as <paramref name="imageIn"/>, it is a good idea to copy the pixels over from the input image before passing it to this function.
+        /// </param>
         /// <returns>The messages that we want to display.</returns>
         public String ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut)
         {
             Stopwatch watch = Stopwatch.StartNew();
             var sceneTexts = Detect(imageIn);
             watch.Stop();
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
+
             Render(imageOut, sceneTexts);
             return String.Format("Detected in {0} milliseconds.", watch.ElapsedMilliseconds);
         }

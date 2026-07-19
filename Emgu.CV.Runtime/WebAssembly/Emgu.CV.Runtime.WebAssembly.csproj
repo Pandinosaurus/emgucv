@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Emgu.CV.runtime.webassembly</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);BLAZORWASM</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Pack the MSBuild targets file into build/ so NuGet automatically imports
+      it into any consuming project.  The targets file adds cvextern.a to
+      NativeFileReference when WasmBuildNative=true.
+    -->
+    <None Include="$(PackageId).targets">
+      <Pack>True</Pack>
+      <PackagePath>build/</PackagePath>
+    </None>
+    <!--
+      Pack the Emscripten-compiled cvextern LLVM IR archive into build/native/
+      so the targets file can reference it via $(MSBuildThisFileDirectory)native\.
+      Built by platforms/emscripten/cmake_configure_dotnet.sh.
+    -->
+    <None Include="$(MSBuildThisFileDirectory)..\..\libs\webgl\cvextern.a">
+      <Pack>True</Pack>
+      <PackagePath>build/native/</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\Emgu.CV\NetStandard\Emgu.CV.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -61,12 +61,12 @@ namespace Emgu.CV.Cuda
    public static partial class CudaInvoke
    {
       [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static IntPtr cudaDisparityBilateralFilterCreate(int ndisp, int radius, int iters, ref IntPtr sharedPtr);
+      internal static extern IntPtr cudaDisparityBilateralFilterCreate(int ndisp, int radius, int iters, ref IntPtr sharedPtr);
 
       [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void cudaDisparityBilateralFilterApply(IntPtr filter, IntPtr disparity, IntPtr image, IntPtr dst, IntPtr stream);
+      internal static extern void cudaDisparityBilateralFilterApply(IntPtr filter, IntPtr disparity, IntPtr image, IntPtr dst, IntPtr stream);
 
       [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void cudaDisparityBilateralFilterRelease(ref IntPtr filter);
+      internal static extern void cudaDisparityBilateralFilterRelease(ref IntPtr filter);
    }
 }

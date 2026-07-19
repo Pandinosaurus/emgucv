@@ -1,10 +1,13 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 # --------------------------------------------------------
+#SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}../../../opencv/cmake")
+#include(OpenCVCompilerOptimizations)
 
 #cmake_minimum_required(VERSION 2.8)
 SET(TESSERACT_DIR "tesseract-ocr.git")
 SET(TESSERACT_SRC_DIR "${TESSERACT_DIR}/src")
+SET(TESSERACT_INCLUDE_DIR "${TESSERACT_DIR}/include")
 SET(LEPTONICA_DIR "${LEPT_ROOT_DIR}/src")
 
 # Get version with components from VERSION file.
@@ -45,15 +48,24 @@ ADD_SUBDIRECTORY(leptonica)
 MACRO(SET_TESSERACT_PROJECT_PROPERTY PROJ_NAME)
   set_target_properties(${PROJECT_NAME} PROPERTIES 
 	FOLDER "tesseract"
-    C_STANDARD 11
+    C_STANDARD 17
     C_STANDARD_REQUIRED ON
-    CXX_STANDARD 11
+    CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON)
-
+  IF(WIN32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES 
+	ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}")
+  ENDIF()
   IF(DEFINED EMGUCV_PLATFORM_TOOLSET)
     set_target_properties(${PROJECT_NAME} PROPERTIES PLATFORM_TOOLSET ${EMGUCV_PLATFORM_TOOLSET})
   ENDIF()  
 ENDMACRO()
+
+IF(ANDROID)
+  include_directories("${CPUFEATURES_ROOT}")
+ENDIF()
 
 #ccutil
 PROJECT(tesseract_ccutil)
@@ -71,8 +83,8 @@ SET(PACKAGE_VERSION ${VERSION_PLAIN})
 #MESSAGE(STATUS "tesseract version source file: ${PROJECT_SOURCE_DIR}/${TESSERACT_SRC_DIR}/api/tess_version.h.in")
 #MESSAGE(STATUS "tesseract version output file: ${PROJECT_SOURCE_DIR}/${TESSERACT_SRC_DIR}/api/tess_version.h")
 configure_file(
-    ${PROJECT_SOURCE_DIR}/${TESSERACT_SRC_DIR}/api/tess_version.h.in
-    ${PROJECT_SOURCE_DIR}/${TESSERACT_SRC_DIR}/api/tess_version.h @ONLY)
+    ${PROJECT_SOURCE_DIR}/${TESSERACT_INCLUDE_DIR}/tesseract/version.h.in
+    ${PROJECT_SOURCE_DIR}/${TESSERACT_INCLUDE_DIR}/tesseract/version.h @ONLY)
 SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/${TESSERACT_SRC_DIR}/ccutil/tessdatamanager.cpp  PROPERTIES COMPILE_DEFINITIONS PACKAGE_VERSION="${PACKAGE_VERSION}")
 #add_definitions(-DPACKAGE_VERSION="${PACKAGE_VERSION}")	
 IF(MSVC)
@@ -93,11 +105,8 @@ file(GLOB tesseract_ccutil_srcs "${TESSERACT_SRC_DIR}/ccutil/*.cpp")
 #file(GLOB tesseract_ccutil_srcs_excludes "${TESSERACT_SRC_DIR}/ccutil/scanutils.cpp")
 #LIST(REMOVE_ITEM tesseract_ccutil_srcs ${tesseract_ccutil_srcs_excludes})
 file(GLOB tesseract_ccutil_hdrs "${TESSERACT_SRC_DIR}/ccutil/*.h")
-IF(ANDROID)
-  LIST(APPEND tesseract_ccutil_hdrs "${CMAKE_CURRENT_SOURCE_DIR}/glob/android/glob.h")
-  LIST(APPEND tesseract_ccutil_srcs "${CMAKE_CURRENT_SOURCE_DIR}/glob/android/glob.c")
-  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/glob/android")
-ENDIF()
+
+include_directories("${PROJECT_SOURCE_DIR}/${TESSERACT_INCLUDE_DIR}/")
 
 source_group("Src" FILES ${tesseract_ccutil_srcs})
 source_group("Include" FILES ${tesseract_ccutil_hdrs})
@@ -105,7 +114,8 @@ source_group("Include" FILES ${tesseract_ccutil_hdrs})
 IF(MSVC)
   #include_directories("${TESSERACT_SRC_DIR}/vs2010/include")
   include_directories("${TESSERACT_SRC_DIR}/api/")
-  add_definitions(-D__MSW32__ -W0 -DWINDLLNAME="\\"tesseract\\"")
+  #add_definitions(-D__MSW32__ -W0 -DWINDLLNAME="\\"tesseract\\"")
+  add_definitions(-D__MSW32__ -W0)
 ENDIF()
 
 add_library(${PROJECT_NAME} STATIC ${tesseract_ccutil_srcs} ${tesseract_ccutil_hdrs})
@@ -115,8 +125,8 @@ SET_TESSERACT_PROJECT_PROPERTY(${PROJECT_NAME})
 #viewer
 PROJECT(tesseract_viewer)
 file(GLOB tesseract_viewer_srcs "${TESSERACT_SRC_DIR}/viewer/*.cpp")
-file(GLOB tesseract_viewer_srcs_excludes "${TESSERACT_SRC_DIR}/viewer/svpaint.cpp")
-LIST(REMOVE_ITEM tesseract_viewer_srcs ${tesseract_viewer_srcs_excludes})
+#file(GLOB tesseract_viewer_srcs_excludes "${TESSERACT_SRC_DIR}/viewer/svpaint.cpp")
+#LIST(REMOVE_ITEM tesseract_viewer_srcs ${tesseract_viewer_srcs_excludes})
 file(GLOB tesseract_viewer_hdrs "${TESSERACT_SRC_DIR}/viewer/*.h")
 source_group("Src" FILES ${tesseract_viewer_srcs})
 source_group("Include" FILES ${tesseract_viewer_hdrs})
@@ -277,27 +287,82 @@ ENDIF()
 
 #arch
 PROJECT(tesseract_arch)
+
+MESSAGE(STATUS "CPU_BASELINE: ${CPU_BASELINE}")
+MESSAGE(STATUS "CPU_BASELINE_FINAL: ${CPU_BASELINE_FINAL}")
+#ocv_check_compiler_optimization("AVX")
+#MESSAGE(STATUS "CPU_AVX_FLAGS_ON: ${CPU_AVX_FLAGS_ON}")
+#MESSAGE(STATUS "CPU_AVX_ENABLED_DEFAULT: ${CPU_AVX_ENABLED_DEFAULT}")
+
 set(AVX_OPT OFF)
+IF ("AVX" IN_LIST CPU_BASELINE_FINAL)
+  SET(AVX_OPT ON)
+  MESSAGE(STATUS "TESSERACT with AVX: ON")
+ELSE()
+  MESSAGE(STATUS "TESSERACT with AVX: OFF")
+ENDIF()
+
 set(AVX2_OPT OFF)
+IF ("AVX2" IN_LIST CPU_BASELINE_FINAL)
+  SET(AVX2_OPT ON)
+  MESSAGE(STATUS "TESSERACT with AVX2: ON")
+ELSE()
+  MESSAGE(STATUS "TESSERACT with AVX2: OFF")
+ENDIF()
+
 set(FMA_OPT OFF)
+
 set(SSE41_OPT OFF)
+IF ("SSE4_1" IN_LIST CPU_BASELINE_FINAL)
+  SET(SSE41_OPT ON)
+  MESSAGE(STATUS "TESSERACT with SSE4_1: ON")
+ELSE()
+  MESSAGE(STATUS "TESSERACT with SSE4_1: OFF")
+ENDIF()
+
 SET(tesseract_arch_srcs "${TESSERACT_SRC_DIR}/arch/dotproduct.cpp" "${TESSERACT_SRC_DIR}/arch/intsimdmatrix.cpp" "${TESSERACT_SRC_DIR}/arch/simddetect.cpp")
+
+set(NEON_OPT OFF)
+IF (("NEON" IN_LIST CPU_BASELINE_FINAL) OR (IPHONESIMULATOR AND ("${IOS_ARCH}" STREQUAL "arm64")))
+  SET(NEON_OPT ON)
+  LIST(APPEND tesseract_arch_srcs "${TESSERACT_SRC_DIR}/arch/dotproductneon.cpp" "${TESSERACT_SRC_DIR}/arch/intsimdmatrixneon.cpp") 
+  MESSAGE(STATUS "TESSERACT with NEON: ON")
+ELSE()
+  MESSAGE(STATUS "TESSERACT with NEON: OFF")
+ENDIF()
+
+SET(TESSERACT_SIMDDETECT_COMPILE_FLAGS)
+#get_source_file_property(TESSERACT_SIMDDETECT_COMPILE_FLAGS ${TESSERACT_SRC_DIR}/arch/simddetect.cpp COMPILE_FLAGS)
 if(AVX_OPT)
    list(APPEND tesseract_arch_srcs ${TESSERACT_SRC_DIR}/arch/dotproductavx.cpp)
-   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductavx.cpp PROPERTIES COMPILE_FLAGS "-DAVX")
-endif(AVX_OPT)
+   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductavx.cpp PROPERTIES COMPILE_FLAGS "-D__AVX__")
+   SET(TESSERACT_SIMDDETECT_COMPILE_FLAGS "${TESSERACT_SIMDDETECT_COMPILE_FLAGS} -DHAVE_AVX")
+endif()
 if(AVX2_OPT)
    list(APPEND tesseract_arch_srcs ${TESSERACT_SRC_DIR}/arch/intsimdmatrixavx2.cpp)
-   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/intsimdmatrixavx2.cpp PROPERTIES COMPILE_FLAGS "-DAVX2")
-endif(AVX2_OPT)
+   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/intsimdmatrixavx2.cpp PROPERTIES COMPILE_FLAGS "-D__AVX2__")
+   SET(TESSERACT_SIMDDETECT_COMPILE_FLAGS "${TESSERACT_SIMDDETECT_COMPILE_FLAGS} -DHAVE_AVX2")
+endif()
 if(FMA_OPT)
    list(APPEND tesseract_arch_srcs ${TESSERACT_SRC_DIR}/arch/dotproductfma.cpp)
    set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductfma.cpp PROPERTIES COMPILE_FLAGS "-mfma")
-endif(FMA_OPT)
+endif()
 if(SSE41_OPT)
    list(APPEND tesseract_arch_srcs ${TESSERACT_SRC_DIR}/arch/dotproductsse.cpp ${TESSERACT_SRC_DIR}/arch/intsimdmatrixsse.cpp)
-   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductsse.cpp ${TESSERACT_SRC_DIR}/arch/intsimdmatrixsse.cpp PROPERTIES COMPILE_FLAGS "-DSSE4_1 -msse4.1")
-endif(SSE41_OPT)
+   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductsse.cpp ${TESSERACT_SRC_DIR}/arch/intsimdmatrixsse.cpp PROPERTIES COMPILE_FLAGS "-D__SSE4_1__ -msse4.1")
+   SET(TESSERACT_SIMDDETECT_COMPILE_FLAGS "${TESSERACT_SIMDDETECT_COMPILE_FLAGS} -DHAVE_SSE4_1")
+endif()
+if(NEON_OPT)
+   list(APPEND tesseract_arch_srcs ${TESSERACT_SRC_DIR}/arch/dotproductneon.cpp ${TESSERACT_SRC_DIR}/arch/intsimdmatrixneon.cpp)
+   set_source_files_properties(${TESSERACT_SRC_DIR}/arch/dotproductneon.cpp ${TESSERACT_SRC_DIR}/arch/intsimdmatrixneon.cpp PROPERTIES COMPILE_FLAGS "-D__ARM_NEON")
+   SET(TESSERACT_SIMDDETECT_COMPILE_FLAGS "${TESSERACT_SIMDDETECT_COMPILE_FLAGS} -DHAVE_NEON")
+endif()
+
+MESSAGE(STATUS "------------------------------------ TESSERACT_SIMDDETECT_COMPILE_FLAGS: ${TESSERACT_SIMDDETECT_COMPILE_FLAGS} -------------------------------------")
+IF(TESSERACT_SIMDDETECT_COMPILE_FLAGS)
+  set_source_files_properties(${TESSERACT_SRC_DIR}/arch/simddetect.cpp PROPERTIES COMPILE_FLAGS "${TESSERACT_SIMDDETECT_COMPILE_FLAGS}")
+ENDIF()
+
 file(GLOB tesseract_arch_hdrs "${TESSERACT_SRC_DIR}/arch/*.h")
 source_group("Src" FILES ${tesseract_arch_srcs})
 source_group("Include" FILES ${tesseract_arch_hdrs})
@@ -361,14 +426,10 @@ file(WRITE "${TESSERACT_SRC_DIR}/api/config_auto.h" "#define PACKAGE_VERSION \"$
 file(GLOB tesseract_api_srcs "${TESSERACT_SRC_DIR}/api/*.cpp")
 file(GLOB tesseract_api_srcs_excludes "${TESSERACT_SRC_DIR}/api/tesseractmain.cpp" "${TESSERACT_SRC_DIR}/api/capi.cpp")
 LIST(REMOVE_ITEM tesseract_api_srcs ${tesseract_api_srcs_excludes})
-file(GLOB tesseract_api_hdrs "${TESSERACT_SRC_DIR}/api/*.h")
-file(GLOB tesseract_api_hdrs_excludes "${TESSERACT_SRC_DIR}/api/capi.h")
-LIST(REMOVE_ITEM tesseract_api_hdrs ${tesseract_api_hdrs_excludes})
-#IF(ANDROID)
-#  LIST(APPEND tesseract_api_hdrs "${CMAKE_CURRENT_SOURCE_DIR}/glob/android/glob.h")
-#  LIST(APPEND tesseract_api_srcs "${CMAKE_CURRENT_SOURCE_DIR}/glob/android/glob.c")
-#  include_directories("${CMAKE_CURRENT_SOURCE_DIR}/glob/android")
-#ENDIF()
+file(GLOB tesseract_api_hdrs "${TESSERACT_SRC_DIR}/api/*.h" "${TESSERACT_INCLUDE_DIR}/tesseract/baseapi.h" "${TESSERACT_INCLUDE_DIR}/tesseract/renderer.h")
+#file(GLOB tesseract_api_hdrs_excludes "${TESSERACT_SRC_DIR}/api/capi.h")
+#LIST(REMOVE_ITEM tesseract_api_hdrs ${tesseract_api_hdrs_excludes})
+
 source_group("Src" FILES ${tesseract_api_srcs})
 source_group("Include" FILES ${tesseract_api_hdrs})
 add_definitions(-DUSE_STD_NAMESPACE -DHAVE_LIBLEPT)

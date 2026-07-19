@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -62,6 +62,7 @@ void cveTrackerKCFRelease(cv::TrackerKCF** tracker, cv::Ptr<cv::TrackerKCF>** sh
 
 
 cv::TrackerCSRT* cveTrackerCSRTCreate(
+	float psr_threshold,
 	bool use_hog,
 	bool use_color_names,
 	bool use_gray,
@@ -93,6 +94,7 @@ cv::TrackerCSRT* cveTrackerCSRTCreate(
 {
 #ifdef HAVE_OPENCV_TRACKING
 	cv::TrackerCSRT::Params p;
+	p.psr_threshold = psr_threshold;
 	p.use_hog = use_hog;
 	p.use_color_names = use_color_names;
 	p.use_gray = use_gray;
@@ -139,6 +141,7 @@ void cveTrackerCSRTRelease(cv::TrackerCSRT** tracker, cv::Ptr<cv::TrackerCSRT>**
 	throw_no_tracking();
 #endif
 }
+
 
 bool cveLegacyTrackerInit(cv::legacy::Tracker* tracker, cv::Mat* image, CvRect* boundingBox)
 {

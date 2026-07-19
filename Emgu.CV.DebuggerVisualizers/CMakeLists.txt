@@ -1,8 +1,8 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 # --------------------------------------------------------
 
-IF((EMGU_CV_BUILD OR EMGU_CV_EXAMPLE_BUILD) AND WIN32)
+IF((EMGU_CV_BUILD OR EMGU_CV_EXAMPLE_BUILD) AND WIN32 AND (NOT IS_WINDESKTOP_ARM64_BUILD))
 
 INSTALL(
   DIRECTORY
@@ -25,7 +25,11 @@ INSTALL(
     COMPONENT emgucv_binary)
 
 PROJECT(Emgu.CV.DebuggerVisualizers)
-SET(EXTRA_BUILD_FLAGS "/p:Platform=\"x86\"")
+
+
+#SET(EXTRA_BUILD_FLAGS "/p:Platform=\"x86\"")
+
+SET(EXTRA_BUILD_FLAGS "/p:Platform=\"Any CPU\"")
 
 MSBUILD_CSPROJ_IN_SOLUTION(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/../Solution/Windows.Desktop/Emgu.CV.DebuggerVisualizers.sln" "Emgu.CV.DebuggerVisualizers" "${EXTRA_BUILD_FLAGS}" ALL)	
 IF (EMGU_SIGN_FOUND)

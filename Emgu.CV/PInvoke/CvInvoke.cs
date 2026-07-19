@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.CodeDom;
@@ -49,16 +49,19 @@ namespace Emgu.CV
         /// </summary>
         public const CallingConvention CvCallingConvention = CallingConvention.Cdecl;
 
-        private static String FindValidSubfolders(String baseFolder, List<String> subfolderOptions)
+        private static List<String> FindValidSubfolders(String baseFolder, List<String> subfolderOptions)
         {
+            List<String> subfolderCandidates = new List<string>();
             foreach (String sfo in subfolderOptions)
             {
-                if (Directory.Exists(Path.Combine(baseFolder, sfo)))
+                String combinedPath = Path.Combine(baseFolder, sfo);
+                if (Directory.Exists(combinedPath))
                 {
-                    return sfo;
+                    subfolderCandidates.Add(sfo);
                 }
             }
-            return String.Empty;
+
+            return subfolderCandidates;
         }
         
         /// <summary>
@@ -78,38 +81,81 @@ namespace Emgu.CV
             //Let unity handle the library loading
             return true;
 #else
-            String oldDir = String.Empty;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+            {
+                if (loadDirectory != null)
+                {
+                    throw new NotImplementedException("Loading modules from a specific directory is not implemented on the current platform");
+                }
+                // cvextern is statically linked into dotnet.native.wasm — no dynamic loading required.
+                return true;
+            }
+            List<String> loadDirectories = new List<String>();
+
             if (loadDirectory == null)
             {
                 List<String> subfolderOptions = new List<string>();
 
-                if (Platform.OperationSystem == Emgu.Util.Platform.OS.Windows 
-                    || Platform.OperationSystem == Emgu.Util.Platform.OS.Linux)
+                if (Platform.OperationSystem == Emgu.Util.Platform.OS.MacOS)
                 {
-                    //var fd = RuntimeInformation.FrameworkDescription;
-                    if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                    subfolderOptions.Add(Path.Combine("runtimes", "osx", "native"));
+                }
+                else if (Platform.OperationSystem == Emgu.Util.Platform.OS.Linux)
+                {
+                    switch (RuntimeInformation.ProcessArchitecture)
                     {
-                        if (Platform.OperationSystem == Emgu.Util.Platform.OS.Windows)
-                            subfolderOptions.Add(Path.Combine("runtimes", "win-x86", "native"));
-                        subfolderOptions.Add("x86");
-                    }
-                    else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
-                    {
-                        if (Platform.OperationSystem == Emgu.Util.Platform.OS.Windows)
-                            subfolderOptions.Add(Path.Combine("runtimes", "win-x64", "native"));
-                        subfolderOptions.Add("x64");
-                    }
-                    else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
-                    {
-                        subfolderOptions.Add("arm");
-                    }
-                    else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                    {
-                        subfolderOptions.Add("arm64");
+                        case Architecture.X86:
+                            subfolderOptions.Add(Path.Combine("runtimes", "linux-x86", "native"));
+                            subfolderOptions.Add(Path.Combine("runtimes", "ubuntu-x86", "native"));
+                            subfolderOptions.Add("x86");
+                            break;
+                        case Architecture.X64:
+                            subfolderOptions.Add(Path.Combine("runtimes", "linux-x64", "native"));
+                            subfolderOptions.Add(Path.Combine("runtimes", "ubuntu-x64", "native"));
+                            subfolderOptions.Add("x64");
+                            break;
+                        case Architecture.Arm:
+                            subfolderOptions.Add(Path.Combine("runtimes", "linux-arm", "native"));
+                            subfolderOptions.Add(Path.Combine("runtimes", "ubuntu-arm", "native"));
+                            subfolderOptions.Add("arm");
+                            break;
+                        case Architecture.Arm64:
+                            subfolderOptions.Add(Path.Combine("runtimes", "linux-arm64", "native"));
+                            subfolderOptions.Add(Path.Combine("runtimes", "ubuntu-arm64", "native"));
+                            subfolderOptions.Add("arm64");
+                            break;
                     }
                 }
+                else if (Platform.OperationSystem == Emgu.Util.Platform.OS.Windows)
+                {
+                    String existingDllDirectory = Emgu.Util.Toolbox.GetDllDirectory();
+                    if (existingDllDirectory != null)
+                        subfolderOptions.Add(existingDllDirectory);
 
-                String subfolder = String.Empty;
+                    switch (RuntimeInformation.ProcessArchitecture)
+                    {
+                        case Architecture.X86:
+                            subfolderOptions.Add(Path.Combine("runtimes", "win-x86", "native"));
+                            subfolderOptions.Add("x86");
+                            break;
+                        case Architecture.X64:
+                            subfolderOptions.Add(Path.Combine("runtimes", "win-x64", "native"));
+                            subfolderOptions.Add("x64");
+                            break;
+                        case Architecture.Arm:
+                            subfolderOptions.Add(Path.Combine("runtimes", "win-arm", "native"));
+                            subfolderOptions.Add("arm");
+                            break;
+                        case Architecture.Arm64:
+                            subfolderOptions.Add(Path.Combine("runtimes", "win-arm64", "native"));
+                            subfolderOptions.Add("arm64");
+                            break;
+                    }
+                    
+                }
+
+
+                List<String> subfolders = new List<String>();
                 
                 System.Reflection.Assembly asm = typeof(CvInvoke).Assembly; //System.Reflection.Assembly.GetExecutingAssembly();
                 if ((String.IsNullOrEmpty(asm.Location) || !File.Exists(asm.Location)))
@@ -135,7 +181,7 @@ namespace Emgu.CV
                         {
                             loadDirectory = baseDirectoryInfo.FullName;
                         }
-                        subfolder = FindValidSubfolders(loadDirectory, subfolderOptions);
+                        subfolders = FindValidSubfolders(loadDirectory, subfolderOptions);
                     }
                 }
                 else
@@ -143,20 +189,28 @@ namespace Emgu.CV
                     loadDirectory = Path.GetDirectoryName(asm.Location);
                     if (loadDirectory != null) 
                     {
-                        subfolder = FindValidSubfolders(loadDirectory, subfolderOptions);
+                        subfolders = FindValidSubfolders(loadDirectory, subfolderOptions);
                     }
                 }
+                
 
-                if (!String.IsNullOrEmpty(subfolder))
+                if (subfolders.Count > 0)
                 {
-                    if (Directory.Exists(Path.Combine(loadDirectory, subfolder)))
+                    foreach (var subfolder in subfolders)
                     {
-                        loadDirectory = Path.Combine(loadDirectory, subfolder);
+                        if (Directory.Exists(Path.Combine(loadDirectory, subfolder)))
+                        {
+                            loadDirectories.Add(Path.Combine(loadDirectory, subfolder));
+                        }
+                        else
+                        {
+                            loadDirectories.Add(Path.Combine(Path.GetFullPath("."), subfolder));
+                        }
                     }
-                    else
-                    {
-                        loadDirectory = Path.Combine(Path.GetFullPath("."), subfolder);
-                    }
+                }
+                else
+                {
+                    loadDirectories.Add(loadDirectory);
                 }
 
                 if (!Directory.Exists(loadDirectory))
@@ -171,18 +225,41 @@ namespace Emgu.CV
                     {
                         FileInfo file = new FileInfo(asm.Location);
                         DirectoryInfo directory = file.Directory;
-                        if ((directory != null) && (!String.IsNullOrEmpty(subfolder)) && Directory.Exists(Path.Combine(directory.FullName, subfolder)))
+                        foreach (var subfolder in subfolders)
                         {
-                            loadDirectory = Path.Combine(directory.FullName, subfolder);
-                        }
-                        else if (directory != null &&  Directory.Exists(directory.FullName))
-                        {
-                            loadDirectory = directory.FullName;
+                            if ((directory != null) && (!String.IsNullOrEmpty(subfolder)) &&
+                                Directory.Exists(Path.Combine(directory.FullName, subfolder)))
+                            {
+                                loadDirectories.Add(Path.Combine(directory.FullName, subfolder));
+                            }
+                            else if (directory != null && Directory.Exists(directory.FullName))
+                            {
+                                loadDirectories.Add(directory.FullName);
+                            }
                         }
                     }
                 }
             }
+            else
+            {
+                loadDirectories.Add(loadDirectory);
+            }
 
+            foreach (String dir in loadDirectories)
+            {
+                if (TryLoadUnmanagedModulesFromDirectory(dir, unmanagedModules))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+#endif
+        }
+
+        private static bool TryLoadUnmanagedModulesFromDirectory(string loadDirectory, string[] unmanagedModules)
+        {
+            String oldDir = String.Empty;
             bool setDllDirectorySuccess = false;
             if (!String.IsNullOrEmpty(loadDirectory) && Directory.Exists(loadDirectory))
             {
@@ -234,9 +311,9 @@ namespace Emgu.CV
 
                 //handle special case for universal build
                 if (
-                   mName.StartsWith("opencv_videoio_ffmpeg")  //opencv_ffmpegvvv(_64).dll
-                   && (IntPtr.Size == 4) //32bit application
-                   )
+                    mName.StartsWith("opencv_videoio_ffmpeg")  //opencv_ffmpegvvv(_64).dll
+                    && (IntPtr.Size == 4) //32bit application
+                )
                 {
                     mName = module.Replace("_64", String.Empty);
                 }
@@ -285,7 +362,6 @@ namespace Emgu.CV
             }
 
             return success;
-#endif
         }
 
         /// <summary>
@@ -308,13 +384,16 @@ namespace Emgu.CV
         /// Attempts to load opencv modules from the specific location
         /// </summary>
         /// <param name="modules">The names of opencv modules. e.g. "opencv_core.dll" on windows.</param>
+        /// <param name="loadDirectory">The path to load the opencv modules. If null, will use the default path.</param>
         /// <returns>True if all the modules has been loaded successfully</returns>
-        public static bool DefaultLoadUnmanagedModules(String[] modules)
+        public static bool DefaultLoadUnmanagedModules(String[] modules, String loadDirectory = null)
         {
             bool libraryLoaded = true;
 
 #if !(UNITY_ANDROID || UNITY_IOS || UNITY_EDITOR || UNITY_STANDALONE || UNITY_WSA  || UNITY_WEBGL)
-            if (Emgu.Util.Platform.OperationSystem == Platform.OS.IOS)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+                return libraryLoaded;
+            else if (Emgu.Util.Platform.OperationSystem == Platform.OS.IOS)
                 return libraryLoaded;
             else if (Emgu.Util.Platform.OperationSystem == Platform.OS.Android && (Emgu.Util.Platform.ClrType != Platform.Clr.Unity))
             {
@@ -333,29 +412,42 @@ namespace Emgu.CV
                                 continue; //skip the ffmpeg modules.
                             try
                             {
-                                System.Diagnostics.Trace.WriteLine(string.Format("Trying to load {0} ({1} bit).", module,
+                                String fullModulePath;
+                                if (loadDirectory != null)
+                                {
+                                    fullModulePath = Path.Combine(loadDirectory, module);
+                                }
+                                else
+                                {
+                                    fullModulePath = module;
+                                }
+                                System.Diagnostics.Trace.WriteLine(string.Format("Trying to load {0} ({1} bit).", fullModulePath,
                                     IntPtr.Size * 8));
-                                loadLibraryMethodInfo.Invoke(null, new object[] { module });
+                                loadLibraryMethodInfo.Invoke(null, new object[] { fullModulePath });
                                 //Java.Lang.JavaSystem.LoadLibrary(module);
-                                System.Diagnostics.Trace.WriteLine(string.Format("Loaded {0}.", module));
+                                System.Diagnostics.Trace.WriteLine(string.Format("Loaded {0}.", fullModulePath));
                             }
                             catch (Exception e)
                             {
                                 libraryLoaded = false;
                                 System.Diagnostics.Trace.WriteLine(String.Format("Failed to load {0}: {1}", module, e.Message));
+                                if (e.InnerException != null && e.InnerException.Message != null)
+                                {
+                                    System.Diagnostics.Trace.WriteLine(String.Format("InnerException {0}", e.InnerException.Message));
+                                }
                             }
                         }
                         return libraryLoaded;
                     }
                 }
-            }
-            else if (Emgu.Util.Platform.OperationSystem != Emgu.Util.Platform.OS.MacOS)
+            } 
+            else //if (Emgu.Util.Platform.OperationSystem != Emgu.Util.Platform.OS.MacOS)
             {
                 String formatString = GetModuleFormatString();
                 for (int i = 0; i < modules.Length; ++i)
                     modules[i] = String.Format(formatString, modules[i]);
 
-                libraryLoaded &= LoadUnmanagedModules(null, modules);
+                libraryLoaded &= LoadUnmanagedModules(loadDirectory, modules);
             }
 #endif
             return libraryLoaded;
@@ -366,10 +458,17 @@ namespace Emgu.CV
         /// </summary>
         static CvInvoke()
         {
-#if ( UNITY_WEBGL && ! UNITY_EDITOR )
+#if UNITY_WEBGL && !UNITY_EDITOR
             _libraryLoaded = true;
 #else
-            if (Emgu.Util.Platform.OperationSystem == Emgu.Util.Platform.OS.IOS)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+            {
+                // Running in WebAssembly (Blazor): cvextern is statically linked into
+                // dotnet.native.wasm — no dynamic library loading required.
+                _libraryLoaded = true;
+            }
+            else if (Emgu.Util.Platform.OperationSystem == Emgu.Util.Platform.OS.IOS ||
+                Emgu.Util.Platform.OperationSystem == Emgu.Util.Platform.OS.MacCatalyst)
             {
                 /*
                 Assembly assembly = Assembly.GetExecutingAssembly();
@@ -387,7 +486,7 @@ namespace Emgu.CV
                     };
                 */
 
-                //For iOS, library are static linked, assume correct loading by default.
+                //iOS or MacCatalyst libraries are static linked, assume correct loading by default.
                 _libraryLoaded = true;
                 return;
             }
@@ -412,6 +511,25 @@ namespace Emgu.CV
 
             }
 #endif
+
+            if (Emgu.Util.Platform.OperationSystem == Emgu.Util.Platform.OS.MacOS)
+            {
+                //Need to set the correct Open CV temp path to avoid error
+                String opencv_temp_path =
+                    Environment.GetEnvironmentVariable("OPENCV_TEMP_PATH", EnvironmentVariableTarget.Process);
+
+                if (String.IsNullOrEmpty(opencv_temp_path))
+                {
+                    //If the path is not set, set it to system temp path
+                    Environment.SetEnvironmentVariable("OPENCV_TEMP_PATH", System.IO.Path.GetTempPath(), EnvironmentVariableTarget.Process);
+                    opencv_temp_path = Environment.GetEnvironmentVariable("OPENCV_TEMP_PATH", EnvironmentVariableTarget.Process);
+                }
+
+                //Create the opencv folder in the temp path
+                String opencv_temp_folder = Path.Combine(opencv_temp_path, "opencv");
+                if (!Directory.Exists(opencv_temp_folder))
+                    Directory.CreateDirectory(opencv_temp_folder);
+            }
         }
 
 #region CV MACROS
@@ -534,6 +652,8 @@ namespace Emgu.CV
             sane &= (sizes.CvSize2D32f == Toolbox.SizeOf<System.Drawing.SizeF>());
             sane &= (sizes.CvTermCriteria == Toolbox.SizeOf<MCvTermCriteria>());
             sane &= 2 * Toolbox.SizeOf<int>() == Toolbox.SizeOf<Emgu.CV.Structure.Range>();
+            int miplImageSize = Toolbox.SizeOf<MIplImage>();
+            sane &= (sizes.IplImage == miplImageSize);
             return sane;
         }
     }

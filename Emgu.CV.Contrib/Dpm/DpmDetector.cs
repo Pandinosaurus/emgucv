@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -28,7 +28,7 @@ namespace Emgu.CV.Dpm
             CvString[] cclasses;
             if (classes == null)
             {
-                cclasses = new CvString[0];
+                cclasses = Array.Empty<CvString>();
             }
             else
             {

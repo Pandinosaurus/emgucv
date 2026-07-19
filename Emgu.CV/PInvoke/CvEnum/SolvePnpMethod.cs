@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -49,7 +49,12 @@ namespace Emgu.CV.CvEnum
         ///   - point 2: [ squareLength / 2, -squareLength / 2, 0]
         ///   - point 3: [-squareLength / 2, -squareLength / 2, 0]
         /// </summary>
-        IPPESquare = 7
+        IPPESquare = 7,
+
+        /// <summary>
+        /// SQPnP: A Consistently Fast and Globally OptimalSolution to the Perspective-n-Point Problem
+        /// </summary>
+        SQPNP
 
     }
 }

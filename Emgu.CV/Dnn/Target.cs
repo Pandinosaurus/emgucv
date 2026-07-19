@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -53,6 +53,14 @@ namespace Emgu.CV.Dnn
         /// <summary>
         /// HDDL
         /// </summary>
-        HDDL
+        HDDL,
+        /// <summary>
+        /// NPU
+        /// </summary>
+        Npu,
+        /// <summary>
+        /// Only the ARM platform is supported. Low precision computing, accelerate model inference.
+        /// </summary>
+        CpuFp16
     }
 }

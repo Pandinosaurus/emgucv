@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -7,12 +7,14 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 
 namespace Emgu.CV
 {
+    /// <summary>
+    /// Extension methods to convert Emgu CV objects to / from BitmapSource
+    /// </summary>
     public static class BitmapSourceExtension
     {
         /// <summary>
@@ -47,27 +49,40 @@ namespace Emgu.CV
             }
         }
 
-        public static Mat ToMat(this BitmapSource source)
+        /// <summary>
+        /// Convert a BitmapSource into a Mat
+        /// </summary>
+        /// <param name="source">The Bitmap source</param>
+        /// <param name="image">The resulting Mat</param>
+        /// <exception cref="Exception">Will throw exception when we cannot handle the BitmapSource's PixelFormat</exception>
+        public static void ToMat(this BitmapSource source, Mat image)
         {
-
             if (source.Format == PixelFormats.Bgra32)
             {
-                Mat result = new Mat();
-                result.Create(source.PixelHeight, source.PixelWidth, DepthType.Cv8U, 4);
-                source.CopyPixels(Int32Rect.Empty, result.DataPointer, result.Step * result.Rows, result.Step);
-                return result;
+                image.Create(source.PixelHeight, source.PixelWidth, DepthType.Cv8U, 4);
+                source.CopyPixels(Int32Rect.Empty, image.DataPointer, image.Step * image.Rows, image.Step);
             }
             else if (source.Format == PixelFormats.Bgr24)
             {
-                Mat result = new Mat();
-                result.Create(source.PixelHeight, source.PixelWidth, DepthType.Cv8U, 3);
-                source.CopyPixels(Int32Rect.Empty, result.DataPointer, result.Step * result.Rows, result.Step);
-                return result;
+                image.Create(source.PixelHeight, source.PixelWidth, DepthType.Cv8U, 3);
+                source.CopyPixels(Int32Rect.Empty, image.DataPointer, image.Step * image.Rows, image.Step);
             }
             else
             {
                 throw new Exception(String.Format("Conversion from BitmapSource of format {0} is not supported.", source.Format));
             }
+        }
+
+        /// <summary>
+        /// Convert a BitmapSource into a Mat
+        /// </summary>
+        /// <param name="source">The Bitmap source</param>
+        /// <returns>The resulting Mat</returns>
+        public static Mat ToMat(this BitmapSource source)
+        {
+            Mat result = new Mat();
+            source.ToMat(result);
+            return result;
         }
     }
 }

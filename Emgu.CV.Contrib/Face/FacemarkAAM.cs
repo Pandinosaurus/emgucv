@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -84,13 +84,13 @@ namespace Emgu.CV.Face
     public static partial class FaceInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveFacemarkAAMCreate(IntPtr parameters, ref IntPtr facemark, ref IntPtr algorithm, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveFacemarkAAMCreate(IntPtr parameters, ref IntPtr facemark, ref IntPtr algorithm, ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFacemarkAAMRelease(ref IntPtr facemark, ref IntPtr sharedPtr);
+        internal static extern void cveFacemarkAAMRelease(ref IntPtr facemark, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveFacemarkAAMParamsCreate();
+        internal static extern IntPtr cveFacemarkAAMParamsCreate();
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFacemarkAAMParamsRelease(ref IntPtr parameters);
+        internal static extern void cveFacemarkAAMParamsRelease(ref IntPtr parameters);
     }
 }

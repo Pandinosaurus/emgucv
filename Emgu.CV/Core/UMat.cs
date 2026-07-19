@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -12,16 +12,78 @@ using Emgu.CV.Util;
 using Emgu.CV.CvEnum;
 using Emgu.Util;
 
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+using System.Text.Json;
+using System.Text.Json.Serialization;
+#endif
+
 namespace Emgu.CV
 {
     /// <summary>
-    /// The equivalent of cv::Mat, should only be used if you know what you are doing.
-    /// In most case you should use the Matrix class instead
+    /// Represents a managed wrapper for the OpenCV UMat (Universal Matrix) structure, which provides 
+    /// a flexible and efficient way to handle multi-dimensional dense arrays in OpenCV. 
+    /// This class supports operations such as element-wise arithmetic, data manipulation, 
+    /// and interoperability with other OpenCV structures.
     /// </summary>
+    /// <remarks>
+    /// The <see cref="UMat"/> class is designed to work with OpenCV's GPU-accelerated operations, 
+    /// enabling efficient computation on supported hardware. It provides constructors and methods 
+    /// for creating, manipulating, and accessing data in various formats, including submatrices, 
+    /// reshaped matrices, and matrices loaded from files.
+    /// </remarks>
+    /// <example>
+    /// Example usage:
+    /// <code>
+    /// UMat umat = new UMat(100, 100, CvEnum.DepthType.Cv8U, 3);
+    /// umat.SetTo(new MCvScalar(255, 0, 0)); // Set all pixels to blue
+    /// umat.Save("output.png");
+    /// </code>
+    /// </example>
+    /// <seealso cref="Mat"/>
+    /// <seealso cref="IInputOutputArray"/>
+    /// <seealso cref="IEquatable{T}"/>
+    /// <seealso cref="ISerializable"/>
     [Serializable]
     [DebuggerTypeProxy(typeof(UMat.DebuggerProxy))]
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+    [JsonConverter(typeof(UMat.UMatJsonConverter))]
+#endif
     public partial class UMat : UnmanagedObject, IEquatable<UMat>, IInputOutputArray, ISerializable
     {
+#if !(UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_STANDALONE || UNITY_WSA || UNITY_EDITOR)
+        /// <summary>
+        /// Class used for Json Serialized the Mat class
+        /// </summary>
+        internal class UMatJsonConverter : JsonConverter<UMat>
+        {
+            /// <inheritdoc/>
+            public override UMat Read(
+                ref Utf8JsonReader reader,
+                Type typeToConvert,
+                JsonSerializerOptions options)
+            {
+                using (Mat m = Mat.MatJsonConverter.ReadMat(ref reader))
+                {
+                    UMat result = new UMat();
+                    m.CopyTo(result);
+                    return result;
+                }
+            }
+
+            /// <inheritdoc/>
+            public override void Write(
+                Utf8JsonWriter writer,
+                UMat umat,
+                JsonSerializerOptions options)
+            {
+                using (Mat m = umat.GetMat(AccessType.Read))
+                {
+                    Mat.MatJsonConverter.WriteMat(writer, m);
+                }
+            }
+        }
+#endif
+
         #region Implement ISerializable interface
         /// <summary>
         /// Constructor used to deserialize runtime serialized object
@@ -91,7 +153,7 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Get or Set the raw image data
+        /// Set the raw image data, or get a copy of the raw image data.
         /// </summary>
         public byte[] Bytes
         {
@@ -124,13 +186,14 @@ namespace Emgu.CV
         /// <summary>
         /// Create an empty cv::UMat
         /// </summary>
-        public UMat()
-           : this(UMatInvoke.cveUMatCreate(), true)
+        /// <param name="usage">Allocation Usage</param>
+        public UMat(Usage usage = Usage.Default)
+           : this(UMatInvoke.cveUMatCreate(usage), true)
         {
         }
 
         /// <summary>
-        /// Create a umat of the specific type.
+        /// Create an umat of the specific type.
         /// </summary>
         /// <param name="rows">Number of rows in a 2D array.</param>
         /// <param name="cols">Number of columns in a 2D array.</param>
@@ -144,7 +207,7 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Create a umat of the specific type.
+        /// Create an umat of the specific type.
         /// </summary>
         /// <param name="size">Size of the UMat</param>
         /// <param name="type">Mat element type</param>
@@ -157,9 +220,9 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Get the Umat header for the specific roi of the parent
+        /// Get the UMat header for the specific roi of the parent
         /// </summary>
-        /// <param name="parent">The parent Umat</param>
+        /// <param name="parent">The parent UMat</param>
         /// <param name="roi">The region of interest</param>
         public UMat(UMat parent, Rectangle roi)
           : this(UMatInvoke.cveUMatCreateFromRect(parent.Ptr, ref roi), true)
@@ -167,9 +230,9 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Create a umat header for the specific ROI
+        /// Create an UMat header for the specific ROI
         /// </summary>
-        /// <param name="umat">The umat where the new UMat header will share data from</param>
+        /// <param name="umat">The UMat where the new UMat header will share data from</param>
         /// <param name="rowRange">The region of interest</param>
         /// <param name="colRange">The region of interest</param>
         public UMat(UMat umat, Emgu.CV.Structure.Range rowRange, Emgu.CV.Structure.Range colRange)
@@ -251,7 +314,7 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Copy the data in this umat to the other mat
+        /// Copy the data in this UMat to the other mat
         /// </summary>
         /// <param name="mask">Operation mask. Its non-zero elements indicate which matrix elements need to be copied.</param>
         /// <param name="m">The input array to copy to</param>
@@ -402,7 +465,7 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Convert this Mat to Image
+        /// Convert this UMat to Image
         /// </summary>
         /// <typeparam name="TColor">The type of Color</typeparam>
         /// <typeparam name="TDepth">The type of Depth</typeparam>
@@ -626,7 +689,7 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        /// Copy data from this Mat to the managed array
+        /// Copy data from this UMat to the managed array
         /// </summary>
         /// <typeparam name="T">The type of managed data array</typeparam>
         /// <param name="data">The managed array where data will be copied to.</param>
@@ -689,7 +752,7 @@ namespace Emgu.CV
         /// <summary>
         /// Get a copy of the data values as an array
         /// </summary>
-        /// <param name="jagged">If true, a jagged array will returned. Otherwise it will return a regular array.</param>
+        /// <param name="jagged">If true, a jagged array will be returned. Otherwise, it will return a regular array.</param>
         /// <returns>a copy of the data values as an array</returns>
         public Array GetData(bool jagged = true)
         {
@@ -784,7 +847,7 @@ namespace Emgu.CV
         }
 
         /// <summary> 
-        /// Perform an binary OR operation with some value
+        /// Perform a binary OR operation with some value
         /// </summary>
         /// <param name="mat1">The mat to OR</param>
         /// <param name="val"> The color to OR</param>
@@ -800,7 +863,7 @@ namespace Emgu.CV
         }
 
         /// <summary> 
-        /// Perform an binary OR operation with some color
+        /// Perform a binary OR operation with some color
         /// </summary>
         /// <param name="mat1">The mat to OR</param>
         /// <param name="val"> The color to OR</param>
@@ -811,7 +874,7 @@ namespace Emgu.CV
         }
 
         /// <summary> 
-        /// Perform an binary OR operation with some scalar
+        /// Perform a binary OR operation with some scalar
         /// </summary>
         /// <param name="mat1">The mat to OR</param>
         /// <param name="val"> The value to OR</param>
@@ -827,7 +890,7 @@ namespace Emgu.CV
         }
 
         /// <summary> 
-        /// Perform an binary OR operation with some scalar
+        /// Perform a binary OR operation with some scalar
         /// </summary>
         /// <param name="mat1">The mat to OR</param>
         /// <param name="val"> The color to OR</param>
@@ -992,11 +1055,11 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        ///  <paramref name="mat"/> * <paramref name="scale"/>
+        /// Multiplies the specified <see cref="UMat"/> by a scalar value.
         /// </summary>
-        /// <param name="mat">The mat</param>
-        /// <param name="scale">The multiplication scale</param>
-        /// <returns><paramref name="mat"/> * <paramref name="scale"/></returns>
+        /// <param name="mat">The <see cref="UMat"/> to be multiplied.</param>
+        /// <param name="scale">The scalar value to multiply the <paramref name="mat"/> by.</param>
+        /// <returns>A new <see cref="UMat"/> that is the result of multiplying <paramref name="mat"/> by <paramref name="scale"/>.</returns>
         public static UMat operator *(UMat mat, double scale)
         {
             using (ScalarArray saValue = new ScalarArray(scale))
@@ -1008,33 +1071,35 @@ namespace Emgu.CV
         }
 
         /// <summary>
-        ///   <paramref name="scale"/>*<paramref name="mat"/>
+        /// Multiplies the specified <see cref="UMat"/> by a scalar value.
         /// </summary>
-        /// <param name="mat">The mat</param>
-        /// <param name="scale">The multiplication scale</param>
-        /// <returns><paramref name="scale"/>*<paramref name="mat"/></returns>
+        /// <param name="mat">The <see cref="UMat"/> to be multiplied.</param>
+        /// <param name="scale">The scalar value to multiply the <paramref name="mat"/> by.</param>
+        /// <returns>A new <see cref="UMat"/> that is the result of multiplying <paramref name="mat"/> by <paramref name="scale"/>.</returns>
         public static UMat operator *(double scale, UMat mat)
         {
             return mat * scale;
         }
 
         /// <summary>
-        ///  <paramref name="mat"/> / <paramref name="scale"/>
+        /// Divides the elements of the specified <see cref="UMat"/> by the given scalar value.
         /// </summary>
-        /// <param name="mat">The mat</param>
-        /// <param name="scale">The division scale</param>
-        /// <returns><paramref name="mat"/> / <paramref name="scale"/></returns>
+        /// <param name="mat">The <see cref="UMat"/> whose elements are to be divided.</param>
+        /// <param name="scale">The scalar value by which to divide the elements of <paramref name="mat"/>.</param>
+        /// <returns>A new <see cref="UMat"/> where each element is the result of the division of the corresponding element in <paramref name="mat"/> by <paramref name="scale"/>.</returns>
+        /// <exception cref="System.DivideByZeroException">Thrown when <paramref name="scale"/> is zero.</exception>
         public static UMat operator /(UMat mat, double scale)
         {
             return mat * (1.0 / scale);
         }
 
         /// <summary>
-        ///   <paramref name="scale"/> / <paramref name="mat"/>
+        /// Divides the elements of the given scalar value by the specified <see cref="UMat"/>.
         /// </summary>
-        /// <param name="mat">The mat</param>
-        /// <param name="scale">The scale</param>
-        /// <returns><paramref name="scale"/> / <paramref name="mat"/></returns>
+        /// <param name="mat">The <see cref="UMat"/>The elements to be divided.</param>
+        /// <param name="scale">The scalar value by which to be divided by the elements of <paramref name="mat"/>.</param>
+        /// <returns>A new <see cref="UMat"/> where each element is the result of the division of <paramref name="scale"/> by the corresponding element in <paramref name="mat"/>.</returns>
+        /// <exception cref="System.DivideByZeroException">Thrown when <paramref name="scale"/> is zero.</exception>/returns>
         public static UMat operator /(double scale, UMat mat)
         {
             using (ScalarArray saScale = new ScalarArray(scale))
@@ -1076,57 +1141,58 @@ namespace Emgu.CV
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputArrayFromUMat(IntPtr mat);
+        internal static extern IntPtr cveInputArrayFromUMat(IntPtr mat);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveOutputArrayFromUMat(IntPtr mat);
+        internal static extern IntPtr cveOutputArrayFromUMat(IntPtr mat);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveInputOutputArrayFromUMat(IntPtr mat);
+        internal static extern IntPtr cveInputOutputArrayFromUMat(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveUMatCreate();
-        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatRelease(ref IntPtr mat);
-        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatGetSize(IntPtr mat, ref Size s);
+        internal static extern IntPtr cveUMatCreate(UMat.Usage usageFlag);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatCopyTo(IntPtr mat, IntPtr m, IntPtr mask);
+        internal static extern void cveUMatRelease(ref IntPtr mat);
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveUMatGetSize(IntPtr mat, ref Size s);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static int cveUMatGetElementSize(IntPtr mat);
+        internal static extern void cveUMatCopyTo(IntPtr mat, IntPtr m, IntPtr mask);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatCreateData(IntPtr mat, int row, int cols, int type, UMat.Usage flags);
+        internal static extern int cveUMatGetElementSize(IntPtr mat);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveUMatCreateFromRect(IntPtr mat, ref Rectangle roi);
+        internal static extern void cveUMatCreateData(IntPtr mat, int row, int cols, int type, UMat.Usage flags);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveUMatCreateFromRange(IntPtr mat, ref Emgu.CV.Structure.Range rowRange, ref Emgu.CV.Structure.Range colRange);
+        internal static extern IntPtr cveUMatCreateFromRect(IntPtr mat, ref Rectangle roi);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatSetTo(IntPtr mat, IntPtr value, IntPtr mask);
+        internal static extern IntPtr cveUMatCreateFromRange(IntPtr mat, ref Emgu.CV.Structure.Range rowRange, ref Emgu.CV.Structure.Range colRange);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveUMatSetTo(IntPtr mat, IntPtr value, IntPtr mask);
 
         //[DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         //internal extern static void cveUMatUseCustomAllocator(IntPtr mat, MatDataAllocatorInvoke.MatAllocateCallback allocator, MatDataAllocatorInvoke.MatDeallocateCallback deallocator, IntPtr allocateDataActionPtr, IntPtr freeDataActionPtr, ref IntPtr matAllocator, ref IntPtr oclAllocator);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveUMatGetMat(IntPtr umat, CvEnum.AccessType access);
+        internal static extern IntPtr cveUMatGetMat(IntPtr umat, CvEnum.AccessType access);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatConvertTo(IntPtr umat, IntPtr outArray, CvEnum.DepthType rtype, double alpha, double beta);
+        internal static extern void cveUMatConvertTo(IntPtr umat, IntPtr outArray, CvEnum.DepthType rtype, double alpha, double beta);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveUMatReshape(IntPtr mat, int cn, int rows);
+        internal static extern IntPtr cveUMatReshape(IntPtr mat, int cn, int rows);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatCopyDataTo(IntPtr mat, IntPtr dest);
+        internal static extern void cveUMatCopyDataTo(IntPtr mat, IntPtr dest);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveUMatCopyDataFrom(IntPtr mat, IntPtr source);
+        internal static extern void cveUMatCopyDataFrom(IntPtr mat, IntPtr source);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static double cveUMatDot(IntPtr mat, IntPtr m);
+        internal static extern double cveUMatDot(IntPtr mat, IntPtr m);
 
 
     }

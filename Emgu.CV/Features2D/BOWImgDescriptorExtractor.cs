@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 ﻿using System;
@@ -60,22 +60,25 @@ namespace Emgu.CV.Features2D
       /// </summary>
       protected override void DisposeObject()
       {
-          Features2DInvoke.cveBOWImgDescriptorExtractorRelease(ref _ptr);
+          if (IntPtr.Zero != _ptr)
+          {
+              Features2DInvoke.cveBOWImgDescriptorExtractorRelease(ref _ptr);
+          }
       }
    }
 
    public static partial class Features2DInvoke
    {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveBOWImgDescriptorExtractorCreate(IntPtr descriptorExtractor, IntPtr descriptorMatcher);
+        internal static extern IntPtr cveBOWImgDescriptorExtractorCreate(IntPtr descriptorExtractor, IntPtr descriptorMatcher);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveBOWImgDescriptorExtractorRelease(ref IntPtr descriptorExtractor);
+        internal static extern void cveBOWImgDescriptorExtractorRelease(ref IntPtr descriptorExtractor);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveBOWImgDescriptorExtractorCompute(IntPtr bowImgDescriptorExtractor, IntPtr image, IntPtr keypoints, IntPtr imgDescriptor);
+        internal static extern void cveBOWImgDescriptorExtractorCompute(IntPtr bowImgDescriptorExtractor, IntPtr image, IntPtr keypoints, IntPtr imgDescriptor);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveBOWImgDescriptorExtractorSetVocabulary(IntPtr bowImgDescriptorExtractor, IntPtr vocabulary);
+        internal static extern void cveBOWImgDescriptorExtractorSetVocabulary(IntPtr bowImgDescriptorExtractor, IntPtr vocabulary);
     }
 }

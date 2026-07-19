@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #ifdef HAVE_OPENCV_RAPID
 #include "opencv2/rapid.hpp"
 #else
-static inline CV_NORETURN void throw_no_rapid() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without rapid support"); }
+static inline CV_NORETURN void throw_no_rapid() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without rapid support. To use this module, please switch to the full Emgu CV runtime."); }
 
 namespace cv {
 	namespace rapid {

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -33,12 +33,28 @@ void cveBackgroundSubtractorMOG2Release(cv::BackgroundSubtractorMOG2** bgSubtrac
 }
 
 //BackgroundSubtractor
-void cveBackgroundSubtractorUpdate(cv::BackgroundSubtractor* bgSubtractor, cv::_InputArray* image, cv::_OutputArray* fgmask, double learningRate)
+void cveBackgroundSubtractorApply1(
+	cv::BackgroundSubtractor* bgSubtractor, 
+	cv::_InputArray* image, 
+	cv::_OutputArray* fgmask, 
+	double learningRate)
 {
 #ifdef HAVE_OPENCV_VIDEO
-	//cv::Mat imgMat = cv::cvarrToMat(image);
-	//cv::Mat fgMat = cv::cvarrToMat(fgmask);
 	bgSubtractor->apply(*image, *fgmask, learningRate);
+#else
+	throw_no_video();
+#endif
+}
+
+CVAPI(void) cveBackgroundSubtractorApply2(
+	cv::BackgroundSubtractor* bgSubtractor,
+	cv::_InputArray* image,
+	cv::_InputArray* knownForegroundMask,
+	cv::_OutputArray* fgmask,
+	double learningRate)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	bgSubtractor->apply(*image, *knownForegroundMask, *fgmask,  learningRate);
 #else
 	throw_no_video();
 #endif
@@ -255,17 +271,48 @@ void cveEstimateRigidTransform(cv::_InputArray* src, cv::_InputArray* dst, bool 
 }*/
 
 double cveFindTransformECC(
-	cv::_InputArray* templateImage, cv::_InputArray* inputImage,
-	cv::_InputOutputArray* warpMatrix, int motionType,
+	cv::_InputArray* templateImage, 
+	cv::_InputArray* inputImage,
+	cv::_InputOutputArray* warpMatrix, 
+	int motionType,
 	CvTermCriteria* criteria,
-	cv::_InputArray* inputMask)
+	cv::_InputArray* inputMask,
+	int gaussFiltSize)
 {
 #ifdef HAVE_OPENCV_VIDEO
 	return cv::findTransformECC(
-		*templateImage, *inputImage,
-		*warpMatrix, motionType,
+		*templateImage,
+		*inputImage,
+		*warpMatrix,
+		motionType,
 		*criteria,
-		inputMask ? *inputMask : (cv::InputArray) cv::noArray());
+		inputMask ? *inputMask : static_cast<cv::InputArray>(cv::noArray()),
+		gaussFiltSize);
+#else
+	throw_no_video();
+#endif
+}
+
+double cveFindTransformECCWithMask(
+	cv::_InputArray* templateImage,
+	cv::_InputArray* inputImage,
+	cv::_InputArray* templateMask,
+	cv::_InputArray* inputMask,
+	cv::_InputOutputArray* warpMatrix,
+	int motionType,
+	CvTermCriteria* criteria,
+	int gaussFiltSize)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	return cv::findTransformECCWithMask(
+		*templateImage,
+		*inputImage,
+		templateMask ? *templateMask : static_cast<cv::InputArray>(cv::noArray()),
+		inputMask ? *inputMask : static_cast<cv::InputArray>(cv::noArray()),
+		*warpMatrix,
+		motionType,
+		*criteria,
+		gaussFiltSize);
 #else
 	throw_no_video();
 #endif
@@ -364,7 +411,7 @@ cv::Tracker* cveTrackerCreate(cv::String* trackerType)
    tracker.addref();
    return tracker.get();
 }*/
-void cveTrackerInit(cv::Tracker* tracker, cv::Mat* image, CvRect* boundingBox)
+void cveTrackerInit(cv::Tracker* tracker, cv::_InputArray* image, CvRect* boundingBox)
 {
 #ifdef HAVE_OPENCV_VIDEO
 	return tracker->init(*image, *boundingBox);
@@ -372,7 +419,7 @@ void cveTrackerInit(cv::Tracker* tracker, cv::Mat* image, CvRect* boundingBox)
 	throw_no_video();
 #endif
 }
-bool cveTrackerUpdate(cv::Tracker* tracker, cv::Mat* image, CvRect* boundingBox)
+bool cveTrackerUpdate(cv::Tracker* tracker, cv::_InputArray* image, CvRect* boundingBox)
 {
 #ifdef HAVE_OPENCV_VIDEO
 	cv::Rect box;
@@ -420,21 +467,27 @@ cv::TrackerMIL* cveTrackerMILCreate(
 	throw_no_video();
 #endif
 }
-void cveTrackerMILRelease(cv::TrackerMIL** tracker, cv::Ptr<cv::TrackerMIL>** sharedPtr)
+void cveTrackerMILRelease(cv::Ptr<cv::TrackerMIL>** sharedPtr)
 {
 #ifdef HAVE_OPENCV_VIDEO
 	delete* sharedPtr;
-	*tracker = 0;
 	*sharedPtr = 0;
 #else
 	throw_no_video();
 #endif
 }
 
-cv::TrackerGOTURN* cveTrackerGOTURNCreate(cv::Tracker** tracker, cv::Ptr<cv::TrackerGOTURN>** sharedPtr)
+cv::TrackerGOTURN* cveTrackerGOTURNCreate(
+	cv::Tracker** tracker,
+	cv::Ptr<cv::TrackerGOTURN>** sharedPtr,
+	cv::String* modelTxt,
+	cv::String* modelBin)
 {
 #ifdef HAVE_OPENCV_VIDEO
-	cv::Ptr<cv::TrackerGOTURN> ptr = cv::TrackerGOTURN::create();
+	cv::TrackerGOTURN::Params p;
+	p.modelTxt = *modelTxt;
+	p.modelBin = *modelBin;
+	cv::Ptr<cv::TrackerGOTURN> ptr = cv::TrackerGOTURN::create(p);
 	*sharedPtr = new cv::Ptr<cv::TrackerGOTURN>(ptr);
 	*tracker = dynamic_cast<cv::Tracker*>(ptr.get());
 	return ptr.get();
@@ -442,13 +495,82 @@ cv::TrackerGOTURN* cveTrackerGOTURNCreate(cv::Tracker** tracker, cv::Ptr<cv::Tra
 	throw_no_video();
 #endif
 }
-void cveTrackerGOTURNRelease(cv::TrackerGOTURN** tracker, cv::Ptr<cv::TrackerGOTURN>** sharedPtr)
+void cveTrackerGOTURNRelease(cv::Ptr<cv::TrackerGOTURN>** sharedPtr)
 {
 #ifdef HAVE_OPENCV_VIDEO
 	delete* sharedPtr;
-	*tracker = 0;
 	*sharedPtr = 0;
 #else
 	throw_no_video();
 #endif
+}
+
+cv::TrackerDaSiamRPN* cveTrackerDaSiamRPNCreate(
+	cv::String* model,
+	cv::String* kernel_cls1,
+	cv::String* kernel_r1,
+	int backend,
+	int target,
+	cv::Tracker** tracker,
+	cv::Ptr<cv::TrackerDaSiamRPN>** sharedPtr)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	cv::TrackerDaSiamRPN::Params p;
+	p.model = *model;
+	p.kernel_cls1 = *kernel_cls1;
+	p.kernel_r1 = *kernel_r1;
+	p.backend = backend;
+	p.target = target;
+
+	cv::Ptr<cv::TrackerDaSiamRPN> ptr = cv::TrackerDaSiamRPN::create(p);
+	*sharedPtr = new cv::Ptr<cv::TrackerDaSiamRPN>(ptr);
+	*tracker = dynamic_cast<cv::Tracker*>(ptr.get());
+	return ptr.get();
+#else
+	throw_no_video();
+#endif
+}
+
+
+void cveTrackerDaSiamRPNRelease(cv::Ptr<cv::TrackerDaSiamRPN>** sharedPtr)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	delete* sharedPtr;
+	*sharedPtr = 0;
+#else
+	throw_no_video();
+#endif	
+}
+
+cv::TrackerNano* cveTrackerNanoCreate(
+	cv::String* backbone,
+	cv::String* neckhead,
+	int backend,
+	int target,
+	cv::Tracker** tracker,
+	cv::Ptr< cv::TrackerNano >** sharedPtr)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	cv::TrackerNano::Params p;
+	p.backbone = *backbone;
+	p.neckhead = *neckhead;
+	p.backend = backend;
+	p.target = target;
+
+	cv::Ptr<cv::TrackerNano> ptr = cv::TrackerNano::create(p);
+	*sharedPtr = new cv::Ptr<cv::TrackerNano>(ptr);
+	*tracker = dynamic_cast<cv::Tracker*>(ptr.get());
+	return ptr.get();
+#else
+	throw_no_video();
+#endif	
+}
+void cveTrackerNanoRelease(cv::Ptr< cv::TrackerNano >** sharedPtr)
+{
+#ifdef HAVE_OPENCV_VIDEO
+	delete* sharedPtr;
+	*sharedPtr = 0;
+#else
+	throw_no_video();
+#endif		
 }

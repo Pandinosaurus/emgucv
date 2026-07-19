@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 #include "emgu_c.h"
 #else
 
-static inline CV_NORETURN void throw_no_cudafeature2d() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without CUDA Feature2d support"); }
+static inline CV_NORETURN void throw_no_cudafeature2d() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without CUDA Feature2d support. To use this module, please switch to the Emgu CV runtime with CUDA support."); }
 
 namespace cv
 {

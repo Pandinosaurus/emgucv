@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -34,18 +34,19 @@ namespace Emgu.CV
       /// Get an empty InputOutputArray
       /// </summary>
       /// <returns>An empty InputOutputArray</returns>
-      public static new InputOutputArray GetEmpty()
+      public new static InputOutputArray GetEmpty()
       {
          return _empty;
       }
 
       /// <summary>
-      /// Release all the memory associated with this InputOutputArry
+      /// Release all the memory associated with this InputOutputArray
       /// </summary>
       protected override void DisposeObject()
       {
          if (_ptr != IntPtr.Zero)
             CvInvoke.cveInputOutputArrayRelease(ref _ptr);
+         _parent = null;
       }
    }
 
@@ -56,7 +57,7 @@ namespace Emgu.CV
       /// </summary>
       /// <param name="arr">Pointer to the input output array</param>
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void cveInputOutputArrayRelease(ref IntPtr arr);
+      internal static extern void cveInputOutputArrayRelease(ref IntPtr arr);
 
    }
 }

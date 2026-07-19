@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -29,6 +29,17 @@ namespace Emgu.CV.Features2D
             {
                 _ptr = Features2DInvoke.cveSimpleBlobDetectorCreateWithParams(ref _feature2D, parameters, ref _sharedPtr);
             }
+        }
+
+        /// <summary>
+        /// Retrieves the contours of detected blobs.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="VectorOfVectorOfPoint"/> containing the contours of the detected blobs.
+        /// </returns>
+        public VectorOfVectorOfPoint GetBlobContours()
+        {
+            return new VectorOfVectorOfPoint(Features2DInvoke.cveSimpleBlobDetectorGetBlobContours(_ptr), false);
         }
 
         /// <summary>
@@ -71,19 +82,22 @@ namespace Emgu.CV.Features2D
     public static partial class Features2DInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveSimpleBlobDetectorCreate(ref IntPtr feature2DPtr, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveSimpleBlobDetectorCreate(ref IntPtr feature2DPtr, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveSimpleBlobDetectorCreateWithParams(ref IntPtr feature2DPtr, IntPtr parameters, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveSimpleBlobDetectorCreateWithParams(ref IntPtr feature2DPtr, IntPtr parameters, ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveSimpleBlobDetectorRelease(ref IntPtr sharedPtr);
+        internal static extern void cveSimpleBlobDetectorRelease(ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveSimpleBlobDetectorParamsCreate();
+        internal static extern IntPtr cveSimpleBlobDetectorParamsCreate();
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveSimpleBlobDetectorParamsRelease(ref IntPtr parameters);
+        internal static extern void cveSimpleBlobDetectorParamsRelease(ref IntPtr parameters);
+
+        [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern IntPtr cveSimpleBlobDetectorGetBlobContours(IntPtr detector);
 
     }
 }

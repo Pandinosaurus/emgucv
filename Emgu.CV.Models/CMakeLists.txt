@@ -1,10 +1,8 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 # --------------------------------------------------------
 
 IF(EMGU_CV_BUILD OR EMGU_CV_EXAMPLE_BUILD)
-
-PROJECT(Emgu.CV.Models)
 
   INSTALL(
 	  DIRECTORY
@@ -14,9 +12,12 @@ PROJECT(Emgu.CV.Models)
 	  FILES_MATCHING 
 	  PATTERN "*.cs"
 	  PATTERN "*.shproj"
+	  PATTERN "*.csproj"
 	  PATTERN "*.projitems"
 	  PATTERN "*.resx"
+	  PATTERN "Directory.Build.props"
 	  PATTERN "README.txt"
+	  PATTERN "README.md"
 	  PATTERN ".svn" EXCLUDE
 	  PATTERN "obj" EXCLUDE
 	  PATTERN "CMakeFiles" EXCLUDE
@@ -26,5 +27,5 @@ PROJECT(Emgu.CV.Models)
 
 ENDIF()
 
-ADD_SUBDIRECTORY(Emgu.CV.Models.NetStandard)
-ADD_SUBDIRECTORY(Emgu.CV.Models.IOS)
+ADD_SUBDIRECTORY(NetStandard)
+

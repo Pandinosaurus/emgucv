@@ -3,14 +3,33 @@
 #include "stdio.h"
 #include <iostream>
 #include "quaternions.h"
+
 #include "opencv2/opencv_modules.hpp"
 
 #include "opencv2/core/core.hpp"
+#include "opencv2/core/cuda.hpp"
+#include "opencv2/core/utils/logger.hpp"
+
+#ifdef HAVE_OPENCV_IMGPROC
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgproc/types_c.h"
+#endif
+
+#ifdef HAVE_OPENCV_FEATURES2D
+#include "opencv2/features2d.hpp"
+#endif
+
+#ifdef HAVE_OPENCV_HIGHGUI
 #include "opencv2/highgui/highgui.hpp"
+#endif
+
+#ifdef HAVE_OPENCV_PHOTO
 #include "opencv2/photo/photo.hpp"
+#endif
+
+#ifdef HAVE_OPENCV_DNN
 #include "opencv2/dnn/dnn.hpp"
+#endif
 //#include "opencv2/gpu/gpu.hpp"
 
 #ifdef _MSC_VER
@@ -203,13 +222,14 @@ void Test_MatchTemplate()
 
 	cv::Mat result;
 
-	cv::matchTemplate(img, templ, result, CV_TM_SQDIFF_NORMED);
+	cv::matchTemplate(img, templ, result, cv::TemplateMatchModes::TM_SQDIFF_NORMED);
 	double minVal, maxVal;
 	cv::Point minLoc, maxLoc;
 	cv::minMaxLoc(result, &minVal, &maxVal, &minLoc, &maxLoc);
 	cout << "Template matched expected: " << offset.x << "," << offset.y << "; computed: " << minLoc.x << "," << minLoc.y << /*"; maxLoc: " << maxLoc.x << "," <<maxLoc.y <<*/ std::endl;
 }
 
+#ifdef HAVE_OPENCV_PHOTO
 void Test_SeamlessClone(int size)
 {
 	//cv::Mat source = cv::imread("C:\\work\\sourceforge\\emgucv\\libs\\x64\\lena.jpg");
@@ -234,7 +254,9 @@ void Test_SeamlessClone(int size)
 		cout << "Seamless clone time: " << meter.getTimeMilli() << " milliseconds. " << std::endl;
 	}
 }
+#endif
 
+#ifdef HAVE_OPENCV_DNN
 void Test_InferenceEngine()
 {
 	std::vector<std::pair<cv::dnn::Backend, cv::dnn::Target>> backends = cv::dnn::getAvailableBackends();
@@ -245,10 +267,29 @@ void Test_InferenceEngine()
 		cout << "Backend: " << b << "; Target: " << t << std::endl;
 	}
 }
+#endif
+
+#ifdef HAVE_OPENCV_FEATURES2D
+void Test_SimpleBlobDetector()
+{
+	cv::Mat m(600, 480, CV_8UC1);
+	cv::Ptr<cv::SimpleBlobDetector> detector = cv::SimpleBlobDetector::create();
+	cv::Mat mask(m.size(), CV_8UC1);
+	mask.setTo(255);
+	std::vector<cv::KeyPoint> kps;
+	detector->detect(m, kps, mask);
+	cout << "SimpleBlobDetector: Passed";
+}
+#endif
 
 int main()
 {
 	char tmp;
+
+	cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_VERBOSE);
+
+	cout << cv::getBuildInformation() << std::endl;
+
 	//Test_CvPoint2D32f();
 	Test_2D_cross_product();
 	Test_3D_cross_product();
@@ -264,20 +305,36 @@ int main()
 	cout << "Size of CvSize (expected " << sizeof(int) * 2 << "): " << sizeof(CvSize) << std::endl;
 	cout << "Size of CvPoint2D32f (expected " << sizeof(float) * 2 << "): " << sizeof(CvPoint2D32f) << std::endl;
 	cout << "Size of CvRect (expected " << sizeof(int) * 4 << "): " << sizeof(CvRect) << std::endl;
-	cout << "Size of IplImage (expected 144):" << sizeof(IplImage) << std::endl;
+	cout << "Size of IplImage: " << sizeof(IplImage) << std::endl;
 	cout << "Size of CvScalar (expected " << sizeof(double) * 4 << "): " << sizeof(CvScalar) << std::endl;
+
+	int cudaDeviceCount = cv::cuda::getCudaEnabledDeviceCount();
+	cout << std::endl << "CUDA Enabled device count: " << cudaDeviceCount << std::endl;
+	for (int i = 0; i < cudaDeviceCount; ++i)
+	{
+		cv::cuda::printCudaDeviceInfo(i);
+		cout << std::endl;
+	}
 
 	Test_vectorOfPoint_to_mat();
 #ifdef _MSC_VER
 	Test_quaternions_performance();
 
+#ifdef HAVE_OPENCV_PHOTO
 	Test_SeamlessClone(3840);
+#endif
 
 #ifdef HAVE_OPENCV_VIDEOIO
 	Test_MSMF_VideoWriter();
 #endif
 
+#ifdef HAVE_OPENCV_DNN
 	Test_InferenceEngine();
+#endif
+
+#ifdef HAVE_OPENCV_FEATURES2D
+	Test_SimpleBlobDetector();
+#endif
 
 	cin >> tmp; //wait for input only if compiling with visual C++ 
 #endif

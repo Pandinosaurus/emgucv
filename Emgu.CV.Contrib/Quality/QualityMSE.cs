@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -75,14 +75,14 @@ namespace Emgu.CV.Quality
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveQualityMSECreate(
+        internal static extern IntPtr cveQualityMSECreate(
             IntPtr refImgs,
             ref IntPtr qualityBase,
             ref IntPtr algorithm,
             ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveQualityMSERelease(ref IntPtr sharedPtr);
+        internal static extern void cveQualityMSERelease(ref IntPtr sharedPtr);
     }
 
 

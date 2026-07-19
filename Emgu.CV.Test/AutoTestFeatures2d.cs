@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -637,10 +637,21 @@ namespace Emgu.CV.Test
         [Test]
         public void TestSimpleBlobDetector()
         {
-            Mat box = EmguAssert.LoadMat("box.png");
-            SimpleBlobDetectorParams p = new SimpleBlobDetectorParams();
-            SimpleBlobDetector detector = new SimpleBlobDetector(p);
-            MKeyPoint[] keypoints = detector.Detect(box);
+            using (Mat box = EmguAssert.LoadMat("box.png"))
+            {
+                SimpleBlobDetectorParams p = new SimpleBlobDetectorParams();
+                p.CollectContours = true;
+                SimpleBlobDetector detector = new SimpleBlobDetector(p);
+                using (Mat mask = new Mat(box.Size, DepthType.Cv8U, 1))
+                {
+                    mask.SetTo(new MCvScalar(255));
+                    MKeyPoint[] keypoints = detector.Detect(box, mask);
+                    using (VectorOfVectorOfPoint contour = detector.GetBlobContours())
+                    {
+                        int count = contour.Size;
+                    }
+                }
+            }
         }
     }
 }

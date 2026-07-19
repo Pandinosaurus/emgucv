@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -140,6 +140,11 @@ namespace Emgu.CV.Rapid
     /// </summary>
     public static partial class RapidInvoke
     {
+        static RapidInvoke()
+        {
+            CvInvoke.Init();
+        }
+
         /// <summary>
         /// Debug draw markers of matched correspondences onto a lineBundle
         /// </summary>
@@ -346,7 +351,7 @@ namespace Emgu.CV.Rapid
             using (InputArray iaCols = cols.GetInputArray())
             using (InputArray iaSrcLocations = srcLocations.GetInputArray())
             using (OutputArray oaPts2d = pts2d.GetOutputArray())
-            using (InputOutputArray ioaPts3d = pts3d.GetInputOutputArray())
+            using (InputOutputArray ioaPts3d = pts3d == null ? InputOutputArray.GetEmpty() : pts3d.GetInputOutputArray())
             using (InputArray iaMask = mask == null? InputArray.GetEmpty() : mask.GetInputArray())
             {
                 cveConvertCorrespondencies(iaCols, iaSrcLocations, oaPts2d, ioaPts3d, iaMask);

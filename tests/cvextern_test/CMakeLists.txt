@@ -1,27 +1,14 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 #
 #  CMake file for cvextern_test. See root CMakeLists.txt
 # --------------------------------------------------------
 
+IF(NOT IS_DEBIAN_ARM_BUILD) 
+
 project(cvextern_test)
 
 SET(OPENCV_MODULES_DIR "${OPENCV_SUBFOLDER}/modules")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/core/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/imgproc/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/video/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/ml/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/calib3d/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/objdetect/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/features2d/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/hal/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/flann/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/highgui/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/imgcodecs/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/videoio/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/photo/include")
-INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/dnn/include")
-
 INCLUDE_DIRECTORIES("${OPENCV_SUBFOLDER}/include/opencv")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../../Emgu.CV.Extern/")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}/../../")
@@ -109,11 +96,31 @@ set_target_properties(${the_target} PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
 	)
 
-ADD_DEPENDENCIES(${the_target} 
-  cvextern opencv_core opencv_calib3d opencv_features2d opencv_highgui opencv_imgproc opencv_ml opencv_objdetect 
-#  ${ZLIB_LIBRARY} 
-#  ${TIFF_LIBRARY} ${GEOTIFF_LIBRARY}
-)
+FOREACH(CVEXTERN_OPTIONAL_DEP ${OPENCV_MODULE_NAME_CANDIDATES})
+  IF (HAVE_opencv_${CVEXTERN_OPTIONAL_DEP})
+    IF ( (DEFINED opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR) AND (EXISTS ${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include) )
+      INCLUDE_DIRECTORIES("${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
+      MESSAGE(STATUS "Include directory for cvextern_test:  ${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
+    ELSEIF (EXISTS "${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+      INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+      MESSAGE(STATUS "Include directory for cvextern_test:  ${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+    ELSEIF (EXISTS "${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+      INCLUDE_DIRECTORIES("${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+      MESSAGE(STATUS "Include directory for cvextern_test:  ${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+    ENDIF()
+  ENDIF()
+ENDFOREACH()
+
+FOREACH(CVEXTERN_OPTIONAL_DEP ${OPENCV_MODULE_NAMES}) 
+  #  INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+  MESSAGE(STATUS "CVEXTERN_TEST dependency added:  opencv_${CVEXTERN_OPTIONAL_DEP}")
+  ADD_DEPENDENCIES(${the_target} opencv_${CVEXTERN_OPTIONAL_DEP})
+  target_link_libraries(${the_target} opencv_${CVEXTERN_OPTIONAL_DEP})
+ENDFOREACH()
+
+#ADD_DEPENDENCIES(${the_target} 
+#  cvextern 
+#)
 
 IF(EMGU_ENABLE_SSE)
   ADD_DEFINITIONS(-D__EMGU_ENABLE_SSE__)
@@ -127,11 +134,37 @@ ENDIF()
 
 # Add the required libraries for linking:
 target_link_libraries(${the_target} ${OPENCV_LINKER_LIBS} 
-  cvextern opencv_core opencv_calib3d opencv_features2d opencv_highgui opencv_imgproc opencv_ml opencv_objdetect 
+  #cvextern 
+  #opencv_core opencv_calib3d opencv_features2d opencv_highgui opencv_imgproc opencv_ml opencv_objdetect 
 #  ${ZLIB_LIBRARY} 
 #  ${TIFF_LIBRARY} 
 #  ${GEOTIFF_LIBRARY}
 )
+
+#IF(IS_DEBIAN_ARM_BUILD)
+#  MESSAGE(STATUS "----------------------------- Linking with atomic on arm debian build ---------------------------")
+#  #target_link_libraries(${the_target} atomic)
+#  target_link_libraries(${the_target} -latomic)
+#  target_link_options(${the_target} PRIVATE -latomic)
+#  SET(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} -latomic)
+#ENDIF()
+
+#IF(IS_DEBIAN_ARM64_BUILD)
+#  MESSAGE(STATUS "----------------------------- DISABLE NEON on arm64 debian build ---------------------------")
+#  ADD_DEFINITIONS(-DPNG_ARM_NEON_OPT=0)
+#ENDIF()
+
+if(WITH_PNG AND BUILD_PNG)
+  target_link_libraries(${the_target} libpng)
+endif()
+
+if(WITH_TIFF AND BUILD_TIFF)
+  target_link_libraries(${the_target} libtiff)
+endif()
+
+if(WITH_JPEG AND BUILD_JPEG)
+  target_link_libraries(${the_target} libjpeg-turbo)
+  endif()
 
 IF("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
   set_target_properties(${the_target} PROPERTIES SUFFIX ".html")
@@ -145,3 +178,5 @@ INSTALL(TARGETS ${the_target}
     RUNTIME DESTINATION bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT main
     LIBRARY DESTINATION lib${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT main
     ARCHIVE DESTINATION lib${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT main)
+
+ENDIF()

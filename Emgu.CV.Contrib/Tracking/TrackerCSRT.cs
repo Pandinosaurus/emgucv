@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -24,6 +24,7 @@ namespace Emgu.CV
         /// <summary>
         /// Creates a CSRT tracker
         /// </summary>
+        /// <param name="psr_threshold">Peak-to-sidelobe ratio threshold below which the target is considered lost. Matches OpenCV's default of 0.035.</param>
         /// <param name="useHog">Use hog</param>
         /// <param name="useColorNames">Use color names</param>
         /// <param name="useGray">Use Gray</param>
@@ -51,6 +52,7 @@ namespace Emgu.CV
         /// <param name="scaleLr">Scale Lr</param>
         /// <param name="scaleStep">Scale step</param>
         public TrackerCSRT(             
+            float psr_threshold = 0.035f,
             bool useHog = true,
             bool useColorNames = true,
             bool useGray = true,
@@ -81,6 +83,7 @@ namespace Emgu.CV
         {
             using (CvString csWindowFunction = new CvString(windowFunction))
                 _ptr = TrackingInvoke.cveTrackerCSRTCreate(
+                    psr_threshold,
                     useHog,
                     useColorNames,
                     useGray,
@@ -126,6 +129,7 @@ namespace Emgu.CV
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern IntPtr cveTrackerCSRTCreate(
+            float psr_threshold,
             [MarshalAs(CvInvoke.BoolMarshalType)]
             bool useHog,
             [MarshalAs(CvInvoke.BoolMarshalType)]

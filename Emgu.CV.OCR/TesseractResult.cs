@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using Emgu.CV.Util;
@@ -27,9 +27,10 @@ namespace Emgu.CV.OCR
         /// </summary>
         public int Length;
         /// <summary>
-        /// The cost
+        /// The mean confidence of the current object at the given level.
+        /// The number should be interpreted as a percent probability. (0.0f-100.0f)
         /// </summary>
-        public float Cost;
+        public float Confident;
         /// <summary>
         /// The region
         /// </summary>

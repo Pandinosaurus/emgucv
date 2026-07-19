@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -19,21 +19,21 @@ namespace Emgu.CV.Tiff
    {
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static IntPtr tiffWriterOpen(
+      internal static extern IntPtr tiffWriterOpen(
          [MarshalAs(CvInvoke.StringMarshalType)]
          string fileSpec);
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void tiffWriterClose(ref IntPtr pTiff);
+      internal static extern void tiffWriterClose(ref IntPtr pTiff);
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void tiffWriteGeoTag(IntPtr pTiff, IntPtr modelTiepoint, IntPtr ModelPixelScale);
+      internal static extern void tiffWriteGeoTag(IntPtr pTiff, IntPtr modelTiepoint, IntPtr ModelPixelScale);
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void tiffWriteImage(IntPtr pTiff, IntPtr image);
+      internal static extern void tiffWriteImage(IntPtr pTiff, IntPtr image);
 
       [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-      internal extern static void tiffWriteImageInfo(IntPtr pTiff, int bitsPerSample, int samplesPerPixel);
+      internal static extern void tiffWriteImageInfo(IntPtr pTiff, int bitsPerSample, int samplesPerPixel);
    }
 
    /// <summary>

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using Emgu.CV.Util;
@@ -88,6 +88,7 @@ namespace Emgu.CV.XImgproc
             {
                 XImgprocInvoke.cveRidgeDetectionFilterRelease(ref _sharedPtr);
                 _ptr = IntPtr.Zero;
+                _algorithm = IntPtr.Zero;
             }
         }
     }

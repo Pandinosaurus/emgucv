@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ namespace cv {
 #include "opencv2/tracking/tracking.hpp"
 #include "opencv2/tracking/tracking_legacy.hpp"
 #else
-static inline CV_NORETURN void throw_no_tracking() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without tracking support"); }
+static inline CV_NORETURN void throw_no_tracking() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without tracking support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 	class TrackerCSRT {};
 	class TrackerKCF {};
@@ -58,6 +58,7 @@ CVAPI(cv::TrackerKCF*) cveTrackerKCFCreate(
 CVAPI(void) cveTrackerKCFRelease(cv::TrackerKCF** tracker, cv::Ptr<cv::TrackerKCF>** sharedPtr);
 
 CVAPI(cv::TrackerCSRT*) cveTrackerCSRTCreate(
+	float psr_threshold,
 	bool use_hog,
 	bool use_color_names,
 	bool use_gray,
@@ -87,6 +88,7 @@ CVAPI(cv::TrackerCSRT*) cveTrackerCSRTCreate(
 	cv::Tracker** tracker,
 	cv::Ptr<cv::TrackerCSRT>** sharedPtr);
 CVAPI(void) cveTrackerCSRTRelease(cv::TrackerCSRT** tracker, cv::Ptr<cv::TrackerCSRT>** sharedPtr);
+
 
 CVAPI(bool) cveLegacyTrackerInit(cv::legacy::Tracker* tracker, cv::Mat* image, CvRect* boundingBox);
 CVAPI(bool) cveLegacyTrackerUpdate(cv::legacy::Tracker* tracker, cv::Mat* image, CvRect* boundingBox);

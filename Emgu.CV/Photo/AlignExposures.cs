@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -33,7 +33,7 @@ namespace Emgu.CV
         {
             using (InputArray iaSrc = src.GetInputArray())
             using (InputArray iaTimes = times.GetInputArray())
-            using (InputArray iaResponse = times.GetInputArray())
+            using (InputArray iaResponse = response.GetInputArray())
             {
                 CvInvoke.cveAlignExposuresProcess(_alignExposuresPtr, iaSrc, dst, iaTimes, iaResponse);
             }

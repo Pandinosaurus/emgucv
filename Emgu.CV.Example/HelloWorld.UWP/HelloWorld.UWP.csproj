@@ -11,7 +11,7 @@
     <AssemblyName>HelloWorld.UWP</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
-    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.19041.0</TargetPlatformVersion>
+    <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.26100.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
@@ -160,13 +160,16 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.12</Version>
+      <Version>6.2.14</Version>
+    </PackageReference>
+    <PackageReference Include="System.Private.Uri">
+      <Version>4.3.2</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Emgu.CV.Platform\NetStandard\Emgu.CV.Platform.Netstandard.csproj">
-      <Project>{5e912dcc-e7ac-491f-8293-c985e3ab5ca7}</Project>
-      <Name>Emgu.CV.Platform.Netstandard</Name>
+    <ProjectReference Include="..\..\Emgu.CV\NetStandard\Emgu.CV.csproj">
+      <Project>{04f3ae12-538f-4023-a652-c6d4ff738f97}</Project>
+      <Name>Emgu.CV</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="..\..\Emgu.CV.Runtime\UWP\Emgu.CV.Runtime.UWP.projitems" Label="Shared" />

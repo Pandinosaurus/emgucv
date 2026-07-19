@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
@@ -74,30 +75,44 @@ namespace Emgu.CV.Test
          }
       }
 
-#if !NETFX_CORE
-      [TestAttribute]
-      public void TestRuntimeSerialize()
+      [Test]
+      public void TestJsonSerializeAndDeserialize()
       {
-         UMat img = new UMat(100, 80, DepthType.Cv8U, 3);
+          using (UMat umat = new UMat(new Size(50, 60), DepthType.Cv8U, 3))
+          {
+              String jsonString = JsonSerializer.Serialize(umat);
 
-         using (MemoryStream ms = new MemoryStream())
-         {
-            //img.SetRandNormal(new MCvScalar(100, 100, 100), new MCvScalar(50, 50, 50));
-            //img.SerializationCompressionRatio = 9;
-            CvInvoke.SetIdentity(img, new MCvScalar(1, 2, 3));
-            System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-                formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
-            formatter.Serialize(ms, img);
-            Byte[] bytes = ms.GetBuffer();
+              using (UMat umat2 = JsonSerializer.Deserialize<UMat>(jsonString))
+                  EmguAssert.IsTrue(umat.Equals(umat2));
 
-            using (MemoryStream ms2 = new MemoryStream(bytes))
-            {
-               Object o = formatter.Deserialize(ms2);
-               UMat img2 = (UMat)o;
-               EmguAssert.IsTrue(img.Equals(img2));
-            }
-         }
+          }
       }
-#endif
-   }
+        /*
+  #if !NETFX_CORE
+        [TestAttribute]
+        public void TestRuntimeSerialize()
+        {
+           UMat img = new UMat(100, 80, DepthType.Cv8U, 3);
+
+           using (MemoryStream ms = new MemoryStream())
+           {
+              //img.SetRandNormal(new MCvScalar(100, 100, 100), new MCvScalar(50, 50, 50));
+              //img.SerializationCompressionRatio = 9;
+              CvInvoke.SetIdentity(img, new MCvScalar(1, 2, 3));
+              System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+                  formatter = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+              formatter.Serialize(ms, img);
+              Byte[] bytes = ms.GetBuffer();
+
+              using (MemoryStream ms2 = new MemoryStream(bytes))
+              {
+                 Object o = formatter.Deserialize(ms2);
+                 UMat img2 = (UMat)o;
+                 EmguAssert.IsTrue(img.Equals(img2));
+              }
+           }
+        }
+  #endif
+        */
+    }
 }

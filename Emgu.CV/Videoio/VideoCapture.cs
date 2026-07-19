@@ -1,23 +1,15 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
-
-#if !(__ANDROID__ || __UNIFIED__ || UNITY_WSA || NETSTANDARD || UNITY_ANDROID || UNITY_IOS || UNITY_WEBGL || UNITY_EDITOR || UNITY_STANDALONE)
-#define WITH_SERVICE_MODEL
-#endif
 
 //#define TEST_CAPTURE
 
 using System;
 using System.Diagnostics;
-#if WITH_SERVICE_MODEL
-using System.ServiceModel;
-#endif
 using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-//using System.Threading.Tasks;
 using Emgu.Util;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
@@ -29,15 +21,8 @@ namespace Emgu.CV
     /// Capture images from either camera or video file. 
     /// </summary>
     /// <remarks>VideoCapture class is NOT implemented in Open CV for Android, iOS or UWP platforms</remarks>
-#if WITH_SERVICE_MODEL
-    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
-#endif
     public partial class VideoCapture :
-        UnmanagedObject,
-#if WITH_SERVICE_MODEL
-        IDuplexCapture,
-#endif
-        ICapture
+        UnmanagedObject
     {
 
         /// <summary>
@@ -323,6 +308,8 @@ namespace Emgu.CV
         {
             get
             {
+                if (_ptr == IntPtr.Zero)
+                    return 0;
                 return Convert.ToInt32(Get(CvEnum.CapProp.FrameWidth));
             }
         }
@@ -332,6 +319,8 @@ namespace Emgu.CV
         {
             get
             {
+                if (_ptr == IntPtr.Zero)
+                    return 0;
                 return Convert.ToInt32(Get(CvEnum.CapProp.FrameHeight));
             }
         }
@@ -389,6 +378,7 @@ namespace Emgu.CV
                 throw new NullReferenceException(String.Format("Error: Unable to create capture from camera {0}", camIndex));
             }
 #endif
+            _needDispose = true;
         }
 
         /// <summary>
@@ -400,16 +390,15 @@ namespace Emgu.CV
         public VideoCapture(String fileName, API captureApi = API.Any, params Tuple<CvEnum.CapProp, int>[] captureProperties)
         {
             using (CvString s = new CvString(fileName))
+            using (VectorOfInt vectInt = ConvertCaptureProperties(captureProperties))
             {
-                using (VectorOfInt vectInt = ConvertCaptureProperties(captureProperties))
-                {
-                    _captureModuleType = CaptureModuleType.Highgui;
-                    _ptr = CvInvoke.cveVideoCaptureCreateFromFile(s, captureApi, vectInt);
-                }
-
+                _captureModuleType = CaptureModuleType.Highgui;
+                _ptr = CvInvoke.cveVideoCaptureCreateFromFile(s, captureApi, vectInt);
+                
                 if (_ptr == IntPtr.Zero)
                     throw new NullReferenceException(String.Format("Unable to create capture from {0}", fileName));
             }
+            _needDispose = true;
         }
         #endregion
 
@@ -424,7 +413,7 @@ namespace Emgu.CV
             if (_needDispose && _ptr != IntPtr.Zero)
             {
                 Stop();
-                CvInvoke.cveVideoCaptureRelease(ref _ptr);
+                CvInvoke.cveVideoCaptureRelease2(ref _ptr);
             }
 #endif
         }
@@ -471,7 +460,7 @@ namespace Emgu.CV
             bool grabbed = CvInvoke.cveVideoCaptureGrab(Ptr);
 
             if (grabbed && ImageGrabbed != null)
-                ImageGrabbed(this, new EventArgs());
+                ImageGrabbed(this, EventArgs.Empty);
             return grabbed;
         }
         
@@ -611,20 +600,22 @@ namespace Emgu.CV
         /// Same to cv::VideoCapture &gt;gt; cv::Mat function
         /// </summary>
         /// <param name="mat">The Mat to be written to. If no more frame is available, the resulting Mat will be empty.</param>
+        /// <returns>False if no frames has been grabbed</returns>
         public bool Read(Mat mat)
         {
             CvInvoke.cveVideoCaptureReadToMat(_ptr, mat);
-            return mat.IsEmpty;
+            return !mat.IsEmpty;
         }
-        
+
         /// <summary>
         /// Same to cv::VideoCapture &gt;gt; cv::UMat function
         /// </summary>
         /// <param name="umat">The UMat to be written to. If no more frame is available, the resulting UMat will be empty.</param>
+        /// <returns>False if no frames has been grabbed</returns>
         public bool Read(UMat umat)
         {
             CvInvoke.cveVideoCaptureReadToUMat(_ptr, umat);
-            return umat.IsEmpty;
+            return !umat.IsEmpty;
         }
         
         /// <summary>
@@ -634,6 +625,9 @@ namespace Emgu.CV
         {
             get
             {
+                if (_ptr == IntPtr.Zero)
+                    return String.Empty;
+
                 using (CvString s = new CvString())
                 {
                     CvInvoke.cveVideoCaptureGetBackendName(Ptr, s);
@@ -664,7 +658,8 @@ namespace Emgu.CV
         public virtual Mat QueryFrame()
         {
             Mat image = new Mat();
-            if (image.IsEmpty)
+
+            if (!Read(image))
             {
                 image.Dispose();
                 return null;
@@ -727,31 +722,6 @@ namespace Emgu.CV
               }
           }*/
 
-#if WITH_SERVICE_MODEL
-        /// <summary>
-        /// Query a frame duplexly over WCF
-        /// </summary>
-        public virtual void DuplexQueryFrame()
-        {
-            IDuplexCaptureCallback callback = OperationContext.Current.GetCallbackChannel<IDuplexCaptureCallback>();
-            using (Mat img = QueryFrame())
-            {
-                callback.ReceiveFrame(img);
-            }
-        }
-
-        /// <summary>
-        /// Query a small frame duplexly over WCF
-        /// </summary>
-        public virtual void DuplexQuerySmallFrame()
-        {
-            IDuplexCaptureCallback callback = OperationContext.Current.GetCallbackChannel<IDuplexCaptureCallback>();
-            using (Mat img = QuerySmallFrame())
-            {
-                callback.ReceiveFrame(img);
-            }
-        }
-#endif
     }
 
     /// <summary>
@@ -809,7 +779,7 @@ namespace Emgu.CV
         internal static extern IntPtr cveVideoCaptureCreateFromFile(IntPtr filename, VideoCapture.API api, IntPtr captureProperties);
 
         [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern void cveVideoCaptureRelease(ref IntPtr capture);
+        internal static extern void cveVideoCaptureRelease2(ref IntPtr capture);
 
         [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         [return: MarshalAs(CvInvoke.BoolToIntMarshalType)]

@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -106,18 +106,18 @@ namespace Emgu.CV.Shape
     public static partial class ShapeInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveAffineTransformerCreate(
+        internal static extern IntPtr cveAffineTransformerCreate(
             [MarshalAs(CvInvoke.BoolMarshalType)]
             bool fullAffine, 
             ref IntPtr transformer, 
             ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveAffineTransformerRelease(ref IntPtr sharedPtr);
+        internal static extern void cveAffineTransformerRelease(ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveThinPlateSplineShapeTransformerCreate(double regularizationParameter, ref IntPtr transformer, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveThinPlateSplineShapeTransformerCreate(double regularizationParameter, ref IntPtr transformer, ref IntPtr sharedPtr);
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveThinPlateSplineShapeTransformerRelease(ref IntPtr sharedPtr);
+        internal static extern void cveThinPlateSplineShapeTransformerRelease(ref IntPtr sharedPtr);
 
         /// <summary>
         /// Estimate the transformation parameters of the current transformer algorithm, based on point matches.
@@ -143,7 +143,7 @@ namespace Emgu.CV.Shape
             }
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveShapeTransformerEstimateTransformation(
+        internal static extern void cveShapeTransformerEstimateTransformation(
             IntPtr transformer,
             IntPtr transformingShape,
             IntPtr targetShape,
@@ -155,7 +155,7 @@ namespace Emgu.CV.Shape
         /// <param name="transformer">The shape transformer</param>
         /// <param name="input">Contour (set of points) to apply the transformation.</param>
         /// <param name="output">Output contour.</param>
-        /// <returns></returns>
+        /// <returns>The cost of the transformation.</returns>
         public static float ApplyTransformation(
             this IShapeTransformer transformer,
             IInputArray input,
@@ -172,7 +172,7 @@ namespace Emgu.CV.Shape
         }
             
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static float cveShapeTransformerApplyTransformation(
+        internal static extern float cveShapeTransformerApplyTransformation(
             IntPtr transformer,
             IntPtr input,
             IntPtr output);
@@ -208,7 +208,7 @@ namespace Emgu.CV.Shape
         }
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveShapeTransformerWarpImage(
+        internal static extern void cveShapeTransformerWarpImage(
             IntPtr transformer,
             IntPtr transformingImage,
             IntPtr output,

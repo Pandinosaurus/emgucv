@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:ui="clr-namespace:Emgu.CV.Platform.Maui.UI;assembly=Emgu.CV.runtime.maui"
+             x:Class="BuildInfo.MainPage">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Spacing="25"
+            Padding="30,0"
+            VerticalOptions="Center">
+
+            <Image
+                Source="dotnet_bot.png"
+                SemanticProperties.Description="Cute dot net bot waving hi to you!"
+                HeightRequest="200"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Emgu CV"
+                SemanticProperties.HeadingLevel="Level1"
+                FontSize="32"
+                HorizontalOptions="Center" />
+
+            <Label
+			    x:Name="DetailLabel"
+                Text="Click the top right 'About' button to see build information"
+                SemanticProperties.HeadingLevel="Level2"
+                SemanticProperties.Description="Welcome to dot net Multi platform App U I"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="InvertBtn"
+                Text="Invert image"
+                SemanticProperties.Hint="Click to invert an image"
+                Clicked="OnInvertClicked"
+                HorizontalOptions="Center" />
+
+            <Button
+                x:Name="FaceDetectBtn"
+                Text="Run Face Detection"
+                SemanticProperties.Hint="Click to perform face detection"
+                Clicked="OnFaceDetectClicked"
+                HorizontalOptions="Center" />
+
+            <ui:CvImageView
+                x:Name="HelloWorldImageView"
+                HeightRequest="480"
+                HorizontalOptions="Center" />
+                    
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

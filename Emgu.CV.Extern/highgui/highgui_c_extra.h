@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/highgui/highgui.hpp"
 #else
-static inline CV_NORETURN void throw_no_highgui() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without highgui support"); }
+static inline CV_NORETURN void throw_no_highgui() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without highgui support. To use this module, please switch to the full Emgu CV runtime."); }
 #endif
 
 
@@ -38,7 +38,7 @@ CVAPI(void) cveSelectROI(
 CVAPI(void) cveSelectROIs(
 	cv::String* windowName,
 	cv::_InputArray* img,
-	std::vector< cv::Rect >* boundingBoxs,
+	std::vector< cv::Rect >* boundingBoxes,
 	bool showCrosshair,
 	bool fromCenter);
 #endif

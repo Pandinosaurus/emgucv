@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -12,17 +12,17 @@
 //
 //----------------------------------------------------------------------------
 
-cv::cudacodec::VideoWriter* cudaVideoWriterCreate(cv::String* fileName, CvSize* frameSize, double fps, cv::cudacodec::SurfaceFormat format, cv::Ptr<cv::cudacodec::VideoWriter>** sharedPtr)
+cv::cudacodec::VideoWriter* cudaVideoWriterCreate(cv::String* fileName, CvSize* frameSize, cv::cudacodec::Codec codec, double fps, cv::cudacodec::ColorFormat colorFormat, cv::cuda::Stream* stream, cv::Ptr<cv::cudacodec::VideoWriter>** sharedPtr)
 {
 #ifdef HAVE_OPENCV_CUDACODEC
-	cv::Ptr<cv::cudacodec::VideoWriter> ptr = cv::cudacodec::createVideoWriter(*fileName, *frameSize, fps, format);
+	cv::Ptr<cv::cudacodec::VideoWriter> ptr = cv::cudacodec::createVideoWriter(*fileName, *frameSize, codec, fps, colorFormat, 0, stream ? *stream : cv::cuda::Stream::Null());
 	*sharedPtr = new cv::Ptr<cv::cudacodec::VideoWriter>(ptr);
 	return ptr.get();
 #else
 	throw_no_cudacodec();
 #endif
 }
-void cudaVideoWriterRelease(cv::Ptr<cv::cudacodec::VideoWriter>** writer)
+void cudaVideoWriterDelete(cv::Ptr<cv::cudacodec::VideoWriter>** writer)
 {
 #ifdef HAVE_OPENCV_CUDACODEC
 	delete* writer;
@@ -31,10 +31,18 @@ void cudaVideoWriterRelease(cv::Ptr<cv::cudacodec::VideoWriter>** writer)
 	throw_no_cudacodec();
 #endif
 }
-void cudaVideoWriterWrite(cv::cudacodec::VideoWriter* writer, cv::_InputArray* frame, bool lastFrame)
+void cudaVideoWriterRelease(cv::cudacodec::VideoWriter* writer)
 {
 #ifdef HAVE_OPENCV_CUDACODEC
-	writer->write(*frame, lastFrame);
+	writer->release();
+#else
+	throw_no_cudacodec();
+#endif	
+}
+void cudaVideoWriterWrite(cv::cudacodec::VideoWriter* writer, cv::_InputArray* frame)
+{
+#ifdef HAVE_OPENCV_CUDACODEC
+	writer->write(*frame);
 #else
 	throw_no_cudacodec();
 #endif

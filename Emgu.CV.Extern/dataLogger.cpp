@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -8,16 +8,26 @@
 
 using namespace emgu;
 
-DataLogger* DataLoggerCreate(int logLevel, int loggerId) { return new DataLogger(logLevel, loggerId); }
+DataLogger* cveDataLoggerCreate(int logLevel, int loggerId)
+{
+	return new DataLogger(logLevel, loggerId);
+}
 
-void DataLoggerRelease(DataLogger** logger) { if (*logger) { delete *logger; *logger = 0; } }
+void cveDataLoggerRelease(DataLogger** logger)
+{
+	if (*logger)
+	{
+		delete *logger;
+		*logger = 0;
+	}
+}
 
-void DataLoggerRegisterCallback(DataLogger* logger, DataCallback dataCallback )
+void cveDataLoggerRegisterCallback(DataLogger* logger, DataCallback dataCallback )
 {
    logger->callback = dataCallback;
 }
 
-void DataLoggerLog(DataLogger* logger, void* data, int logLevel)
+void cveDataLoggerLog(DataLogger* logger, void* data, int logLevel)
 {
    logger->log(data, logLevel);
 }

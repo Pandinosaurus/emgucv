@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //  Vector of ${VECTOR_NAME}
 //
@@ -43,7 +43,7 @@ CVAPI(void) VectorOf${VECTOR_NAME}CopyData(std::vector< ${VECTOR_ELEMENT} >* v, 
 
 CVAPI(${VECTOR_ELEMENT}*) VectorOf${VECTOR_NAME}GetStartAddress(std::vector< ${VECTOR_ELEMENT} >* v);
 
-CVAPI(void*) VectorOf${VECTOR_NAME}GetEndAddress(std::vector< ${VECTOR_ELEMENT} >* v);
+CVAPI(int64_t) VectorOf${VECTOR_NAME}GetMemorySize(std::vector< ${VECTOR_ELEMENT} >* v);
 
 CVAPI(void) VectorOf${VECTOR_NAME}GetItem(std::vector<  ${VECTOR_ELEMENT} >* vec, int index,  ${VECTOR_ELEMENT}* element);
 
@@ -82,6 +82,8 @@ CVAPI(void) VectorOf${VECTOR_NAME}Release(void** v);
 CVAPI(void) VectorOf${VECTOR_NAME}CopyData(void* v,  void* data);
 
 CVAPI(void*) VectorOf${VECTOR_NAME}GetStartAddress(void* v);
+
+CVAPI(int64_t) VectorOf${VECTOR_NAME}GetMemorySize(void* v);
 
 CVAPI(void) VectorOf${VECTOR_NAME}GetItem(void* vec, int index, void* element);
 

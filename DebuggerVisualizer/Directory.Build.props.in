@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<Project>
+  <!-- https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory?view=vs-2022 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <version>${CPACK_PACKAGE_VERSION}</version>
+    <authors>${CPACK_PACKAGE_VENDOR}</authors>
+    <owners>${CPACK_PACKAGE_VENDOR}</owners>
+    <EmguCVProjectRoot>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\))</EmguCVProjectRoot>
+	<OpenCVBinaryDir>$([System.IO.Path]::GetFullPath($(EmguCVProjectRoot)\libs))</OpenCVBinaryDir>
+    <PackageOutputPath>$([System.IO.Path]::GetFullPath($(EmguCVProjectRoot)\platforms\nuget))</PackageOutputPath>
+    <copyright>© ${CPACK_PACKAGE_VENDOR} ${CURRENT_YEAR}. All rights reserved.</copyright>
+    
+	<!-- Add local repository path to RestoreSources -->
+    <RestoreSources>$(RestoreSources);$(PackageOutputPath);https://api.nuget.org/v3/index.json</RestoreSources>
+	
+  </PropertyGroup>
+  
+  	<ItemGroup>
+      <PackageReference Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" Include="${EMGUCV_WINDOWS_NUGET_ID}" Version="${CPACK_PACKAGE_VERSION}">
+	  </PackageReference>
+	  <!--
+	  <PackageReference Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" Include="${EMGUCV_WPF_NUGET_ID}" Version="${CPACK_PACKAGE_VERSION}">
+	  </PackageReference>
+	  -->
+    </ItemGroup>
+
+  <Import Project="SignBinary.Targets" Condition="exists('SignBinary.Targets')" />		
+  <!--
+  <Import Project="SignVSIX.Targets" Condition="exists('SignVSIX.Targets')" />
+  -->
+</Project>

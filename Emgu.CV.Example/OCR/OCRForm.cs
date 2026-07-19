@@ -1,10 +1,11 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -63,9 +64,9 @@ namespace OCR
                 {
                     String source = Emgu.CV.OCR.Tesseract.GetLangFileUrl(lang);
                     
-                    Console.WriteLine(String.Format("Downloading file from '{0}' to '{1}'", source, dest));
+                    Trace.WriteLine(String.Format("Downloading file from '{0}' to '{1}'", source, dest));
                     webclient.DownloadFile(source, dest);
-                    Console.WriteLine(String.Format("Download completed"));
+                    Trace.WriteLine("Download completed");
                 }
         }
 
@@ -150,7 +151,7 @@ namespace OCR
                 if (ocr.Recognize() != 0)
                     throw new Exception("Failed to recognizer image");
 
-                Tesseract.Character[] characters = ocr.GetCharacters();
+                Tesseract.Word[] characters = ocr.GetWords();
                 if (characters.Length == 0)
                 {
                     Mat imgGrey = new Mat();
@@ -158,17 +159,17 @@ namespace OCR
                     Mat imgThresholded = new Mat();
                     CvInvoke.Threshold(imgGrey, imgThresholded, 65, 255, ThresholdType.Binary);
                     ocr.SetImage(imgThresholded);
-                    characters = ocr.GetCharacters();
+                    characters = ocr.GetWords();
                     imageColor = imgThresholded;
                     if (characters.Length == 0)
                     {
                         CvInvoke.Threshold(image, imgThresholded, 190, 255, ThresholdType.Binary);
                         ocr.SetImage(imgThresholded);
-                        characters = ocr.GetCharacters();
+                        characters = ocr.GetWords();
                         imageColor = imgThresholded;
                     }
                 }
-                foreach (Tesseract.Character c in characters)
+                foreach (Tesseract.Word c in characters)
                 {
                     CvInvoke.Rectangle(imageColor, c.Region, drawCharColor.MCvScalar);
                 }
@@ -245,7 +246,7 @@ namespace OCR
                 }
 
 
-                List<Tesseract.Character> allChars = new List<Tesseract.Character>();
+                List<Tesseract.Word> allChars = new List<Tesseract.Word>();
                 String allText = String.Empty;
                 foreach (Rectangle rect in regions)
                 {
@@ -254,7 +255,7 @@ namespace OCR
                         ocr.SetImage(region);
                         if (ocr.Recognize() != 0)
                             throw new Exception("Failed to recognize image");
-                        Tesseract.Character[] characters = ocr.GetCharacters();
+                        Tesseract.Word[] characters = ocr.GetWords();
 
                         //convert the coordinates from the local region to global
                         for (int i = 0; i < characters.Length; i++)
@@ -276,7 +277,7 @@ namespace OCR
                 {
                     CvInvoke.Rectangle(imageColor, rect, drawRegionColor.MCvScalar);
                 }
-                foreach (Tesseract.Character c in allChars)
+                foreach (Tesseract.Word c in allChars)
                 {
                     CvInvoke.Rectangle(imageColor, c.Region, drawCharColor.MCvScalar);
                 }

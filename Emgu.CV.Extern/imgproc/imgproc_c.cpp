@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -37,11 +37,60 @@ void cveBlendLinear(cv::_InputArray* src1, cv::_InputArray* src2, cv::_InputArra
 	cv::blendLinear(*src1, *src2, *weights1, *weights2, *dst);
 }
 
-void cveCLAHE(cv::_InputArray* src, double clipLimit, CvSize* tileGridSize, cv::_OutputArray* dst)
+cv::CLAHE* cveCLAHECreate(double clipLimit, CvSize* tileGridSize, cv::Ptr<cv::CLAHE>** sharedPtr)
 {
 	cv::Size s(tileGridSize->width, tileGridSize->height);
-	cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(clipLimit, s);
+	cv::Ptr<cv::CLAHE> ptr = cv::createCLAHE(clipLimit, s);
+	*sharedPtr = new cv::Ptr<cv::CLAHE>(ptr);
+	return (*sharedPtr)->get();
+}
+
+void cveCLAHEApply(cv::CLAHE* clahe, cv::_InputArray* src, cv::_OutputArray* dst)
+{
 	clahe->apply(*src, *dst);
+}
+
+void cveCLAHERelease(cv::Ptr<cv::CLAHE>** sharedPtr)
+{
+	delete *sharedPtr;
+	*sharedPtr = 0;
+}
+
+void cveCLAHESetClipLimit(cv::CLAHE* clahe, double clipLimit)
+{
+	clahe->setClipLimit(clipLimit);
+}
+
+double cveCLAHEGetClipLimit(cv::CLAHE* clahe)
+{
+	return clahe->getClipLimit();
+}
+
+void cveCLAHESetTilesGridSize(cv::CLAHE* clahe, CvSize* tileGridSize)
+{
+	clahe->setTilesGridSize(cv::Size(tileGridSize->width, tileGridSize->height));
+}
+
+void cveCLAHEGetTilesGridSize(cv::CLAHE* clahe, CvSize* size)
+{
+	cv::Size s = clahe->getTilesGridSize();
+	size->width = s.width;
+	size->height = s.height;
+}
+
+void cveCLAHESetBitShift(cv::CLAHE* clahe, int shift)
+{
+	clahe->setBitShift(shift);
+}
+
+int cveCLAHEGetBitShift(cv::CLAHE* clahe)
+{
+	return clahe->getBitShift();
+}
+
+void cveCLAHECollectGarbage(cv::CLAHE* clahe)
+{
+	clahe->collectGarbage();
 }
 
 /*
@@ -116,14 +165,34 @@ void cveCanny2(cv::_InputArray* dx, cv::_InputArray* dy, cv::_OutputArray* edges
 	cv::Canny(*dx, *dy, *edges, threshold1, threshold2, L2gradient);
 }
 
+void cveCornerEigenValsAndVecs(cv::_InputArray* src, cv::_OutputArray* dst, int blockSize, int ksize, int borderType)
+{
+	cv::cornerEigenValsAndVecs(*src, *dst, blockSize, ksize, borderType);
+}
+
 void cveCornerHarris(cv::_InputArray* src, cv::_OutputArray* dst, int blockSize, int ksize, double k, int borderType)
 {
 	cv::cornerHarris(*src, *dst, blockSize, ksize, k, borderType);
 }
 
-double cveThreshold(cv::_InputArray* src, cv::_OutputArray* dst, double thresh, double maxval, int type)
+double cveThreshold(
+	cv::_InputArray* src, 
+	cv::_OutputArray* dst, 
+	double thresh, 
+	double maxval, 
+	int type)
 {
 	return cv::threshold(*src, *dst, thresh, maxval, type);
+}
+double cveThresholdWithMask(
+	cv::_InputArray* src,
+	cv::_InputOutputArray* dst,
+	cv::_InputArray* mask,
+	double thresh,
+	double maxval,
+	int type)
+{
+	return cv::thresholdWithMask(*src, *dst, *mask, thresh, maxval, type);
 }
 void cveWatershed(cv::_InputArray* image, cv::_InputOutputArray* markers)
 {
@@ -133,9 +202,27 @@ void cveAdaptiveThreshold(cv::_InputArray* src, cv::_OutputArray* dst, double ma
 {
 	cv::adaptiveThreshold(*src, *dst, maxValue, adaptiveMethod, thresholdType, blockSize, c);
 }
-void cveCvtColor(cv::_InputArray* src, cv::_OutputArray* dst, int code, int dstCn)
+void cveCvtColor(
+	cv::_InputArray* src, 
+	cv::_OutputArray* dst, 
+	int code, 
+	int dstCn, 
+	int hint)
 {
-	cv::cvtColor(*src, *dst, code, dstCn);
+	cv::cvtColor(*src, *dst, code, dstCn, static_cast<cv::AlgorithmHint>(hint));
+}
+void cveCvtColorTwoPlane(
+	cv::_InputArray* src1, 
+	cv::_InputArray* src2, 
+	cv::_OutputArray* dst, 
+	int code, 
+	int hint)
+{
+	cv::cvtColorTwoPlane(*src1, *src2, *dst, code, static_cast<cv::AlgorithmHint>(hint));
+}
+void cveDemosaicing(cv::_InputArray* src, cv::_OutputArray* dst, int code, int dstCn)
+{
+	cv::demosaicing(*src, *dst, code, dstCn);
 }
 void cveCopyMakeBorder(cv::_InputArray* src, cv::_OutputArray* dst, int top, int bottom, int left, int right, int borderType, CvScalar* value)
 {
@@ -210,6 +297,11 @@ void cvePhaseCorrelate(cv::_InputArray* src1, cv::_InputArray* src2, cv::_InputA
 	cv::Point2d pt = cv::phaseCorrelate(*src1, *src2, window ? *window : (cv::InputArray) cv::noArray(), response);
 	result->x = pt.x; result->y = pt.y;
 }
+void cvePhaseCorrelateIterative(cv::_InputArray* src1, cv::_InputArray* src2, int L2size, int maxIters, CvPoint2D64f* result)
+{
+	cv::Point2d pt = cv::phaseCorrelateIterative(*src1, *src2, L2size, maxIters);
+	result->x = pt.x; result->y = pt.y;
+}
 void cveCreateHanningWindow(cv::_OutputArray* dst, CvSize* winSize, int type)
 {
 	cv::createHanningWindow(*dst, *winSize, type);
@@ -248,9 +340,20 @@ void cveHoughCircles(cv::_InputArray* image, cv::_OutputArray* circles, int meth
 {
 	cv::HoughCircles(*image, *circles, method, dp, minDist, param1, param2, minRadius, maxRadius);
 }
-void cveHoughLines(cv::_InputArray* image, cv::_OutputArray* lines, double rho, double theta, int threshold, double srn, double stn)
+void cveHoughLines(
+	cv::_InputArray* image, 
+	cv::_OutputArray* lines, 
+	double rho, 
+	double theta, 
+	int threshold, 
+	double srn, 
+	double stn, 
+	double minTheta,
+	double maxTheta,
+	bool useEdgeVal
+	)
 {
-	cv::HoughLines(*image, *lines, rho, theta, threshold, srn, stn);
+	cv::HoughLines(*image, *lines, rho, theta, threshold, srn, stn, minTheta, maxTheta, useEdgeVal);
 }
 void cveHoughLinesP(cv::_InputArray* image, cv::_OutputArray* lines, double rho, double theta, int threshold, double minLineLength, double maxGap)
 {
@@ -289,9 +392,9 @@ void cveInvertAffineTransform(cv::_InputArray* m, cv::_OutputArray* im)
 	cv::invertAffineTransform(*m, *im);
 }
 
-void cveEMD(cv::_InputArray* signature1, cv::_InputArray* signature2, int distType, cv::_InputArray* cost, float* lowerBound, cv::_OutputArray* flow)
+float cveEMD(cv::_InputArray* signature1, cv::_InputArray* signature2, int distType, cv::_InputArray* cost, float* lowerBound, cv::_OutputArray* flow)
 {
-	cv::EMD(
+	return cv::EMD(
 		*signature1, 
 		*signature2, 
 		distType, 
@@ -333,6 +436,17 @@ void cveGetRotationMatrix2D(CvPoint2D32f* center, double angle, double scale, cv
 void cveFindContours(cv::_InputOutputArray* image, cv::_OutputArray* contours, cv::_OutputArray* hierarchy, int mode, int method, CvPoint* offset)
 {
 	cv::findContours(*image, *contours, hierarchy ? *hierarchy : (cv::OutputArray) cv::noArray(), mode, method, *offset);
+}
+
+void cveFindContoursLinkRuns(cv::_InputArray* image, cv::_OutputArray* contours, cv::_OutputArray* hierarchy)
+{
+	if (hierarchy)
+	{
+		cv::findContoursLinkRuns(*image, *contours);
+	} else
+	{
+		cv::findContoursLinkRuns(*image, *contours, *hierarchy);
+	}
 }
 
 double cvePointPolygonTest(cv::_InputArray* contour, CvPoint2D32f* pt, bool measureDist)
@@ -413,7 +527,11 @@ void cveFitEllipseDirect(cv::_InputArray* points, CvBox2D* box)
 	box->size = cvSize2D32f(rect.size.width, rect.size.height);
 	box->angle = rect.angle;
 }
-
+void cveGetClosestEllipsePoints(CvBox2D* ellipseParams, cv::_InputArray* points, cv::_OutputArray* closestPts)
+{
+	cv::RotatedRect rect = *ellipseParams;
+	cv::getClosestEllipsePoints(rect, *points, *closestPts);
+}
 void cveFitLine(cv::_InputArray* points, cv::_OutputArray* line, int distType, double param, double reps, double aeps)
 {
 	cv::fitLine(*points, *line, distType, param, reps, aeps);
@@ -435,6 +553,10 @@ void cveApproxPolyDP(cv::_InputArray* curve, cv::_OutputArray* approxCurve, doub
 {
 	cv::approxPolyDP(*curve, *approxCurve, epsilon, closed);
 }
+void cveApproxPolyN(cv::_InputArray* curve, cv::_OutputArray* approxCurve, int nsides, float epsilonPercentage, bool ensureConvex)
+{
+	cv::approxPolyN(*curve, *approxCurve, nsides, epsilonPercentage, ensureConvex);
+}
 void cveConvexHull(cv::_InputArray* points, cv::_OutputArray* hull, bool clockwise, bool returnPoints)
 {
 	cv::convexHull(*points, *hull, clockwise, returnPoints);
@@ -444,13 +566,31 @@ void cveConvexityDefects(cv::_InputArray* contour, cv::_InputArray* convexhull, 
 	cv::convexityDefects(*contour, *convexhull, *convexityDefects);
 }
 
-void cveGaussianBlur(cv::_InputArray* src, cv::_OutputArray* dst, CvSize* ksize, double sigmaX, double sigmaY, int borderType)
+void cveGaussianBlur(
+	cv::_InputArray* src, 
+	cv::_OutputArray* dst, 
+	CvSize* ksize, 
+	double sigmaX, 
+	double sigmaY, 
+	int borderType,
+	int hint)
 {
-	cv::GaussianBlur(*src, *dst, *ksize, sigmaX, sigmaY, borderType);
+	cv::GaussianBlur(
+		*src, 
+		*dst, 
+		*ksize, 
+		sigmaX, 
+		sigmaY, 
+		borderType,
+		static_cast<cv::AlgorithmHint>(hint));
 }
 void cveBlur(cv::_InputArray* src, cv::_OutputArray* dst, CvSize* kSize, CvPoint* anchor, int borderType)
 {
 	cv::blur(*src, *dst, *kSize, *anchor, borderType);
+}
+void cveStackBlur(cv::_InputArray* src, cv::_OutputArray* dst, CvSize* ksize)
+{
+	cv::stackBlur(*src, *dst, *ksize);
 }
 void cveMedianBlur(cv::_InputArray* src, cv::_OutputArray* dst, int ksize)
 {
@@ -473,7 +613,8 @@ void cveBilateralFilter(cv::_InputArray* src, cv::_OutputArray* dst, int d, doub
 //Subdiv2D
 cv::Subdiv2D* cveSubdiv2DCreate(CvRect* rect)
 {
-	return new cv::Subdiv2D(*rect);
+	cv::Rect2f r(*rect);
+	return new cv::Subdiv2D(r);
 }
 void cveSubdiv2DRelease(cv::Subdiv2D** subdiv)
 {
@@ -609,11 +750,29 @@ void cvePolylines(cv::_InputOutputArray* img, cv::_InputArray* pts,
 	cv::polylines(*img, *pts, isClosed, *color, thickness, lineType, shift);
 }
 
-void cveEllipse(cv::_InputOutputArray* img, CvPoint* center, CvSize* axes,
-	double angle, double startAngle, double endAngle,
-	const CvScalar* color, int thickness, int lineType, int shift)
+void cveEllipse1(
+	cv::_InputOutputArray* img,
+	CvPoint* center,
+	CvSize* axes,
+	double angle,
+	double startAngle,
+	double endAngle,
+	const CvScalar* color,
+	int thickness,
+	int lineType,
+	int shift)
 {
 	cv::ellipse(*img, *center, *axes, angle, startAngle, endAngle, *color, thickness, lineType, shift);
+}
+
+CVAPI(void) cveEllipse2(
+	cv::_InputOutputArray* img,
+	cv::RotatedRect* box,
+	CvScalar* color,
+	int thickness,
+	int lineType)
+{
+	cv::ellipse(*img, *box, *color, thickness, lineType);
 }
 
 void cveDrawMarker(

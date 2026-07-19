@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -13,7 +13,7 @@
 #ifdef HAVE_OPENCV_INTENSITY_TRANSFORM
 #include "opencv2/intensity_transform.hpp"
 #else
-static inline CV_NORETURN void throw_no_intensity_transform() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without intensity transform."); }
+static inline CV_NORETURN void throw_no_intensity_transform() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without intensity transform. To use this module, please switch to the full Emgu CV runtime."); }
 #endif
 
 CVAPI(void) cveLogTransform(cv::Mat* input, cv::Mat* output);

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -83,7 +83,7 @@ namespace Emgu.CV.XFeatures2D
     public static partial class XFeatures2DInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveDAISYCreate(
+        internal static extern IntPtr cveDAISYCreate(
            float radius, 
            int qRadius, 
            int qTheta,
@@ -98,6 +98,6 @@ namespace Emgu.CV.XFeatures2D
            ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDAISYRelease(ref IntPtr shared);
+        internal static extern void cveDAISYRelease(ref IntPtr shared);
     }
 }

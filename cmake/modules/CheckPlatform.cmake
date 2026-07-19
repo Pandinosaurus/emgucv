@@ -4,44 +4,108 @@
 #
 # IS_UBUNTU - If the system is Ubuntu
 # IS_RASPBIAN - If the system is raspbian
+# IS_RHEL - If the system is RHEL
 #
 # copyright (c) 2009 - 2012 Canming Huang support@emgu.com
 
 SET (IS_UBUNTU FALSE)
-#SET (IS_RASPBIAN FALSE)
+SET (IS_DEBIAN FALSE)
+SET (IS_RHEL FALSE)
 
 IF (UNIX AND NOT APPLE)
-  find_program(LSB_RELEASE_EXEC lsb_release)
-  IF(LSB_RELEASE_EXEC)
-    execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
-      OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
-      OUTPUT_VARIABLE LSB_RELEASE_RELEASE_SHORT
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      )
-    IF (LSB_RELEASE_ID_SHORT STREQUAL "Ubuntu")
+  IF(${CMAKE_VERSION} VERSION_GREATER "3.22")
+    cmake_host_system_information(RESULT DISTRO_ID QUERY DISTRIB_ID)
+    MARK_AS_ADVANCED(DISTRO_ID)
+    MESSAGE(STATUS "SYSTEM DISTRO_ID: ${DISTRO_ID}")
+    IF(DISTRO_ID STREQUAL "ubuntu")
       SET(IS_UBUNTU TRUE)
-    ELSEIF (LSB_RELEASE_ID_SHORT STREQUAL "Raspbian")
-      SET(IS_RASPBIAN TRUE)
+    ELSEIF(DISTRO_ID STREQUAL "rhel")
+      SET(IS_RHEL TRUE)
+    ELSEIF(DISTRO_ID STREQUAL "ol")
+      #Oracle Linux is based on RHEL
+      SET(IS_RHEL TRUE)
     ENDIF()
-  ELSE()
-    find_program(UNAME_EXEC uname)
-    IF (UNAME_EXEC)
-#      MESSAGE(status "------------------------- Found uname: ${UNAME_EXEC}")
-      execute_process(COMMAND ${UNAME_EXEC} -a
-        OUTPUT_VARIABLE UNAME_ALL
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+  ENDIF()
+
+  IF (NOT (IS_UBUNTU OR IS_RHEL))
+    #Use other method to check if the system is Ubuntu or debian
+    find_program(LSB_RELEASE_EXEC lsb_release)
+    IF(LSB_RELEASE_EXEC)
+      execute_process(COMMAND ${LSB_RELEASE_EXEC} -is
+	OUTPUT_VARIABLE LSB_RELEASE_ID_SHORT
+	OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
-#      MESSAGE(status "------------------------- UNAME_ALL: ${UNAME_ALL}")
-      IF ("${UNAME_ALL}" MATCHES ".*[Uu]buntu.*")
-	 SET(IS_UBUNTU TRUE)
+      execute_process(COMMAND ${LSB_RELEASE_EXEC} -rs
+	OUTPUT_VARIABLE LSB_RELEASE_RELEASE_SHORT
+	OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+      IF (LSB_RELEASE_ID_SHORT STREQUAL "Ubuntu")
+	SET(IS_UBUNTU TRUE)
+      ELSEIF (LSB_RELEASE_ID_SHORT STREQUAL "Raspbian")
+	#Raspbian is a debian distribution
+	SET(IS_DEBIAN TRUE)
+      ELSEIF (LSB_RELEASE_ID_SHORT STREQUAL "Debian")
+	SET(IS_DEBIAN TRUE)
+      ENDIF()
+    ELSE()
+      find_program(UNAME_EXEC uname)
+      IF (UNAME_EXEC)
+	#      MESSAGE(status "------------------------- Found uname: ${UNAME_EXEC}")
+	execute_process(COMMAND ${UNAME_EXEC} -a
+          OUTPUT_VARIABLE UNAME_ALL
+          OUTPUT_STRIP_TRAILING_WHITESPACE
+	  )
+	#      MESSAGE(status "------------------------- UNAME_ALL: ${UNAME_ALL}")
+	IF ("${UNAME_ALL}" MATCHES ".*[Uu]buntu.*")
+	  SET(IS_UBUNTU TRUE)
+	ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
 ENDIF()
 
+IF (IS_UBUNTU)
+  MESSAGE(STATUS "IS_UBUNTU: ${IS_UBUNTU}")
+ELSEIF (IS_RHEL)
+  MESSAGE(STATUS "IS_RHEL: ${IS_RHEL}")
+ELSEIF (IS_DEBIAN)
+  MESSAGE(STATUS "IS_DEBIAN: ${IS_DEBIAN}")
+ENDIF()
+
+
+IF(IS_UBUNTU OR IS_DEBIAN)
+  if(EXISTS "/etc/os-release")
+    file(READ "/etc/os-release" OS_RELEASE_CONTENT)
+    string(REGEX MATCH "VERSION_ID=\"?([0-9.]+)\"?" _ ${OS_RELEASE_CONTENT})
+    set(OS_RELEASE_VERSION "${CMAKE_MATCH_1}")
+    MESSAGE(STATUS "OS_RELEASE_VERSION: ${OS_RELEASE_VERSION}")
+    string(REGEX MATCH "VERSION_CODENAME=([^\n]+)" _ ${OS_RELEASE_CONTENT})
+    set(OS_RELEASE_VERSION_CODENAME ${CMAKE_MATCH_1})
+    string(REPLACE "\"" "" OS_RELEASE_VERSION_CODENAME ${OS_RELEASE_VERSION_CODENAME})
+    MESSAGE(STATUS "OS_RELEASE_VERSION_CODENAME: ${OS_RELEASE_VERSION_CODENAME}")
+    IF(IS_UBUNTU)
+      set(UBUNTU_VERSION "${OS_RELEASE_VERSION}")
+      message(STATUS "Detected Ubuntu ${UBUNTU_VERSION}")
+      MARK_AS_ADVANCED(UBUNTU_VERSION)
+      # Ubuntu <= 22: use version-qualified RID (ubuntu.<major>.<minor>-<arch>)
+      # Ubuntu > 22:  use generic RID (ubuntu-<arch>)
+      string(REGEX MATCH "^([0-9]+)" _ "${UBUNTU_VERSION}")
+      set(UBUNTU_VERSION_MAJOR "${CMAKE_MATCH_1}")
+      if(UBUNTU_VERSION_MAJOR GREATER 22)
+        set(UBUNTU_RID_PREFIX "ubuntu")
+      else()
+        set(UBUNTU_RID_PREFIX "ubuntu.${UBUNTU_VERSION}")
+      endif()
+      message(STATUS "UBUNTU_RID_PREFIX: ${UBUNTU_RID_PREFIX}")
+      mark_as_advanced(UBUNTU_RID_PREFIX)
+    ELSEIF(IS_DEBIAN)
+      set(DEBIAN_VERSION "${OS_RELEASE_VERSION_CODENAME}")
+      message(STATUS "Detected Debian ${DEBIAN_VERSION}")
+      MARK_AS_ADVANCED(DEBIAN_VERSION)
+    ENDIF()
+  endif()
+ENDIF()
+
 MARK_AS_ADVANCED(IS_UBUNTU)
-MARK_AS_ADVANCED(IS_RASPBIAN)
- 
+MARK_AS_ADVANCED(IS_DEBIAN)
+MARK_AS_ADVANCED(IS_RHEL) 

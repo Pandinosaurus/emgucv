@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -148,6 +148,25 @@ void cveFaceRecognizerPredict(cv::face::FaceRecognizer* recognizer, cv::_InputAr
 	throw_no_face();
 #endif
 }
+
+void cveFaceRecognizerSetLabelInfo(cv::face::FaceRecognizer* recognizer, int label, cv::String* strInfo)
+{
+#ifdef HAVE_OPENCV_FACE
+	recognizer->setLabelInfo(label, *strInfo);
+#else
+	throw_no_face();
+#endif	
+}
+void cveFaceRecognizerGetLabelInfo(cv::face::FaceRecognizer* recognizer, int label, cv::String* strInfo)
+{
+#ifdef HAVE_OPENCV_FACE
+	cv::String str = recognizer->getLabelInfo(label);
+	*strInfo = str;
+#else
+	throw_no_face();
+#endif		
+}
+
 
 cv::face::BIF* cveBIFCreate(int numBands, int numRotations, cv::Ptr<cv::face::BIF>** sharedPtr)
 {
@@ -348,16 +367,30 @@ void cveDrawFacemarks(cv::_InputOutputArray* image, cv::_InputArray* points, CvS
 #endif
 }
 
-cv::face::MACE* cveMaceCreate(int imgSize, cv::Ptr<cv::face::MACE>** sharedPtr)
+cv::face::MACE* cveMaceCreate(int imgSize, cv::Ptr<cv::face::MACE>** sharedPtr, cv::Algorithm** algorithm)
 {
 #ifdef HAVE_OPENCV_FACE
 	cv::Ptr<cv::face::MACE> mace = cv::face::MACE::create(imgSize);
 	*sharedPtr = new cv::Ptr<cv::face::MACE>(mace);
+	*algorithm = dynamic_cast<cv::Algorithm*>(mace.get());
 	return (*sharedPtr)->get();
 #else
 	throw_no_face();
 #endif
 }
+
+cv::face::MACE* cveMaceCreate2(cv::String* fileName, cv::String* objName, cv::Ptr<cv::face::MACE>** sharedPtr, cv::Algorithm** algorithm)
+{
+#ifdef HAVE_OPENCV_FACE
+	cv::Ptr<cv::face::MACE> mace = cv::face::MACE::load(*fileName, *objName);
+	*sharedPtr = new cv::Ptr<cv::face::MACE>(mace);
+	*algorithm = dynamic_cast<cv::Algorithm*>(mace.get());
+	return (*sharedPtr)->get();
+#else
+	throw_no_face();
+#endif	
+}
+
 void cveMaceSalt(cv::face::MACE* mace, cv::String* passphrase)
 {
 #ifdef HAVE_OPENCV_FACE

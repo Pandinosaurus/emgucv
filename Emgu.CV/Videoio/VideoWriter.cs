@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -63,7 +63,7 @@ namespace Emgu.CV
         /// <param name="fps">frame rate per second</param>
         /// <param name="size">the size of the frame</param>
         /// <param name="isColor">true if this is a color video, false otherwise</param>
-        /// <param name="apiPreference">Allows to specify API backends to use.</param>
+        /// <param name="apiPreference">Allows to specify API backends to use. Use 0 if you don't have any preference.</param>
         public VideoWriter(String fileName, int apiPreference, int compressionCode, double fps, System.Drawing.Size size, bool isColor)
         {
             using (CvString s = new CvString(fileName))
@@ -96,9 +96,9 @@ namespace Emgu.CV
         /// On windows use -1 to open a codec selection dialog.
         /// On Linux, use VideoWriter.Fourcc('I', 'Y', 'U', 'V') for default codec for the specific file name.
         /// </param>
-        /// <param name="fps">frame rate per second</param>
-        /// <param name="size">the size of the frame</param>
-        /// <param name="apiPreference">Allows to specify API backends to use.</param>
+        /// <param name="fps">Frame rate per second</param>
+        /// <param name="size">The size of the frame</param>
+        /// <param name="apiPreference">Allows to specify API backends to use. Use 0 if you don't have any specific preference.</param>
         /// <param name="writerProperties">Optional writer properties. e.g. new Tuple&lt;VideoWriter.WriterProperty&gt;(VideoWriter.WriterProperty.HwAcceleration, (int) VideoAccelerationType.Any)</param>
         public VideoWriter(String fileName, int apiPreference, int compressionCode, double fps, System.Drawing.Size size, params Tuple<WriterProperty, int>[] writerProperties)
         {
@@ -114,9 +114,10 @@ namespace Emgu.CV
         /// Write a single frame to the video writer
         /// </summary>
         /// <param name="frame">The frame to be written to the video writer</param>
-        public void Write(Mat frame)
+        public void Write(IInputArray frame)
         {
-            CvInvoke.cveVideoWriterWrite(_ptr, frame);
+            using (InputArray iaFrame = frame.GetInputArray())
+                CvInvoke.cveVideoWriterWrite(_ptr, iaFrame);
         }
 
         /// <summary>
@@ -174,6 +175,24 @@ namespace Emgu.CV
         }
 
         /// <summary>
+        /// The name of the backend used by this VideoWriter
+        /// </summary>
+        public String BackendName
+        {
+            get
+            {
+                if (_ptr == IntPtr.Zero)
+                    return String.Empty;
+
+                using (CvString s = new CvString())
+                {
+                    CvInvoke.cveVideoWriterGetBackendName(Ptr, s);
+                    return s.ToString();
+                }
+            }
+        }
+
+        /// <summary>
         /// The VideoWriter property
         /// </summary>
         public enum WriterProperty
@@ -209,7 +228,12 @@ namespace Emgu.CV
             /// <summary>
             /// (**open-only**) Hardware device index (select GPU if multiple available)
             /// </summary>
-            HwDevice = 7, 
+            HwDevice = 7,
+
+            /// <summary>
+            /// (**open-only**) If non-zero, create new OpenCL context and bind it to current thread. The OpenCL context created with Video Acceleration context attached it (if not attached yet) for optimized GPU data copy between cv::UMat and HW accelerated encoder.
+            /// </summary>
+            HwAccelerationUseOpencl = 8, 
         }
     }
 
@@ -282,6 +306,9 @@ namespace Emgu.CV
         [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         internal static extern double cveVideoWriterGet(IntPtr writer, VideoWriter.WriterProperty propId);
 
+
+        [DllImport(ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
+        internal static extern void cveVideoWriterGetBackendName(IntPtr writer, IntPtr backendName);
 
     }
 }

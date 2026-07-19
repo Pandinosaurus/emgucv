@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Emgu.CV.Models\Emgu.CV.Models.NetStandard\Emgu.CV.Models.NetStandard.csproj" />
-    <ProjectReference Include="..\..\Emgu.CV.Platform\NetStandard\Emgu.CV.Platform.NetStandard.csproj" />
+    <ProjectReference Include="..\..\Emgu.CV.Models\NetStandard\Emgu.CV.Models.csproj" />
+    <ProjectReference Include="..\..\Emgu.CV\NetStandard\Emgu.CV.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\Emgu.CV.Runtime\Mac\Emgu.CV.Runtime.Mac.projitems" Label="Shared" Condition="Exists('..\..\Emgu.CV.Runtime\Mac\Emgu.CV.Runtime.Mac.projitems')" />

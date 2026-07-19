@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -9,7 +9,7 @@ namespace Emgu.CV.CvEnum
     /// <summary>
     /// contour approximation method
     /// </summary>
-    public enum ChainApproxMethod : int
+    public enum ChainApproxMethod
     {
         /// <summary>
         /// output contours in the Freeman chain code. All other methods output polygons (sequences of vertices). 

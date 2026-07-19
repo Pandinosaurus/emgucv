@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -35,7 +35,11 @@ namespace Emgu.CV.Aruco
             /// <summary>
             /// Refine the corners using the contour-points
             /// </summary>
-            Contour   
+            Contour,
+            /// <summary>
+            /// Tag and corners detection based on the AprilTag 2 approach
+            /// </summary>
+            AprilTag
         }
 
 
@@ -166,6 +170,22 @@ namespace Emgu.CV.Aruco
         /// </summary>
         [MarshalAs(CvInvoke.BoolMarshalType)]
         public bool DetectInvertedMarker;
+
+        /// <summary>
+        /// Use Aruco 3D detection
+        /// </summary>
+        [MarshalAs(CvInvoke.BoolMarshalType)]
+        public bool UseAruco3Detection;
+
+        /// <summary>
+        /// MinSideLengthCanonicalImg, use default value of 32
+        /// </summary>
+        public int MinSideLengthCanonicalImg;
+
+        /// <summary>
+        /// MinMarkerLengthRatioOriginalImg, use default value of 0.0
+        /// </summary>
+        public float MinMarkerLengthRatioOriginalImg;
 
         /// <summary>
         /// Get the detector parameters with default values

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -8,9 +8,45 @@
 #ifndef EMGU_FEATURES2D_C_H
 #define EMGU_FEATURES2D_C_H
 
+#include "opencv2/core/core_c.h"
 #include "opencv2/imgproc/imgproc.hpp"
+
+
+#ifdef HAVE_OPENCV_FEATURES2D
 #include "opencv2/features2d/features2d.hpp"
-//#include "opencv2/legacy/compat.hpp"
+#else
+static inline CV_NORETURN void throw_no_features2d() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without features2d support. To use this module, please switch to the full Emgu CV runtime."); }
+
+namespace cv {
+	class ORB {};
+	class Feature2D {};
+	class BRISK {};
+	class FastFeatureDetector {};
+	class GFTTDetector {};
+	class MSER {};
+	class SimpleBlobDetector
+	{
+	public:
+		class Params {};
+	};
+	class DescriptorMatcher {};
+	class BFMatcher {};
+	class FlannBasedMatcher {};
+	class BOWKMeansTrainer {};
+	class BOWImgDescriptorExtractor {};
+	class KAZE {};
+	class AKAZE {};
+	class AgastFeatureDetector {};
+	class SIFT {};
+		
+	namespace flann
+	{
+		class IndexParams {};
+		class SearchParams {};
+	}
+}
+#endif
+
 #include "vectors_c.h"
 
 //ORB
@@ -56,9 +92,10 @@ CVAPI(cv::SimpleBlobDetector*) cveSimpleBlobDetectorCreateWithParams(cv::Feature
 CVAPI(void) cveSimpleBlobDetectorRelease(cv::Ptr<cv::SimpleBlobDetector>** sharedPtr);
 CVAPI(cv::SimpleBlobDetector::Params*) cveSimpleBlobDetectorParamsCreate();
 CVAPI(void) cveSimpleBlobDetectorParamsRelease(cv::SimpleBlobDetector::Params** params);
+CVAPI(const std::vector< std::vector< cv::Point > >*) cveSimpleBlobDetectorGetBlobContours(cv::SimpleBlobDetector* detector);
 
 // Draw keypoints.
-CVAPI(void) drawKeypoints(
+CVAPI(void) cveDrawKeypoints(
 	cv::_InputArray* image,
 	const std::vector<cv::KeyPoint>* keypoints,
 	cv::_InputOutputArray* outImage,
@@ -66,31 +103,31 @@ CVAPI(void) drawKeypoints(
 	int flags);
 
 // Draws matches of keypoints from two images on output image.
-CVAPI(void) drawMatchedFeatures1(
-	cv::_InputArray* img1, 
+CVAPI(void) cveDrawMatchedFeatures1(
+	cv::_InputArray* img1,
 	const std::vector<cv::KeyPoint>* keypoints1,
-	cv::_InputArray* img2, 
+	cv::_InputArray* img2,
 	const std::vector<cv::KeyPoint>* keypoints2,
 	std::vector< cv::DMatch >* matches,
 	cv::_InputOutputArray* outImg,
-	const CvScalar* matchColor, 
+	const CvScalar* matchColor,
 	const CvScalar* singlePointColor,
 	std::vector< unsigned char >* matchesMask,
 	int flags);
 
-CVAPI(void) drawMatchedFeatures2(
-	cv::_InputArray* img1, 
+CVAPI(void) cveDrawMatchedFeatures2(
+	cv::_InputArray* img1,
 	const std::vector<cv::KeyPoint>* keypoints1,
-	cv::_InputArray* img2, 
+	cv::_InputArray* img2,
 	const std::vector<cv::KeyPoint>* keypoints2,
 	std::vector< std::vector< cv::DMatch > >* matches,
 	cv::_InputOutputArray* outImg,
-	const CvScalar* matchColor, 
+	const CvScalar* matchColor,
 	const CvScalar* singlePointColor,
 	std::vector< std::vector< unsigned char > >* matchesMask,
 	int flags);
 
-CVAPI(void) drawMatchedFeatures3(
+CVAPI(void) cveDrawMatchedFeatures3(
 	cv::_InputArray* img1, const std::vector<cv::KeyPoint>* keypoints1,
 	cv::_InputArray* img2, const std::vector<cv::KeyPoint>* keypoints2,
 	std::vector< std::vector< cv::DMatch > >* matches,
@@ -158,19 +195,25 @@ CVAPI(void) cveDescriptorMatcherRadiusMatch2(
 CVAPI(cv::BFMatcher*) cveBFMatcherCreate(int distanceType, bool crossCheck, cv::DescriptorMatcher** m);
 CVAPI(void) cveBFMatcherRelease(cv::BFMatcher** matcher);
 
+#ifdef HAVE_OPENCV_FLANN
 //FlannBasedMatcher
 CVAPI(cv::FlannBasedMatcher*) cveFlannBasedMatcherCreate(cv::flann::IndexParams* indexParams, cv::flann::SearchParams* searchParams, cv::DescriptorMatcher** m);
 CVAPI(void) cveFlannBasedMatcherRelease(cv::FlannBasedMatcher** matcher);
+#else
+//FlannBasedMatcher
+CVAPI(void*) cveFlannBasedMatcherCreate(void* indexParams, void* searchParams, void** m);
+CVAPI(void) cveFlannBasedMatcherRelease(void** matcher);
+#endif
 
 //2D Tracker
-CVAPI(int) voteForSizeAndOrientation(std::vector<cv::KeyPoint>* modelKeyPoints, std::vector<cv::KeyPoint>* observedKeyPoints, std::vector< std::vector< cv::DMatch > >* matches, cv::Mat* mask, double scaleIncrement, int rotationBins);
+CVAPI(int) cveVoteForSizeAndOrientation(std::vector<cv::KeyPoint>* modelKeyPoints, std::vector<cv::KeyPoint>* observedKeyPoints, std::vector< std::vector< cv::DMatch > >* matches, cv::Mat* mask, double scaleIncrement, int rotationBins);
 
 //Feature2D
-CVAPI(void) CvFeature2DDetectAndCompute(cv::Feature2D* feature2D, cv::_InputArray* image, cv::_InputArray* mask, std::vector<cv::KeyPoint>* keypoints, cv::_OutputArray* descriptors, bool useProvidedKeyPoints);
-CVAPI(void) CvFeature2DDetect(cv::Feature2D* feature2D, cv::_InputArray* image, std::vector<cv::KeyPoint>* keypoints, cv::_InputArray* mask);
-CVAPI(void) CvFeature2DCompute(cv::Feature2D* feature2D, cv::_InputArray* image, std::vector<cv::KeyPoint>* keypoints, cv::_OutputArray* descriptors);
-CVAPI(int) CvFeature2DGetDescriptorSize(cv::Feature2D* feature2D);
-CVAPI(cv::Algorithm*) CvFeature2DGetAlgorithm(cv::Feature2D* feature2D);
+CVAPI(void) cveFeature2DDetectAndCompute(cv::Feature2D* feature2D, cv::_InputArray* image, cv::_InputArray* mask, std::vector<cv::KeyPoint>* keypoints, cv::_OutputArray* descriptors, bool useProvidedKeyPoints);
+CVAPI(void) cveFeature2DDetect(cv::Feature2D* feature2D, cv::_InputArray* image, std::vector<cv::KeyPoint>* keypoints, cv::_InputArray* mask);
+CVAPI(void) cveFeature2DCompute(cv::Feature2D* feature2D, cv::_InputArray* image, std::vector<cv::KeyPoint>* keypoints, cv::_OutputArray* descriptors);
+CVAPI(int) cveFeature2DGetDescriptorSize(cv::Feature2D* feature2D);
+CVAPI(cv::Algorithm*) cveFeature2DGetAlgorithm(cv::Feature2D* feature2D);
 
 //BowKMeansTrainer
 CVAPI(cv::BOWKMeansTrainer*) cveBOWKMeansTrainerCreate(int clusterCount, const CvTermCriteria* termcrit, int attempts, int flags);

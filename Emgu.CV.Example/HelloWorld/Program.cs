@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -13,7 +13,6 @@ namespace HelloWorld
     {
         static void Main(string[] args)
         {
-            CvInvoke.Init();
             String win1 = "Test Window"; //The name of the window
             CvInvoke.NamedWindow(win1); //Create the window using the specific name
 

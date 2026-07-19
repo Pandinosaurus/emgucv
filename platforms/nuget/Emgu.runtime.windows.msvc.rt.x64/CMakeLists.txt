@@ -1,25 +1,54 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 # --------------------------------------------------------
 
 IF (WIN32 AND HAVE_WINDESKTOP_X64)
 
   PROJECT(Emgu.runtime.windows.msvc.rt.x64.nuget)
+
+  #SET(EMGU_WINDOWS_MSVCRT_X64_NUGET_TITLE "MSVC x64 runtime for windows")
+
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec.in ${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/README.md.in ${CMAKE_CURRENT_SOURCE_DIR}/README.md)
+
+  get_filename_component(NUGET_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+
   BUILD_NUGET_PACKAGE(
     ${PROJECT_NAME} 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../../../Emgu.CV.Platform/NetStandard/Emgu.CV.Platform.NetStandard.csproj"  #csproj_file 
+	"${EMGU_CV_SOURCE_DIR}/Emgu.CV/NetStandard/Emgu.CV.csproj"  #csproj_file 
 	"${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec" #nuspec_file 
-	"${CMAKE_CURRENT_SOURCE_DIR}/../" #output_dir 
+	"${NUGET_OUTPUT_DIR}" #output_dir 
 	"${CMAKE_CURRENT_SOURCE_DIR}" #working_dir
 	) 
-  ADD_DEPENDENCIES(${PROJECT_NAME} cvextern)
 
-  IF (TARGET Emgu.CV.nuget)
-    ADD_DEPENDENCIES(${PROJECT_NAME} Emgu.CV.nuget)
+  TARGET_SOURCES(${PROJECT_NAME} PRIVATE
+	"${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec"
+	"${CMAKE_CURRENT_SOURCE_DIR}/README.md.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+  )
+
+  source_group("Template" FILES 
+	"${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec.in"
+	"${CMAKE_CURRENT_SOURCE_DIR}/README.md.in")
+	
+  source_group("Nuget" FILES 
+	"${CMAKE_CURRENT_SOURCE_DIR}/Package.nuspec"
+	"${CMAKE_CURRENT_SOURCE_DIR}/README.md"
+  )
+
+  IF (EMGU_NUGET_SIGN_FOUND)
+    EMGU_SIGN_NUGET(${PROJECT_NAME} "${NUGET_OUTPUT_DIR}/${EMGU_WINDOWS_MSVCRT_X64_NUGET_ID}.${EMGU_WINDOWS_MSVCRT_NUGET_VERSION}.nupkg")
   ENDIF()
 
-if(ENABLE_SOLUTION_FOLDERS)
-  set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "nuget")
-endif() 
+  ADD_DEPENDENCIES(${PROJECT_NAME} cvextern)
+
+  IF (TARGET Emgu.CV)
+    ADD_DEPENDENCIES(${PROJECT_NAME} Emgu.CV)
+  ENDIF()
+
+  if(ENABLE_SOLUTION_FOLDERS)
+    set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "nuget")
+  endif() 
 
 ENDIF()

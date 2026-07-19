@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Text;
@@ -149,7 +149,7 @@ namespace Emgu.Util
             return c;
         }
 
-
+#if ! __IOS__
         /// <summary>
         /// Call a command from command line
         /// </summary>
@@ -185,6 +185,7 @@ namespace Emgu.Util
                 return output;
             }
         }
+#endif
 
         /// <summary>
         /// Use reflection to find the base type. If such type do not exist, null is returned
@@ -329,48 +330,50 @@ namespace Emgu.Util
 
         private static IEnumerable<T> JoinTwoInterpolatables<T>(IEnumerable<T> enum1, IEnumerable<T> enum2) where T : IInterpolatable<T>, new()
         {
-            IEnumerator<T> l1 = enum1.GetEnumerator();
-            IEnumerator<T> l2 = enum2.GetEnumerator();
-            if (!l1.MoveNext())
+            using (IEnumerator<T> l1 = enum1.GetEnumerator())
+            using (IEnumerator<T> l2 = enum2.GetEnumerator())
             {
-                while (l2.MoveNext())
-                    yield return l2.Current;
-                yield break;
-            }
-            else if (!l2.MoveNext())
-            {
-                while (l1.MoveNext())
-                    yield return l1.Current;
-                yield break;
-            }
-
-            T s1 = l1.Current;
-            T s2 = l2.Current;
-
-            while (true)
-            {
-                if (s1.InterpolationIndex < s2.InterpolationIndex)
+                if (!l1.MoveNext())
                 {
-                    yield return s1;
-                    if (l1.MoveNext())
-                        s1 = l1.Current;
-                    else
-                    {
-                        while (l2.MoveNext())
-                            yield return l2.Current;
-                        yield break;
-                    }
+                    while (l2.MoveNext())
+                        yield return l2.Current;
+                    yield break;
                 }
-                else
+                else if (!l2.MoveNext())
                 {
-                    yield return s2;
-                    if (l2.MoveNext())
-                        s2 = l2.Current;
+                    while (l1.MoveNext())
+                        yield return l1.Current;
+                    yield break;
+                }
+
+                T s1 = l1.Current;
+                T s2 = l2.Current;
+
+                while (true)
+                {
+                    if (s1.InterpolationIndex < s2.InterpolationIndex)
+                    {
+                        yield return s1;
+                        if (l1.MoveNext())
+                            s1 = l1.Current;
+                        else
+                        {
+                            while (l2.MoveNext())
+                                yield return l2.Current;
+                            yield break;
+                        }
+                    }
                     else
                     {
-                        while (l1.MoveNext())
-                            yield return l1.Current;
-                        yield break;
+                        yield return s2;
+                        if (l2.MoveNext())
+                            s2 = l2.Current;
+                        else
+                        {
+                            while (l1.MoveNext())
+                                yield return l1.Current;
+                            yield break;
+                        }
                     }
                 }
             }
@@ -408,7 +411,7 @@ namespace Emgu.Util
         /// <summary>
         /// Load all the assemblies.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>All the assemblies loaded.</returns>
         public static System.Reflection.Assembly[] LoadAllDependentAssemblies()
         {
             try
@@ -466,7 +469,7 @@ namespace Emgu.Util
         /// </summary>
         /// <typeparam name="T">The interface</typeparam>
         /// <returns>The types that implement the specific interface</returns>
-        public static Type[] GetIntefaceImplementationFromAssembly<T>()
+        public static Type[] GetInterfaceImplementationFromAssembly<T>()
         {
             System.Reflection.Assembly[] assemblies = LoadAllDependentAssemblies();
             List<Type> types = new List<Type>();
@@ -563,7 +566,8 @@ namespace Emgu.Util
                 handler = LoadLibraryExWindows(dllname, 0);
             }
 
-            if (handler == IntPtr.Zero)
+            // LoadPackagedLibrary() is supported from Windows 8 (6.2) onwards
+            if (handler == IntPtr.Zero && Environment.OSVersion.Version >= new Version(6, 2))
             {
                 //Also try loadPackagedLibrary
                 IntPtr packagedLibraryHandler = LoadPackagedLibrary(dllname, 0);
@@ -571,9 +575,7 @@ namespace Emgu.Util
                 {
                     int error = Marshal.GetLastWin32Error();
                     var ex = new System.ComponentModel.Win32Exception(error);
-                    System.Diagnostics.Debug.WriteLine(String.Format(
-                        "LoadPackagedLibrary {0} failed with error code {1}: {2}", dllname, (uint)error,
-                        ex.Message));
+                    System.Diagnostics.Debug.WriteLine("LoadPackagedLibrary {0} failed with error code {1}: {2}", dllname, (uint)error, ex.Message);
                 }
                 else
                 {
@@ -602,10 +604,40 @@ namespace Emgu.Util
             }
             else
             {
-                IntPtr handler = Dlopen(dllname, 0x00102); // 0x00002 == RTLD_NOW, 0x00100 = RTL_GLOBAL
-                if (handler == IntPtr.Zero)
+                int mode;
+                if (Platform.OperationSystem == Emgu.Util.Platform.OS.MacOS
+                    || Platform.OperationSystem == Emgu.Util.Platform.OS.MacCatalyst
+                    || Platform.OperationSystem == Emgu.Util.Platform.OS.IOS)
                 {
-                    System.Diagnostics.Trace.WriteLine(String.Format("Failed to use dlopen to load {0} (RTLD_NOW | RTL_GLOBAL)", dllname));
+                    mode = 0x00102; // Apple flag values: 0x00002 == RTLD_NOW, 0x00100 == RTLD_FIRST
+                }
+                else
+                {
+                    // 0x00002 == RTLD_NOW; scope stays RTLD_LOCAL (the default).
+                    // On Linux/Android 0x00100 is RTLD_GLOBAL, which would place this
+                    // library's symbols - and those of its whole dependency chain,
+                    // e.g. libproj's libsqlite3 - into the global scope, where they
+                    // interpose other native libraries' PLT self-calls, such as the
+                    // libe_sqlite3 bundled with EF Core (issue #1027).
+                    mode = 0x00002;
+                }
+                IntPtr handler;
+                try
+                {
+                    handler = Dlopen(dllname, mode);
+                    if (handler == IntPtr.Zero)
+                    {
+                        System.Diagnostics.Trace.WriteLine(String.Format("Failed to use dlopen to load {0}", dllname));
+                    }
+                }
+                catch
+                {
+                    System.Diagnostics.Trace.WriteLine(String.Format("Failed to use dlopen from libdl.so to load {0}, will try using libdl.so.2 instead", dllname));
+                    handler = Dlopen2(dllname, mode);
+                    if (handler == IntPtr.Zero)
+                    {
+                        System.Diagnostics.Trace.WriteLine(String.Format("Failed to use dlopen from libdl.so.2 to load {0}", dllname));
+                    }
                 }
 
                 return handler;
@@ -644,6 +676,12 @@ namespace Emgu.Util
             [MarshalAs(UnmanagedType.LPStr)]
             String dllname, int mode);
 
+        [DllImport("libdl.so.2", EntryPoint = "dlopen")]
+        private static extern IntPtr Dlopen2(
+            [MarshalAs(UnmanagedType.LPStr)]
+            String dllname, int mode);
+
+
         /*
         /// <summary>
         /// Decrements the reference count of the loaded dynamic-link library (DLL). When the reference count reaches zero, the module is unmapped from the address space of the calling process and the handle is no longer valid
@@ -654,23 +692,58 @@ namespace Emgu.Util
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool FreeLibrary(IntPtr handle);
         */
-        
+
         /// <summary>
         /// Set the directory to the search path used to locate DLLs for the application
         /// </summary>
         /// <param name="path">The directory to be searched for DLLs</param>
         /// <returns>True if success</returns>
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("Kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetDllDirectory(String path);
+
+
+        /// <summary>
+        /// Get the search path used to locate DLLs for the application
+        /// </summary>
+        /// <returns>
+        /// If the function succeeds, the return value is the search path used to locate DLLs for the application
+        /// If the function fails, the return value is null.To get extended error information, call GetLastError.
+        /// </returns>
+        public static String GetDllDirectory()
+        {
+            int maxSize = 2048;
+            
+            IntPtr buffer = Marshal.AllocHGlobal(maxSize);
+            try
+            {
+                bool success = GetDllDirectory((uint) maxSize, buffer);
+                if (!success)
+                    return null;
+                return Marshal.PtrToStringUni(buffer);
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine("Failed to call into GetDllDirectory:" + Environment.NewLine + e.StackTrace);
+                return null;
+            }
+            finally 
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+            
+        }
         
+        [DllImport("Kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GetDllDirectory(uint nBufferLength, IntPtr lpBuffer);
 
         /// <summary>
         /// Adds a directory to the search path used to locate DLLs for the application
         /// </summary>
         /// <param name="path">The directory to be searched for DLLs</param>
         /// <returns>True if success</returns>
-        [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("Kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool AddDllDirectory(String path);
 

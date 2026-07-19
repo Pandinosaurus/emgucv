@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -8,10 +8,11 @@ using Emgu.CV;
 using Emgu.CV.UI;
 using System.Diagnostics;
 
+/*
 [assembly: DebuggerVisualizer(
     typeof(Emgu.CV.DebuggerVisualizers.ImageVisualizer), 
     typeof(VisualizerObjectSource), 
-    Target = typeof(Image<,>))]
+    Target = typeof(Image<,>))]*/
 [assembly: DebuggerVisualizer(
     typeof(Emgu.CV.DebuggerVisualizers.MatVisualizer), 
     typeof(VisualizerObjectSource), 
@@ -23,23 +24,39 @@ using System.Diagnostics;
 
 namespace Emgu.CV.DebuggerVisualizers
 {
-    public sealed class ImageVisualizer : BaseImageVisualizer
+    /*
+    public sealed class ImageVisualizer : BaseImageVisualizer<Image>
+    {
+    }*/
+
+    public sealed class MatVisualizer : BaseImageVisualizer<Mat>
     {
     }
 
-    public sealed class MatVisualizer : BaseImageVisualizer
+    public sealed class UMatVisualizer : BaseImageVisualizer<UMat>
     {
     }
 
-    public sealed class UMatVisualizer : BaseImageVisualizer
-    {
-    }
-
-    public class BaseImageVisualizer : DialogDebuggerVisualizer
+    public class BaseImageVisualizer<T> : DialogDebuggerVisualizer where T : IInputArray
     {
         protected override void Show(IDialogVisualizerService windowService, IVisualizerObjectProvider objectProvider)
         {
-            IInputArray image = objectProvider.GetObject() as IInputArray;
+            IInputArray image;
+            if (objectProvider is IVisualizerObjectProvider3)
+            {
+                IVisualizerObjectProvider3 objectProvider3 = objectProvider as IVisualizerObjectProvider3;
+                image = objectProvider3.GetObject<T>();
+            }
+            else if (objectProvider is IVisualizerObjectProvider2)
+            {
+                IVisualizerObjectProvider2 objectProvider2 = objectProvider as IVisualizerObjectProvider2;
+                var deserializableObject = objectProvider2.GetDeserializableObject();
+                image = deserializableObject.ToObject<T>();
+            }
+            else
+            {
+                image = objectProvider.GetObject() as IInputArray;
+            }
             if (image != null)
             {
                 using (ImageViewer viewer = new ImageViewer())
@@ -52,7 +69,7 @@ namespace Emgu.CV.DebuggerVisualizers
 
         public static void TestShowVisualizer(object objectToVisualize)
         {
-            VisualizerDevelopmentHost myHost = new VisualizerDevelopmentHost(objectToVisualize, typeof(BaseImageVisualizer));
+            VisualizerDevelopmentHost myHost = new VisualizerDevelopmentHost(objectToVisualize, typeof(BaseImageVisualizer<T>));
             myHost.ShowVisualizer();
         }
     }

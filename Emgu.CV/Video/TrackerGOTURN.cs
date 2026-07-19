@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -25,9 +25,17 @@ namespace Emgu.CV
         /// <summary>
         /// Create a GOTURN tracker
         /// </summary>
-        public TrackerGOTURN()
+        public TrackerGOTURN(String modelTxt= "goturn.prototxt", String modelBin="goturn.caffemodel")
         {
-            _ptr = CvInvoke.cveTrackerGOTURNCreate(ref _trackerPtr, ref _sharedPtr);
+            using (CvString csModelTxt = new CvString(modelTxt))
+            using (CvString csModelBin = new CvString(modelBin))
+            {
+                _ptr = CvInvoke.cveTrackerGOTURNCreate(
+                    ref _trackerPtr, 
+                    ref _sharedPtr,
+                    csModelTxt,
+                    csModelBin);
+            }
         }
 
         /// <summary>
@@ -36,7 +44,11 @@ namespace Emgu.CV
         protected override void DisposeObject()
         {
             if (IntPtr.Zero != _ptr)
-                CvInvoke.cveTrackerGOTURNRelease(ref _ptr, ref _sharedPtr);
+            {
+                CvInvoke.cveTrackerGOTURNRelease(ref _sharedPtr);
+                _ptr = IntPtr.Zero;
+            }
+
             base.DisposeObject();
         }
     }
@@ -48,10 +60,14 @@ namespace Emgu.CV
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern IntPtr cveTrackerGOTURNCreate(ref IntPtr tracker, ref IntPtr sharedPtr);
+        internal static extern IntPtr cveTrackerGOTURNCreate(
+            ref IntPtr tracker, 
+            ref IntPtr sharedPtr,
+            IntPtr modelTxt,
+            IntPtr modelBin);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal static extern void cveTrackerGOTURNRelease(ref IntPtr tracker, ref IntPtr sharedPtr);
+        internal static extern void cveTrackerGOTURNRelease(ref IntPtr sharedPtr);
 
     }
 }

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -9,13 +9,41 @@
 #define EMGU_ML_C_H
 
 #include "opencv2/core/core_c.h"
+#ifdef HAVE_OPENCV_ML
 #include "opencv2/ml/ml.hpp"
+#else
+static inline CV_NORETURN void throw_no_ml() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without ml support. To use this module, please switch to the full Emgu CV runtime."); }
+
+namespace cv {
+	namespace ml
+	{
+		class StatModel {};
+		class TrainData {};
+		class NormalBayesClassifier {};
+		class KNearest {};
+		class EM {};
+		class SVM {};
+		class ParamGrid {};
+		class ANN_MLP {};
+		class DTrees {};
+		class RTrees {};
+		class Boost {};
+		class LogisticRegression {};
+		class SVMSGD {};
+	}
+}
+
+#endif
+
+
+
+
 
 //StatModel
 
-CVAPI(bool) StatModelTrain(cv::ml::StatModel* model, cv::_InputArray* samples, int layout, cv::_InputArray* responses );
-CVAPI(bool) StatModelTrainWithData(cv::ml::StatModel* model, cv::ml::TrainData* data, int flags);
-CVAPI(float) StatModelPredict(cv::ml::StatModel* model, cv::_InputArray* samples, cv::_OutputArray* results, int flags); 
+CVAPI(bool) cveStatModelTrain(cv::ml::StatModel* model, cv::_InputArray* samples, int layout, cv::_InputArray* responses );
+CVAPI(bool) cveStatModelTrainWithData(cv::ml::StatModel* model, cv::ml::TrainData* data, int flags);
+CVAPI(float) cveStatModelPredict(cv::ml::StatModel* model, cv::_InputArray* samples, cv::_OutputArray* results, int flags); 
 
 CVAPI(cv::ml::TrainData*) cveTrainDataCreate(
 	cv::_InputArray* samples, int layout, cv::_InputArray* responses,

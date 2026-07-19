@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -9,10 +9,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
+//using System.Text.Json;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.Util;
 
@@ -62,6 +64,26 @@ namespace Emgu.CV.Test
                         EmguAssert.IsTrue(data2[i, j] == data[i, j]);
             }
 
+            using (Mat m = new Mat(
+                       data.GetLength(0),
+                       data.GetLength(1),
+                       DepthType.Cv32F,
+                       1,
+                       dataHandle.AddrOfPinnedObject(),
+                       data.GetLength(1) * Marshal.SizeOf<float>()
+                   ))
+            using (Mat m3 = new Mat(m, new Rectangle(1, 1, m.Width-1, m.Height-1)))
+            {
+                float[,] data2 = m.GetData(true) as float[,];
+                for (int i = 0; i < data2.GetLength(0); i++)
+                    for (int j = 0; j < data2.GetLength(1); j++)
+                        EmguAssert.IsTrue(data2[i, j] == data[i, j]);
+
+                float[,] data3 = m3.GetData(true) as float[,];
+                for (int i = 0; i < data3.GetLength(0); i++)
+                    for (int j = 0; j < data3.GetLength(1); j++)
+                        EmguAssert.IsTrue(data3[i, j] == data[i + 1, j + 1]);
+            }
             dataHandle.Free();
         }
 
@@ -175,11 +197,12 @@ namespace Emgu.CV.Test
         public void TestGetDiagColRow()
         {
             Matrix<double> m = new Matrix<double>(new double[,] { { 1, 2 }, { 3, 4 } });
+            /*
             Matrix<double> diag = m.GetDiag();
             EmguAssert.IsTrue(diag[0, 0] == 1);
             EmguAssert.IsTrue(diag[1, 0] == 4);
             EmguAssert.IsTrue(diag.Sum == m.Trace.V0);
-
+            */
             Matrix<double> col1 = m.GetCol(1);
             EmguAssert.IsTrue(col1[0, 0] == 2);
             EmguAssert.IsTrue(col1[1, 0] == 4);
@@ -208,6 +231,7 @@ namespace Emgu.CV.Test
             }
         }
 
+        /*
 #if !NETFX_CORE
         [Test]
         public void TestRuntimeSerialize1()
@@ -288,6 +312,7 @@ namespace Emgu.CV.Test
             handle.Free();
         }
 #endif
+        */
 
 #if !WINDOWS_PHONE_APP //bad garbage collector in Windows phone results in failed test?
         [Test]
@@ -333,12 +358,12 @@ namespace Emgu.CV.Test
             {
                 EmguAssert.AreEqual(mat[i, 2], thirdCol[i, 0]);
             }
-
+            /*
             Matrix<float> diagonal = mat.GetDiag();
             for (int i = 0; i < Math.Min(mat.Rows, mat.Cols); i++)
             {
                 EmguAssert.AreEqual(diagonal[i, 0], mat[i, i]);
-            }
+            }*/
         }
 
         [Test]

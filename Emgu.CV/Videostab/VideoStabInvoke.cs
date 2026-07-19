@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -10,7 +10,10 @@ using Emgu.CV.Structure;
 
 namespace Emgu.CV.VideoStab
 {
-    internal static partial class VideoStabInvoke
+    /// <summary>
+    /// Entry points to the Open CV VideoStab module
+    /// </summary>
+    public static partial class VideoStabInvoke
     {
         static VideoStabInvoke()
         {

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -18,7 +18,7 @@
 
 #else
 
-static inline CV_NORETURN void throw_no_aruco() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without Aruco support"); }
+static inline CV_NORETURN void throw_no_aruco() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without Aruco support. To use this module, please switch to the full Emgu CV runtime."); }
 
 namespace cv
 {
@@ -53,14 +53,20 @@ namespace cv
 
 #endif
 
+CVAPI(void) cveArucoDictionaryGenerateImageMarker(cv::aruco::Dictionary* dict, int id, int sizePixels, cv::_OutputArray* _img, int borderBits);
 CVAPI(cv::aruco::Dictionary*) cveArucoGetPredefinedDictionary(int name, cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
-CVAPI(cv::aruco::Dictionary*) cveArucoDictionaryCreate1(int nMarkers, int markerSize, cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
-CVAPI(cv::aruco::Dictionary*) cveArucoDictionaryCreate2(int nMarkers, int markerSize, cv::Ptr<cv::aruco::Dictionary>* baseDictionary, cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
+CVAPI(cv::aruco::Dictionary*) cveArucoDictionaryCreate(cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
+CVAPI(cv::aruco::Dictionary*) cveArucoExtendDictionary(
+	int nMarkers,
+	int markerSize,
+	cv::Ptr<cv::aruco::Dictionary>* baseDictionary,
+	int randomSeed,
+	cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
 CVAPI(void) cveArucoDictionaryRelease(cv::aruco::Dictionary** dict, cv::Ptr<cv::aruco::Dictionary>** sharedPtr);
 
-CVAPI(void) cveArucoDrawMarker(cv::aruco::Dictionary* dictionary, int id, int sidePixels, cv::_OutputArray* img, int borderBits);
+//CVAPI(void) cveArucoDrawMarker(cv::aruco::Dictionary* dictionary, int id, int sidePixels, cv::_OutputArray* img, int borderBits);
 
-CVAPI(void) cveArucoDrawAxis(cv::_InputOutputArray* image, cv::_InputArray* cameraMatrix, cv::_InputArray* distCoeffs, cv::_InputArray* rvec, cv::_InputArray* tvec, float length);
+//CVAPI(void) cveArucoDrawAxis(cv::_InputOutputArray* image, cv::_InputArray* cameraMatrix, cv::_InputArray* distCoeffs, cv::_InputArray* rvec, cv::_InputArray* tvec, float length);
 
 CVAPI(void) cveArucoDetectMarkers(
    cv::_InputArray* image, cv::aruco::Dictionary* dictionary, cv::_OutputArray* corners,
@@ -73,16 +79,17 @@ CVAPI(void) cveArucoEstimatePoseSingleMarkers(cv::_InputArray* corners, float ma
 
 CVAPI(cv::aruco::GridBoard*) cveArucoGridBoardCreate(
 	int markersX, int markersY, float markerLength, float markerSeparation,
-	cv::aruco::Dictionary* dictionary, int firstMarker, cv::aruco::Board** boardPtr, cv::Ptr<cv::aruco::GridBoard>** sharedPtr);
+	cv::aruco::Dictionary* dictionary, cv::_InputArray* ids, cv::aruco::Board** boardPtr, cv::Ptr<cv::aruco::GridBoard>** sharedPtr);
 
-CVAPI(void) cveArucoGridBoardDraw(cv::aruco::GridBoard* gridBoard, CvSize* outSize, cv::_OutputArray* img, int marginSize, int borderBits);
+CVAPI(void) cveArucoBoardGenerateImage(cv::aruco::Board* gridBoard, CvSize* outSize, cv::_OutputArray* img, int marginSize, int borderBits);
+
 
 CVAPI(void) cveArucoGridBoardRelease(cv::aruco::GridBoard** gridBoard, cv::Ptr<cv::aruco::GridBoard>** sharedPtr);
 
 CVAPI(cv::aruco::CharucoBoard*) cveCharucoBoardCreate(
    int squaresX, int squaresY, float squareLength, float markerLength,
    cv::aruco::Dictionary* dictionary, cv::aruco::Board** boardPtr, cv::Ptr<cv::aruco::CharucoBoard>** sharedPtr);
-CVAPI(void) cveCharucoBoardDraw(cv::aruco::CharucoBoard* charucoBoard, CvSize* outSize, cv::_OutputArray* img, int marginSize, int borderBits);
+//CVAPI(void) cveCharucoBoardDraw(cv::aruco::CharucoBoard* charucoBoard, CvSize* outSize, cv::_OutputArray* img, int marginSize, int borderBits);
 CVAPI(void) cveCharucoBoardRelease(cv::aruco::CharucoBoard** charucoBoard, cv::Ptr<cv::aruco::CharucoBoard>** sharedPtr);
 
 CVAPI(void) cveArucoRefineDetectedMarkers(

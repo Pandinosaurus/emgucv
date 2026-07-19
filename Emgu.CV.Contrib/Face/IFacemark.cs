@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -67,7 +67,7 @@ namespace Emgu.CV.Face
             }
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveFacemarkLoadModel(IntPtr facemark, IntPtr model);
+        internal static extern void cveFacemarkLoadModel(IntPtr facemark, IntPtr model);
 
         /*
         /// <summary>
@@ -91,11 +91,11 @@ namespace Emgu.CV.Face
         */
 
         /// <summary>
-        /// Trains a Facemark algorithm using the given dataset.
+        /// Detect facial landmarks from an image.
         /// </summary>
         /// <param name="facemark">The facemark object</param>
         /// <param name="image">Input image.</param>
-        /// <param name="faces">Represent region of interest of the detected faces. Each face is stored in cv::Rect container.</param>
+        /// <param name="faces">Output of the function which represent region of interest of the detected faces. Each face is stored in cv::Rect container.</param>
         /// <param name="landmarks">The detected landmark points for each faces.</param>
         /// <returns>True if successful</returns>
         public static bool Fit(this IFacemark facemark, IInputArray image, IInputArray faces, IInputOutputArray landmarks)
@@ -109,7 +109,7 @@ namespace Emgu.CV.Face
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
         [return: MarshalAs(CvInvoke.BoolMarshalType)]
-        internal extern static bool cveFacemarkFit(IntPtr facemark, IntPtr image, IntPtr faces, IntPtr landmarks);
+        internal static extern bool cveFacemarkFit(IntPtr facemark, IntPtr image, IntPtr faces, IntPtr landmarks);
 
         /// <summary>
         /// Utility to draw the detected facial landmark points.
@@ -126,7 +126,7 @@ namespace Emgu.CV.Face
             }
         }
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveDrawFacemarks(IntPtr image, IntPtr points, ref MCvScalar color);
+        internal static extern void cveDrawFacemarks(IntPtr image, IntPtr points, ref MCvScalar color);
 
         /*
         /// <summary>

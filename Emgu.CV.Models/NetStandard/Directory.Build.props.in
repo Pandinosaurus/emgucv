@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<Project>
+  <!-- https://learn.microsoft.com/en-us/visualstudio/msbuild/customize-by-directory?view=vs-2022 -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  
+ <PropertyGroup>
+ 
+ 	<TargetFrameworks>netstandard2.0</TargetFrameworks>
+	<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('osx')) Or $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net${DOTNET_VERSION_MAJOR}.0-ios;net${DOTNET_VERSION_MAJOR}.0-maccatalyst</TargetFrameworks>
+		
+    <EmguCVProjectRoot>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\..\))</EmguCVProjectRoot>
+	<OpenCVBinaryDir>$([System.IO.Path]::GetFullPath($(EmguCVProjectRoot)\libs))</OpenCVBinaryDir>
+ 
+    <PackageId>${EMGUCV_MODELS_NUGET_ID}</PackageId>
+	
+	<title>Experimental component to help download, initialize and execute image processing/AI models.</title>
+    <version>${CPACK_PACKAGE_VERSION}</version>
+    <authors>${CPACK_PACKAGE_VENDOR}</authors>
+    <owners>${CPACK_PACKAGE_VENDOR}</owners>
+	<summary>Experimental component to help download, initialize and execute image processing/AI models. This is under active development and API may change from time to time.</summary>
+    <Description>Emgu CV is a cross platform .Net wrapper to the OpenCV image processing library. Allowing OpenCV functions to be called from .NET compatible languages such as C#, VB, VC++, IronPython etc. </Description>
+    <PackageReleaseNotes>This is the ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH} release of Emgu CV. For online documentation please visit
+${NUGET_EMGU_URL}/wiki/files/${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}/document/index.html    	        
+</PackageReleaseNotes>
+	
+	<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	<PackageIcon>nuget_icon.png</PackageIcon>
+    <PackageReadmeFile>docs/README.md</PackageReadmeFile>
+	<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+	<RepositoryUrl>${GITHUB_REPO_URL}</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+	<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageOutputPath>$([System.IO.Path]::GetFullPath($(EmguCVProjectRoot)\platforms\nuget))</PackageOutputPath>
+	<PackageTags>opencv;emgu;emgucv;ai;image</PackageTags>
+    <PackageProjectUrl>${NUGET_EMGU_URL}</PackageProjectUrl>
+    <copyright>© ${CPACK_PACKAGE_VENDOR} ${CURRENT_YEAR}. All rights reserved.</copyright>
+    
+ </PropertyGroup>
+ 
+    <ItemGroup>
+      <None Include="..\..\LICENSE.txt">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+      </None>
+      <None Include="..\..\miscellaneous\nuget_icon.png">
+        <Pack>True</Pack>
+        <PackagePath></PackagePath>
+      </None>
+    </ItemGroup>
+    <ItemGroup>
+      <None Include="docs\README.md">
+        <Pack>True</Pack>
+        <PackagePath>docs\</PackagePath>
+      </None>
+    </ItemGroup>
+
+  <Import Project="SignBinary.Targets" Condition="exists('SignBinary.Targets')" />	
+  <Import Project="SignPkg.Targets" Condition="exists('SignPkg.Targets')" />	
+  
+</Project>

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -26,6 +26,7 @@ namespace Emgu.CV.Models
     public class FacemarkDetector : DisposableObject
     {
         private FacemarkLBF _facemark = null;
+        private readonly String _modelFolderName = Path.Combine("emgu", "facemark");
 
         /// <summary>
         /// Download and initialize the facial landmark detector
@@ -33,17 +34,17 @@ namespace Emgu.CV.Models
         /// <param name="onDownloadProgressChanged">Callback when download progress has been changed</param>
         /// <returns>Async task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
-        public IEnumerator Init(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        public IEnumerator Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #else
-        public async Task Init(System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
+        public async Task Init(FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null)
 #endif
         {
             if (_facemark == null)
             {
                 FileDownloadManager manager = new FileDownloadManager();
                 manager.AddFile(
-                    "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/lbfmodel.yaml", 
-                    "facemark",
+                    "https://raw.githubusercontent.com/kurnianggoro/GSOC2017/master/data/lbfmodel.yaml",
+                    _modelFolderName,
                     "70DD8B1657C42D1595D6BD13D97D932877B3BED54A95D3C4733A0F740D1FD66B");
                 if (onDownloadProgressChanged != null)
                     manager.OnDownloadProgressChanged += onDownloadProgressChanged;

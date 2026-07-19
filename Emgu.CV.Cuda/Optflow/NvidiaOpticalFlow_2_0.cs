@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -211,13 +211,13 @@ namespace Emgu.CV.Cuda
             ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cudaNvidiaOpticalFlow_2_0_ConvertToFloat(
+        internal static extern void cudaNvidiaOpticalFlow_2_0_ConvertToFloat(
             IntPtr novf,
             IntPtr flow, 
             IntPtr floatFlow);
 
         [DllImport(CvInvoke.ExternCudaLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cudaNvidiaOpticalFlow_2_0_Release(ref IntPtr flow);
+        internal static extern void cudaNvidiaOpticalFlow_2_0_Release(ref IntPtr flow);
 
     }
 }

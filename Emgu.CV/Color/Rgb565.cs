@@ -1,5 +1,5 @@
 //----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -62,7 +62,7 @@ namespace Emgu.CV.Structure
         [DisplayColor(255, 0, 0)]
         public double Blue { get { return _scalar.V2; } set { _scalar.V2 = value; } }
 
-        #region IEquatable<Rgb> Members
+        #region IEquatable<Bgr565> Members
         /// <summary>
         /// Return true if the two color equals
         /// </summary>

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -135,26 +135,26 @@ namespace Emgu.CV.XFeatures2D
     {
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cvePCTSignaturesSQFDCreate(
+        internal static extern IntPtr cvePCTSignaturesSQFDCreate(
             PCTSignaturesSQFD.DistanceFunction distanceFunction,
             PCTSignaturesSQFD.SimilarityFunction similarityFunction,
             float similarityParameter, 
             ref IntPtr sharedPtr);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static float cvePCTSignaturesSQFDComputeQuadraticFormDistance(
+        internal static extern float cvePCTSignaturesSQFDComputeQuadraticFormDistance(
             IntPtr sqfd,
             IntPtr signature0,
             IntPtr signature1);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cvePCTSignaturesSQFDComputeQuadraticFormDistances(
+        internal static extern void cvePCTSignaturesSQFDComputeQuadraticFormDistances(
             IntPtr sqfd,
             IntPtr sourceSignature,
             IntPtr imageSignatures,
             IntPtr distances);
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cvePCTSignaturesSQFDRelease(ref IntPtr sharedPtr);
+        internal static extern void cvePCTSignaturesSQFDRelease(ref IntPtr sharedPtr);
     }
 }

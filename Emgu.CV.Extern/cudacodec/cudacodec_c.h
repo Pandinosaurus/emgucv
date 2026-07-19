@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 #include "emgu_c.h"
 
 #else
-static inline CV_NORETURN void throw_no_cudacodec() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without CUDA Codec support"); }
+static inline CV_NORETURN void throw_no_cudacodec() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without CUDA Codec support. To use this module, please switch to the Emgu CV runtime with CUDA support."); }
 
 
 namespace cv
@@ -33,12 +33,16 @@ namespace cv
 		class VideoReader
 		{
 		};
-		
-		enum SurfaceFormat
+
+		enum Codec
 		{
 		};
 
-		enum FormatInfo
+		enum ColorFormat
+		{
+		};
+
+		struct FormatInfo
 		{
 		};
 	}
@@ -47,13 +51,21 @@ namespace cv
 
 //----------------------------------------------------------------------------
 //
-//  CudaVideoWritter
+//  CudaVideoWriter
 //
 //----------------------------------------------------------------------------
 
-CVAPI(cv::cudacodec::VideoWriter*) cudaVideoWriterCreate(cv::String* fileName, CvSize* frameSize, double fps, cv::cudacodec::SurfaceFormat format, cv::Ptr<cv::cudacodec::VideoWriter>** sharedPtr);
-CVAPI(void) cudaVideoWriterRelease(cv::Ptr<cv::cudacodec::VideoWriter>** writer);
-CVAPI(void) cudaVideoWriterWrite(cv::cudacodec::VideoWriter* writer, cv::_InputArray* frame, bool lastFrame);
+CVAPI(cv::cudacodec::VideoWriter*) cudaVideoWriterCreate(
+	cv::String* fileName, 
+	CvSize* frameSize, 
+	cv::cudacodec::Codec codec, 
+	double fps, 
+	cv::cudacodec::ColorFormat colorFormat, 
+	cv::cuda::Stream* stream, 
+	cv::Ptr<cv::cudacodec::VideoWriter>** sharedPtr);
+CVAPI(void) cudaVideoWriterDelete(cv::Ptr<cv::cudacodec::VideoWriter>** writer);
+CVAPI(void) cudaVideoWriterRelease(cv::cudacodec::VideoWriter* writer);
+CVAPI(void) cudaVideoWriterWrite(cv::cudacodec::VideoWriter* writer, cv::_InputArray* frame);
 
 //----------------------------------------------------------------------------
 //

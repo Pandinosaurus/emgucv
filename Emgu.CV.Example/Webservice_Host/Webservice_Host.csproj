@@ -13,7 +13,7 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -139,13 +139,9 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Emgu.CV.Platform\DotNet\Framework\Emgu.CV.Platform.NetFramework.csproj">
-      <Project>{90e78bbf-c7fe-4d8e-ade1-75448e866fdb}</Project>
-      <Name>Emgu.CV.Platform.NetFramework</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Emgu.CV.Platform\NetStandard\Emgu.CV.Platform.Netstandard.csproj">
-      <Project>{f8ccdef7-e79a-4fd5-8c0e-9290059c7dd6}</Project>
-      <Name>Emgu.CV.Platform.Netstandard</Name>
+    <ProjectReference Include="..\..\Emgu.CV\NetStandard\Emgu.CV.csproj">
+      <Project>{19f8fc2f-e400-4dd6-aa04-7d1bef6820f4}</Project>
+      <Name>Emgu.CV</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="..\..\Emgu.CV.Runtime\Windows\Emgu.CV.Runtime.Windows.projitems" Label="Shared" />

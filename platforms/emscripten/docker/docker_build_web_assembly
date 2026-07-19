@@ -1,0 +1,14 @@
+#!/bin/sh
+
+cd "$(dirname "$0")"
+
+cd ../../..
+
+docker run \
+  -e USER="$(id -u)" \
+  -u="$(id -u)" \
+  -v $(pwd):/src/workspace \
+  -v /etc/passwd:/etc/passwd \
+  -w /src/workspace \
+  emgu/bazel-android:latest \
+  /bin/bash -c "cd platforms/emscripten; ./cmake_configure_dotnet.sh"

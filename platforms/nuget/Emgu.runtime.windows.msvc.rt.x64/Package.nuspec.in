@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>${EMGU_WINDOWS_MSVCRT_X64_NUGET_ID}</id>
+	<title>MSVC x64 runtime for windows</title>
+    <version>${EMGU_WINDOWS_MSVCRT_VERSION}</version>
+    <authors>${CPACK_PACKAGE_VENDOR}</authors>
+    <owners>${CPACK_PACKAGE_VENDOR}</owners>
+    <license type="file">${EMGUCV_LICENSE_FILE}</license>
+    <projectUrl>${NUGET_EMGU_URL}</projectUrl>
+	<repository type="git" url="https://github.com/emgucv/emgucv" />
+	<icon>icon.png</icon>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+	<summary>MSVC x64 runtime package for Windows</summary>
+    <description>This package contains the native x64 MSVC runtime for Windows</description>
+    <releaseNotes>This is the x64 MSVC runtime v${MSVC_TOOLSET_VERSION} built by ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH} release of Emgu CV.   	        
+    </releaseNotes>
+	<readme>docs/README.md</readme>
+    <copyright>© ${CPACK_PACKAGE_VENDOR} ${CURRENT_YEAR}. All rights reserved.</copyright>
+    <tags>native emgu msvc</tags>
+  </metadata>
+  <files>
+	<file src="..\..\..\libs\runtimes\win-x64\native\concrt*.dll" target="runtimes\win-x64\native" /> 
+	<file src="..\..\..\libs\runtimes\win-x64\native\msvcp*.dll" target="runtimes\win-x64\native" /> 
+	<file src="..\..\..\libs\runtimes\win-x64\native\vcruntime*.dll" target="runtimes\win-x64\native" />     
+	<file src="..\..\..\libs\runtimes\win-x64\native\vccorlib*.dll" target="runtimes\win-x64\native" />     
+	<file src="..\..\..\miscellaneous\nuget_icon.png" target="icon.png" />
+    <file src="..\..\..\${EMGUCV_LICENSE_FILE}" target="" />
+	<file src="README.md" target="docs\" />
+  </files>
+</package>

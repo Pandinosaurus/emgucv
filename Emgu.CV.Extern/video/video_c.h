@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -13,11 +13,13 @@
 #ifdef HAVE_OPENCV_VIDEO
 #include "opencv2/video/video.hpp"
 #else
-static inline CV_NORETURN void throw_no_video() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without video support"); }
+static inline CV_NORETURN void throw_no_video() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without video support. To use this module, please switch to the full Emgu CV runtime."); }
 namespace cv {
 	class Tracker {};
 	class TrackerMIL {};
 	class TrackerGOTURN {};
+	class TrackerDaSiamRPN {};
+	class TrackerNano {};
 	class BackgroundSubtractorMOG2 {};
 	class BackgroundSubtractor {};
 	class BackgroundSubtractorKNN {};
@@ -36,7 +38,17 @@ CVAPI(cv::BackgroundSubtractorMOG2*) cveBackgroundSubtractorMOG2Create(int histo
 CVAPI(void) cveBackgroundSubtractorMOG2Release(cv::BackgroundSubtractorMOG2** bgSubtractor, cv::Ptr<cv::BackgroundSubtractorMOG2>** sharedPtr);
 
 //BackgroundSubtractor
-CVAPI(void) cveBackgroundSubtractorUpdate(cv::BackgroundSubtractor* bgSubtractor, cv::_InputArray* image, cv::_OutputArray* fgmask, double learningRate);
+CVAPI(void) cveBackgroundSubtractorApply1(
+	cv::BackgroundSubtractor* bgSubtractor, 
+	cv::_InputArray* image, 
+	cv::_OutputArray* fgmask, 
+	double learningRate);
+CVAPI(void) cveBackgroundSubtractorApply2(
+	cv::BackgroundSubtractor* bgSubtractor, 
+	cv::_InputArray* image,
+	cv::_InputArray* knownForegroundMask,
+	cv::_OutputArray* fgmask,
+	double learningRate);
 CVAPI(void) cveBackgroundSubtractorGetBackgroundImage(cv::BackgroundSubtractor* bgSubtractor, cv::_OutputArray* backgroundImage);
 
 
@@ -100,10 +112,24 @@ CVAPI(int) cveBuildOpticalFlowPyramid(
 
 //CVAPI(void) cveEstimateRigidTransform(cv::_InputArray* src, cv::_InputArray* dst, bool fullAffine, cv::Mat* result);
 
-CVAPI(double) cveFindTransformECC(cv::_InputArray* templateImage, cv::_InputArray* inputImage,
-	cv::_InputOutputArray* warpMatrix, int motionType,
+CVAPI(double) cveFindTransformECC(
+	cv::_InputArray* templateImage, 
+	cv::_InputArray* inputImage,
+	cv::_InputOutputArray* warpMatrix, 
+	int motionType,
 	CvTermCriteria* criteria,
-	cv::_InputArray* inputMask);
+	cv::_InputArray* inputMask,
+	int gaussFiltSize);
+
+CVAPI(double) cveFindTransformECCWithMask(
+	cv::_InputArray* templateImage,
+	cv::_InputArray* inputImage,
+	cv::_InputArray* templateMask,
+	cv::_InputArray* inputMask,
+	cv::_InputOutputArray* warpMatrix,
+	int motionType,
+	CvTermCriteria* criteria,
+	int gaussFiltSize);
 
 CVAPI(cv::KalmanFilter*) cveKalmanFilterCreate(int dynamParams, int measureParams, int controlParams, int type);
 
@@ -120,8 +146,8 @@ CVAPI(cv::VariationalRefinement*) cveVariationalRefinementCreate(cv::DenseOptica
 CVAPI(void) cveVariationalRefinementRelease(cv::VariationalRefinement** flow, cv::Ptr<cv::VariationalRefinement>** sharedPtr);
 
 //CVAPI(cv::Tracker*) cveTrackerCreate(cv::String* trackerType);
-CVAPI(void) cveTrackerInit(cv::Tracker* tracker, cv::Mat* image, CvRect* boundingBox);
-CVAPI(bool) cveTrackerUpdate(cv::Tracker* tracker, cv::Mat* image, CvRect* boundingBox);
+CVAPI(void) cveTrackerInit(cv::Tracker* tracker, cv::_InputArray* image, CvRect* boundingBox);
+CVAPI(bool) cveTrackerUpdate(cv::Tracker* tracker, cv::_InputArray* image, CvRect* boundingBox);
 //CVAPI(void) cveTrackerRelease(cv::Tracker** tracker);
 
 CVAPI(cv::TrackerMIL*) cveTrackerMILCreate(
@@ -134,9 +160,33 @@ CVAPI(cv::TrackerMIL*) cveTrackerMILCreate(
 	int featureSetNumFeatures,
 	cv::Tracker** tracker,
 	cv::Ptr<cv::TrackerMIL>** sharedPtr);
-CVAPI(void) cveTrackerMILRelease(cv::TrackerMIL** tracker, cv::Ptr<cv::TrackerMIL>** sharedPtr);
+CVAPI(void) cveTrackerMILRelease(cv::Ptr<cv::TrackerMIL>** sharedPtr);
 
-CVAPI(cv::TrackerGOTURN*) cveTrackerGOTURNCreate(cv::Tracker** tracker, cv::Ptr<cv::TrackerGOTURN>** sharedPtr);
-CVAPI(void) cveTrackerGOTURNRelease(cv::TrackerGOTURN** tracker, cv::Ptr<cv::TrackerGOTURN>** sharedPtr);
+CVAPI(cv::TrackerGOTURN*) cveTrackerGOTURNCreate(
+	cv::Tracker** tracker, 
+	cv::Ptr<cv::TrackerGOTURN>** sharedPtr,
+	cv::String* modelTxt,
+	cv::String* modelBin);
+CVAPI(void) cveTrackerGOTURNRelease(cv::Ptr<cv::TrackerGOTURN>** sharedPtr);
+
+CVAPI(cv::TrackerDaSiamRPN*) cveTrackerDaSiamRPNCreate(
+	cv::String* model,
+	cv::String* kernel_cls1,
+	cv::String* kernel_r1,
+	int backend,
+	int target,
+	cv::Tracker** tracker,
+	cv::Ptr< cv::TrackerDaSiamRPN >** sharedPtr);
+CVAPI(void) cveTrackerDaSiamRPNRelease(cv::Ptr< cv::TrackerDaSiamRPN >** sharedPtr);
+
+
+CVAPI(cv::TrackerNano*) cveTrackerNanoCreate(
+	cv::String* backbone,
+	cv::String* neckhead,
+	int backend,
+	int target,
+	cv::Tracker** tracker,
+	cv::Ptr< cv::TrackerNano >** sharedPtr);
+CVAPI(void) cveTrackerNanoRelease(cv::Ptr< cv::TrackerNano >** sharedPtr);
 
 #endif

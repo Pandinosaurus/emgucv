@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -51,10 +51,10 @@ namespace Emgu.CV
     public static partial class GapiInvoke
     {
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static IntPtr cveGMatCreate();
+        internal static extern IntPtr cveGMatCreate();
 
         [DllImport(CvInvoke.ExternLibrary, CallingConvention = CvInvoke.CvCallingConvention)]
-        internal extern static void cveGMatRelease(ref IntPtr gmat);
+        internal static extern void cveGMatRelease(ref IntPtr gmat);
 
     }
 }

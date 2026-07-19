@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
@@ -9,12 +9,14 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Features2D;
+using Emgu.CV.Quality;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Emgu.Util;
@@ -89,17 +91,44 @@ namespace Emgu.CV.Test
         }
 
         [TestAttribute]
+        public void TestMatMultiply()
+        {
+            Mat m1 = new Mat(640, 320, DepthType.Cv8U, 3);
+            m1.SetTo(new MCvScalar(100, 100, 100));
+            Mat m2 = new Mat();
+            using (ScalarArray sa = new ScalarArray(new MCvScalar(.5, 0.5, 0.5)))
+            {
+                CvInvoke.Multiply(m1, sa, m2);
+                MCvScalar mean = new MCvScalar();
+                MCvScalar std = new MCvScalar();
+                CvInvoke.MeanStdDev(m2, ref mean, ref std);
+            }
+            
+        }
+
+        [TestAttribute]
         public void TestMatPixelAccess()
         {
             Mat m1 = EmguAssert.LoadMat("lena.jpg");
             byte[] data = new byte[m1.Width * m1.Height * 3]; //3 channel bgr image data
             GCHandle handle = GCHandle.Alloc(data, GCHandleType.Pinned);
             using (Mat m2 = new Mat(m1.Size, DepthType.Cv8U, 3, handle.AddrOfPinnedObject(), m1.Width * 3))
+            {
                 CvInvoke.BitwiseNot(m1, m2);
+
+                var span = m1.GetSpan<byte>();
+                for (int i = 0; i < span.Length; i++)
+                {
+                    span[i] = (byte)((byte)255 - (byte)(span[i]));
+                }
+                EmguAssert.IsTrue(m1.Equals(m2));
+            }
+
             handle.Free();
             //now the data array contains the pixel data of the inverted lena image.
             //note that if the m2 Mat was allocated with the wrong size, data[] array will contains all 0s, and no exception will be thrown
             //so be really careful when performing the above operations.
+
         }
 
 
@@ -184,6 +213,47 @@ namespace Emgu.CV.Test
             }
         }
 
+        [TestAttribute]
+        public void TestVectorOfVectorOfMat()
+        {
+            using (Mat m = new Mat())
+            using (VectorOfMat vm = new VectorOfMat())
+            {
+                vm.Push(m);
+                using (VectorOfVectorOfMat vvm = new VectorOfVectorOfMat())
+                {
+                    vvm.Push(vm);
+                }
+            }
+        }
+
+        [TestAttribute]
+        public void TestQuality()
+        {
+            Mat m1 = EmguAssert.LoadMat("lena.jpg");
+            Mat m2 = new Mat();
+            CvInvoke.GaussianBlur(m1, m2, new Size(5, 5), 3);
+            using (Emgu.CV.Quality.QualityMSE q = new QualityMSE(m1))
+            {
+                MCvScalar quality = q.Compute(m2);
+            }
+
+        }
+
+        [Test]
+        public void TestJsonSerializeAndDeserialize()
+        {
+            using (Mat mat = new Mat(new Size(50, 60), DepthType.Cv8U, 3))
+            {
+                String jsonString = JsonSerializer.Serialize(mat);
+
+                using (Mat mat2 = JsonSerializer.Deserialize<Mat>(jsonString))
+                    EmguAssert.IsTrue(mat.Equals(mat2));
+
+            }
+        }
+
+        /*
 #if !NETFX_CORE
         [TestAttribute]
         public void TestRuntimeSerialize()
@@ -209,5 +279,6 @@ namespace Emgu.CV.Test
             }
         }
 #endif
+        */
     }
 }

@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -27,7 +27,7 @@ namespace Emgu.CV
         {
             if (_fileReaderMatArr == null)
             {
-                Type[] readersTypes = Emgu.Util.Toolbox.GetIntefaceImplementationFromAssembly<Emgu.CV.IFileReaderMat>();
+                Type[] readersTypes = Emgu.Util.Toolbox.GetInterfaceImplementationFromAssembly<Emgu.CV.IFileReaderMat>();
                 Emgu.CV.IFileReaderMat[] matArr = new IFileReaderMat[readersTypes.Length];
                 for (int i = 0; i < readersTypes.Length; i++)
                 {
@@ -56,7 +56,7 @@ namespace Emgu.CV
         {
             if (_fileWriterMatArr == null)
             {
-                Type[] writerTypes = Emgu.Util.Toolbox.GetIntefaceImplementationFromAssembly<Emgu.CV.IFileWriterMat>();
+                Type[] writerTypes = Emgu.Util.Toolbox.GetInterfaceImplementationFromAssembly<Emgu.CV.IFileWriterMat>();
                 Emgu.CV.IFileWriterMat[] matArr = new IFileWriterMat[writerTypes.Length];
                 for (int i = 0; i < writerTypes.Length; i++)
                 {

@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -8,9 +8,9 @@
 #ifndef EMGU_STITCHING_C_H
 #define EMGU_STITCHING_C_H
 
-#include "opencv2/core/core_c.h"
-#ifdef HAVE_OPENCV_STITCHING
+#include "features2d_c.h" // include Feature2D class definition
 
+#ifdef HAVE_OPENCV_STITCHING
 #include "opencv2/stitching.hpp"
 
 #ifndef HAVE_OPENCV_CUDAWARPING
@@ -24,14 +24,26 @@ namespace cv
 #endif
 
 #else
-static inline CV_NORETURN void throw_no_stitching() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without stitching support"); }
+static inline CV_NORETURN void throw_no_stitching() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without stitching support. To use this module, please switch to the full Emgu CV runtime."); }
 
 namespace cv
 {
 	class Stitcher {};
-	class Feature2D {};
 	class WarperCreator {};
-	
+	class PlaneWarper {};
+	class CylindricalWarper {};
+	class SphericalWarper {};
+	class FisheyeWarper {};
+	class StereographicWarper {};
+	class CompressedRectilinearWarper {};
+	class PaniniWarper {};
+	class MercatorWarper {};
+	class PaniniPortraitWarper {};
+	class PlaneWarperGpu {};
+	class TransverseMercatorWarper {};
+	class CylindricalWarperGpu {};
+	class SphericalWarperGpu {};
+
 	namespace detail
 	{
 		class Blender {};
@@ -75,6 +87,7 @@ namespace cv
 		class PlaneWarperGpu {};
 		class CylindricalWarperGpu {};
 		class SphericalWarperGpu {};
+		class CameraParams {};
 	}
 }
 #endif
@@ -122,6 +135,19 @@ CVAPI(int) cveStitcherStitch(cv::Stitcher* stitcher, cv::_InputArray* images, cv
 CVAPI(int) cveStitcherEstimateTransform(cv::Stitcher* stitcher, cv::_InputArray* images, cv::_InputArray* masks);
 CVAPI(int) cveStitcherComposePanorama1(cv::Stitcher* stitcher, cv::_OutputArray* pano);
 CVAPI(int) cveStitcherComposePanorama2(cv::Stitcher* stitcher, cv::_InputArray* images, cv::_OutputArray* pano);
+
+CVAPI(void) cveStitcherCameras(cv::Stitcher* stitcher, std::vector< cv::detail::CameraParams >* cameraParams);
+CVAPI(void) cveStitcherComponent(cv::Stitcher* stitcher, std::vector< int >* component);
+
+CVAPI(int) cveStitcherSetTransform(
+	cv::Stitcher* stitcher,
+	cv::_InputArray* images,
+	const std::vector< cv::detail::CameraParams >* cameras,
+	const std::vector< int >* component);
+
+CVAPI(void) cveStitcherGetResultMask(
+	cv::Stitcher* stitcher,
+	cv::_OutputArray* resultMask);
 
 /*
 #ifdef OPENCV_ENABLE_NONFREE
@@ -206,6 +232,11 @@ CVAPI(cv::detail::TransverseMercatorWarper*) cveDetailTransverseMercatorWarperCr
 CVAPI(void) cveDetailTransverseMercatorWarperRelease(cv::detail::TransverseMercatorWarper** warper);
 CVAPI(cv::TransverseMercatorWarper*) cveTransverseMercatorWarperCreate(cv::WarperCreator** warperCreator);
 CVAPI(void) cveTransverseMercatorWarperRelease(cv::TransverseMercatorWarper** warperCreator);
+
+CVAPI(void) cveBlenderPrepare(cv::detail::Blender* blender, std::vector< cv::Point >* corners, const std::vector< cv::Size >* sizes);
+CVAPI(void) cveBlenderPrepare2(cv::detail::Blender* blender, CvRect* dstRoi);
+CVAPI(void) cveBlenderFeed(cv::detail::Blender* blender, cv::_InputArray* img, cv::_InputArray* mask, CvPoint* tl);
+CVAPI(void) cveBlenderBlend(cv::detail::Blender* blender, cv::_InputOutputArray* dst, cv::_InputOutputArray* dstMask);
 
 CVAPI(cv::detail::FeatherBlender*) cveFeatherBlenderCreate(float sharpness, cv::detail::Blender** blender);
 CVAPI(void) cveFeatherBlenderRelease(cv::detail::FeatherBlender** blender);
@@ -323,4 +354,8 @@ CVAPI(void) cveDetailSphericalWarperGpuRelease(cv::detail::SphericalWarperGpu** 
 CVAPI(cv::SphericalWarperGpu*) cveSphericalWarperGpuCreate(cv::WarperCreator** warperCreator);
 CVAPI(void) cveSphericalWarperGpuRelease(cv::SphericalWarperGpu** warper);
 
+
+CVAPI(cv::detail::CameraParams*) cveCameraParamsCreate();
+CVAPI(void) cveCameraParamsRelease(cv::detail::CameraParams** params);
+CVAPI(void) cveCameraParamsGetK(cv::detail::CameraParams* params, cv::_OutputArray* k);
 #endif

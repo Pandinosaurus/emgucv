@@ -1,6 +1,6 @@
 //----------------------------------------------------------------------------
 //
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 //
 //----------------------------------------------------------------------------
 
@@ -13,8 +13,9 @@
 
 #ifdef HAVE_OPENCV_DNN
 #include "opencv2/dnn/dnn.hpp"
+#include "../../opencv/modules/dnn/src/op_cuda.hpp"
 #else
-static inline CV_NORETURN void throw_no_dnn() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without DNN support"); }
+static inline CV_NORETURN void throw_no_dnn() { CV_Error(cv::Error::StsBadFunc, "The library is compiled without DNN support. To use this module, please switch to the full Emgu CV runtime."); }
 
 namespace cv
 {
@@ -54,8 +55,15 @@ CVAPI(cv::dnn::Net*) cveReadNetFromCaffe2(const char *bufferProto, int lenProto,
 CVAPI(cv::dnn::Net*) cveReadNetFromTensorflow(cv::String* model, cv::String* config);
 CVAPI(cv::dnn::Net*) cveReadNetFromTensorflow2(const char *bufferModel, int lenModel, const char *bufferConfig, int lenConfig);
 
+CVAPI(cv::dnn::Net*) cveReadNetFromTFLite(cv::String* model);
+CVAPI(cv::dnn::Net*) cveReadNetFromTFLite2(const char* bufferModel, int lenModel);
+
 CVAPI(cv::dnn::Net*) cveReadNetFromONNX(cv::String* onnxFile);
+CVAPI(cv::dnn::Net*) cveReadNetFromONNX2(const char* bufferModel, int lenModel);
 CVAPI(void) cveReadTensorFromONNX(cv::String* path, cv::Mat* tensor);
+
+CVAPI(cv::dnn::Net*) cveReadNetFromTorch(cv::String* model, bool isBinary, bool evaluate);
+CVAPI(void) cveReadTorchBlob(cv::String* filename, bool isBinary, cv::Mat* tensor);
 
 CVAPI(cv::dnn::Net*) cveReadNet(cv::String* model, cv::String* config, cv::String* framework);
 CVAPI(cv::dnn::Net*) cveReadNetFromModelOptimizer(cv::String* xml, cv::String* bin);
@@ -74,10 +82,12 @@ CVAPI(int64) cveDnnNetGetPerfProfile(cv::dnn::Net* net, std::vector<double>* tim
 CVAPI(void) cveDnnNetDump(cv::dnn::Net* net, cv::String* string);
 CVAPI(void) cveDnnNetDumpToFile(cv::dnn::Net* net, cv::String* path);
 CVAPI(std::vector<cv::String>*) cveDnnNetGetLayerNames(cv::dnn::Net* net);
+CVAPI(void) cveDnnNetConnect(cv::dnn::Net* net, cv::String* outPin, cv::String* inPin);
 
-CVAPI(int) cveDnnGetLayerId(cv::dnn::Net* net, cv::String* layer);
-CVAPI(cv::dnn::Layer*) cveDnnGetLayerByName(cv::dnn::Net* net, cv::String* layerName, cv::Ptr<cv::dnn::Layer>** sharedPtr);
-CVAPI(cv::dnn::Layer*) cveDnnGetLayerById(cv::dnn::Net* net, int layerId, cv::Ptr<cv::dnn::Layer>** sharedPtr);
+CVAPI(int) cveDnnNetGetLayerId(cv::dnn::Net* net, cv::String* layer);
+CVAPI(cv::dnn::Layer*) cveDnnNetGetLayerByName(cv::dnn::Net* net, cv::String* layerName, cv::Ptr<cv::dnn::Layer>** sharedPtr);
+CVAPI(cv::dnn::Layer*) cveDnnNetGetLayerById(cv::dnn::Net* net, int layerId, cv::Ptr<cv::dnn::Layer>** sharedPtr);
+
 CVAPI(void) cveDnnLayerRelease(cv::Ptr<cv::dnn::Layer>** layer);
 CVAPI(std::vector<cv::Mat>*) cveDnnLayerGetBlobs(cv::dnn::Layer* layer);
 
@@ -126,7 +136,19 @@ CVAPI(void) cveDnnNMSBoxes2(
 	float eta,
 	int topK);
 
-CVAPI(void) cveDNNGetAvailableBackends(std::vector<int>* backends, std::vector<int>* targets);
+CVAPI(void) cveDnnSoftNMSBoxes(
+	std::vector<cv::Rect>* bboxes,
+	std::vector<float>* scores,
+	std::vector<float>* updatedScores,
+	float scoreThreshold,
+	float nmsThreshold,
+	std::vector<int>* indices,
+	int topK,
+	float sigma,
+	int method);
+
+CVAPI(void) cveDnnGetAvailableBackends(std::vector<int>* backends, std::vector<int>* targets);
+CVAPI(void) cveDnnEnableModelDiagnostics(bool isDiagnosticsMode);
 
 CVAPI(cv::dnn::TextDetectionModel_DB*) cveDnnTextDetectionModelDbCreate1(cv::String* model, cv::String* config, cv::dnn::TextDetectionModel** textDetectionModel, cv::dnn::Model** baseModel);
 CVAPI(cv::dnn::TextDetectionModel_DB*) cveDnnTextDetectionModelDbCreate2(cv::dnn::Net* network, cv::dnn::TextDetectionModel** textDetectionModel, cv::dnn::Model** baseModel);
@@ -153,6 +175,7 @@ CVAPI(void) cveDnnTextDetectionModelDetectTextRectangles(
 CVAPI(cv::dnn::TextRecognitionModel*) cveDnnTextRecognitionModelCreate1(cv::String* model, cv::String* config, cv::dnn::Model** baseModel);
 CVAPI(cv::dnn::TextRecognitionModel*) cveDnnTextRecognitionModelCreate2(cv::dnn::Net* network, cv::dnn::Model** baseModel);
 CVAPI(void) cveDnnTextRecognitionModelRelease(cv::dnn::TextRecognitionModel** textRecognitionModel);
+CVAPI(void) cveDnnTextRecognitionModelSetDecodeOptsCTCPrefixBeamSearch(cv::dnn::TextRecognitionModel* textRecognitionModel, int beamSize, int vocPruneSize);
 CVAPI(void) cveDnnTextRecognitionModelSetVocabulary(cv::dnn::TextRecognitionModel* textRecognitionModel, std::vector< std::string >* vocabulary);
 CVAPI(void) cveDnnTextRecognitionModelGetVocabulary(cv::dnn::TextRecognitionModel* textRecognitionModel, std::vector< std::string >* vocabulary);
 CVAPI(void) cveDnnTextRecognitionModelRecognize1(cv::dnn::TextRecognitionModel* textRecognitionModel, cv::_InputArray* frame, cv::String* text);
@@ -161,6 +184,7 @@ CVAPI(void) cveDnnTextRecognitionModelRecognize2(
 	cv::_InputArray* frame, 
 	cv::_InputArray* roiRects, 
 	std::vector< std::string >* results);
+
 
 CVAPI(cv::dnn::Model*) cveModelCreate(cv::String* model, cv::String* config);
 CVAPI(cv::dnn::Model*) cveModelCreateFromNet(cv::dnn::Net* network);
@@ -215,4 +239,5 @@ CVAPI(void) cveDnnSegmentationModelSegment(
 	cv::_InputArray* frame,
 	cv::_OutputArray* mask);
 
+//CVAPI(bool) cveDnnHaveCUDA();
 #endif

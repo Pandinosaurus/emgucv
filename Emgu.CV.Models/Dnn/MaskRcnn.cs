@@ -1,5 +1,5 @@
 ﻿//----------------------------------------------------------------------------
-//  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.       
+//  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.       
 //----------------------------------------------------------------------------
 
 using System;
@@ -25,13 +25,24 @@ namespace Emgu.CV.Models
     /// </summary>
     public class MaskRcnn : DisposableObject, IProcessAndRenderModel
     {
-        private String _modelFolderName = "mask_rcnn_inception_v2_coco_2018_01_28";
+        private readonly String _modelFolderName = Path.Combine("emgu", "mask_rcnn_inception_v2_coco_2018_01_28");
 
         private string[] _labels = null;
 
         private MCvScalar[] _colors = null;
 
         private String[] _objectsOfInterest = null;
+
+        /// <summary>
+        /// The rendering method
+        /// </summary>
+        public RenderType RenderMethod
+        {
+            get
+            {
+                return RenderType.Update;
+            }
+        }
 
         /// <summary>
         /// Get or Set the list of object of interest.
@@ -45,7 +56,17 @@ namespace Emgu.CV.Models
         }
 
         private Net _maskRcnnDetector = null;
-        //private Model _maskRcnnModel = null;
+
+        /// <summary>
+        /// Return true if the model is initialized
+        /// </summary>
+        public bool Initialized
+        {
+            get
+            {
+                return _maskRcnnDetector != null;
+            }
+        }
 
         /// <summary>
         /// Download and initialize the Mask Rcnn model
@@ -55,11 +76,11 @@ namespace Emgu.CV.Models
         /// <returns>Asyn task</returns>
 #if UNITY_EDITOR || UNITY_IOS || UNITY_ANDROID || UNITY_STANDALONE || UNITY_WEBGL
         public IEnumerator Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
 #else
         public async Task Init(
-            System.Net.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
+            FileDownloadManager.DownloadProgressChangedEventHandler onDownloadProgressChanged = null,
             Object initOptions = null)
 #endif
         {
@@ -120,15 +141,47 @@ namespace Emgu.CV.Models
                             }
                         }
                     }
-                    
 
-                    _colors = new MCvScalar[_labels.Length];
-                    Random r = new Random(12345);
-                    for (int i = 0; i < _colors.Length; i++)
+                    if (_colors == null || _colors.Length != _labels.Length)
                     {
-                        _colors[i] = new MCvScalar(r.Next(256), r.Next(256), r.Next(256));
+                        _colors = new MCvScalar[_labels.Length];
+                        Random r = new Random(12345);
+                        for (int i = 0; i < _colors.Length; i++)
+                        {
+                            _colors[i] = new MCvScalar(r.Next(256), r.Next(256), r.Next(256));
+                        }
                     }
                 }
+            }
+        }
+
+        private MCvScalar _renderColor = new MCvScalar(0, 0, 255);
+
+        /// <summary>
+        /// Get or Set the color used in rendering the rectangle around the object.
+        /// </summary>
+        public MCvScalar RenderColorRectangle
+        {
+            get
+            {
+                return _renderColor;
+            }
+            set
+            {
+                _renderColor = value;
+            }
+        }
+
+        /// <summary>
+        /// Get the rendering colors for the mask. The size of the array equals to the size of labels.
+        /// You can change the colors for rendering masks by updating this array.
+        /// It will only contains value after the Init function is called.
+        /// </summary>
+        public MCvScalar[] RenderColorMask
+        {
+            get
+            {
+                return _colors;
             }
         }
 
@@ -158,16 +211,10 @@ namespace Emgu.CV.Models
         public void ProcessAndRender(IInputArray imageIn, IInputOutputArray imageOut, float matchScoreThreshold = 0.5f, float nmsThreshold = 0.4f)
         {
             MaskedObject[] objects = Detect(imageIn, matchScoreThreshold, nmsThreshold);
-            if (imageOut != imageIn)
-            {
-                using (InputArray iaImageIn = imageIn.GetInputArray())
-                {
-                    iaImageIn.CopyTo(imageOut);
-                }
-            }
+
             foreach (var obj in objects)
             {
-                obj.Render(imageOut, new MCvScalar(0, 0, 255), _colors[obj.ClassId]);
+                obj.Render(imageOut, RenderColorRectangle, RenderColorMask[obj.ClassId]);
                 obj.Dispose();
             }
         }

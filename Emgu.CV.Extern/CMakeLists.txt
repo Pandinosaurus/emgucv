@@ -1,5 +1,5 @@
 # --------------------------------------------------------
-#  Copyright (C) 2004-2021 by EMGU Corporation. All rights reserved.
+#  Copyright (C) 2004-2026 by EMGU Corporation. All rights reserved.
 # 
 #  CMake file for cvextern. See root CMakeLists.txt
 #
@@ -113,6 +113,8 @@ CREATE_VECTOR_CS("KeyLine" "cv::line_descriptor::KeyLine" "MKeyLine" "struct_not
 
 CREATE_VECTOR_CS("ColorPoint" "ColorPoint" "ColorPoint" "struct" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "#include \"videoio_c_extra.h\"" "" "defined(HAVE_OPENCV_VIDEOIO)")
 
+CREATE_VECTOR_CS("IntPtr" "void*" "IntPtr" "struct_not_array" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "" "" "1")
+
 IF(EMGU_CV_WITH_TESSERACT)
   SET(EMGU_CV_WITH_TESSERACT_FLAG "1")
 ELSE()
@@ -133,13 +135,13 @@ CREATE_VECTOR_CS("VectorOfByte" "std::vector< unsigned char >" "Byte" "vector" "
 CREATE_VECTOR_CS("VectorOfDMatch" "std::vector< cv::DMatch >" "MDMatch" "vector" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "" "" "1")
 CREATE_VECTOR_CS("VectorOfRect" "std::vector< cv::Rect >" "Rectangle" "vector" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "" "" "1")
 
-
 CREATE_VECTOR_CS("OclPlatformInfo" "cv::ocl::PlatformInfo" "Ocl.PlatformInfo" "object" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "#include \"opencv2/core/ocl.hpp\"" "" "1")
-
 CREATE_VECTOR_CS("GpuMat" "cv::cuda::GpuMat" "GpuMat" "object" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Cuda" Emgu.CV.Cuda "" "#include \"opencv2/core/cuda.hpp\"" "" "1")
 
 CREATE_VECTOR_CS("VideoCapture" "cv::VideoCapture" "VideoCapture" "object_not_array" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "#include \"videoio_c_extra.h\"" "" "defined(HAVE_OPENCV_VIDEOIO)")
+CREATE_VECTOR_CS("VectorOfMat" "std::vector< cv::Mat >" "VectorOfMat" "object_not_array" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" Emgu.CV.Util "" "" "" "1")
 
+CREATE_VECTOR_CS("LinemodMatch" "cv::linemod::Match" "Emgu.CV.Linemod.Match" "object_not_array" "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/Rgbd" Emgu.CV.Linemod "" "#include \"rgbd_c.h\"" "" "defined(HAVE_OPENCV_RGBD)")
 
 MACRO(WRITE_IF_DIFFERENT fname content)
   IF (EXISTS "${fname}")
@@ -170,12 +172,13 @@ ENDMACRO()
 #################################################################################
 MACRO(CREATE_OCV_CLASS_PROPERTY fname csfname cname_full cname pnames ptypes mtypes cs_func_names csptypes csp_docs cs_namespace cs_invoke_class cs_class_name cs_compilation_condition header_additional_include source_additional_code c_compilation_condition ocv_module_enabled)
   #MESSAGE(STATUS ">>>>>>>>>>>>>>>> ocv_module_enabled: ${ocv_module_enabled}")
-  IF ("${ocv_module_enabled}" STREQUAL "ON")
-	SET(IS_DUMMY OFF)
+  #IF (("${ocv_module_enabled}" STREQUAL "ON") OR ("${ocv_module_enabled}" STREQUAL "TRUE"))
+  IF (${ocv_module_enabled})
+    SET(IS_DUMMY OFF)
   ELSE()
     SET(IS_DUMMY ON)
   ENDIF()
-  #MESSAGE(STATUS ">>>>>>>>>>>>>>>> is_dummy: ${IS_DUMMY}")
+  #MESSAGE(STATUS ">>>>>>>>>>>>>>>> fname: ${fname}; is_dummy: ${IS_DUMMY}")
 
   SET(FILE_NAME ${fname})
   SET(CLASS_NAME_FULL ${cname_full})
@@ -275,7 +278,7 @@ namespace ${cs_namespace}
       SET(MARSHAL_RETURN "
      [return: MarshalAs(CvInvoke.BoolMarshalType)]")
     ENDIF()
-    
+  
     IF("${MARSHAL_TYPE}" STREQUAL "val")
       IF("${PROPERTY_TYPE}" STREQUAL "cv::String") #special handling for functions that returns strings
 	    IF(IS_DUMMY)
@@ -1293,7 +1296,7 @@ ENDMACRO()
 	""
 	""
 	${HAVE_opencv_core})
-  
+
   CREATE_OCV_CLASS_PROPERTY( 
     "core/gpumat_property" 
     "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Cuda/GpuMat.g.cs"
@@ -1311,6 +1314,27 @@ ENDMACRO()
     "Emgu.CV.Cuda"
     "CudaInvoke"
     "GpuMat"
+	""
+    "#include \"opencv2/core/cuda.hpp\"
+	#include \"opencv2/core/types_c.h\""
+	""
+	""
+	${HAVE_opencv_core})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "core/stream_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.CUDA/Stream.g.cs"
+    "cv::cuda::Stream" 
+    "Stream" 
+    "cudaPtr" 
+    "void*" 
+    "val"
+    "CudaPtr" 
+    "IntPtr"
+    "Get pointer to CUDA stream"
+    "Emgu.CV.Cuda"
+    "CudaInvoke"
+    "Stream"
 	""
     "#include \"opencv2/core/cuda.hpp\"
 	#include \"opencv2/core/types_c.h\""
@@ -1415,6 +1439,28 @@ ENDIF()
 	""
 	${HAVE_opencv_objdetect})
 
+  CREATE_OCV_CLASS_PROPERTY( 
+    "objdetect/FaceDetectorYN_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Objdetect/FaceDetectorYN.g.cs"
+    "cv::FaceDetectorYN" 
+    "FaceDetectorYN" 
+    "ScoreThreshold;NMSThreshold;TopK;InputSize" 
+    "float;float;int;CvSize" 
+    "propW;propW;propW;struct"
+    "ScoreThreshold;NMSThreshold;TopK;InputSize" 
+    "float;float;int;System.Drawing.Size"
+    "The score threshold to filter out bounding boxes of score less than the given value;
+     The Non-maximum-suppression threshold to suppress bounding boxes that have IoU greater than the given value;
+     The number of bounding boxes to preserve from top rank based on score;
+     The size for the network input, which overwrites the input size of creating model."
+    "Emgu.CV"
+    "CvInvoke"
+    "FaceDetectorYN"
+	""
+    "#include \"objdetect_c.h\""
+	""
+	""
+	${HAVE_opencv_objdetect})
 ############################### objdetect code gen END ################################
 
 ############################### imgproc code gen START ##############################
@@ -1474,11 +1520,11 @@ ENDIF()
     "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Features2D/SimpleBlobDetectorParams.g.cs"
     "cv::SimpleBlobDetector::Params" 
     "SimpleBlobDetectorParams" 
-    "thresholdStep;minThreshold;maxThreshold;minDistBetweenBlobs;filterByColor;blobColor;filterByArea;minArea;maxArea;filterByCircularity;minCircularity;maxCircularity;filterByInertia;minInertiaRatio;maxInertiaRatio;filterByConvexity;minConvexity;maxConvexity;minRepeatability" 
-    "float;float;float;float;bool;uchar;bool;float;float;bool;float;float;bool;float;float;bool;float;float;size_t" 
-    "element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element"
-    "ThresholdStep;MinThreshold;MaxThreshold;MinDistBetweenBlobs;FilterByColor;blobColor;FilterByArea;MinArea;MaxArea;FilterByCircularity;MinCircularity;MaxCircularity;FilterByInertia;MinInertiaRatio;MaxInertiaRatio;FilterByConvexity;MinConvexity;MaxConvexity;MinRepeatability" 
-    "float;float;float;float;bool;Byte;bool;float;float;bool;float;float;bool;float;float;bool;float;float;IntPtr"
+    "thresholdStep;minThreshold;maxThreshold;minDistBetweenBlobs;filterByColor;blobColor;filterByArea;minArea;maxArea;filterByCircularity;minCircularity;maxCircularity;filterByInertia;minInertiaRatio;maxInertiaRatio;filterByConvexity;minConvexity;maxConvexity;minRepeatability;collectContours" 
+    "float;float;float;float;bool;uchar;bool;float;float;bool;float;float;bool;float;float;bool;float;float;size_t;bool" 
+    "element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element;element"
+    "ThresholdStep;MinThreshold;MaxThreshold;MinDistBetweenBlobs;FilterByColor;blobColor;FilterByArea;MinArea;MaxArea;FilterByCircularity;MinCircularity;MaxCircularity;FilterByInertia;MinInertiaRatio;MaxInertiaRatio;FilterByConvexity;MinConvexity;MaxConvexity;MinRepeatability;CollectContours" 
+    "float;float;float;float;bool;Byte;bool;float;float;bool;float;float;bool;float;float;bool;float;float;IntPtr;bool"
     "Threshold step;
   Min threshold;
   Max threshold;
@@ -1497,7 +1543,8 @@ ENDIF()
   Filter by convexity;
   Min Convexity;
   Max Convexity;
-  Min Repeatability"
+  Min Repeatability;
+  Collect Contours"
     "Emgu.CV.Features2D"
     "Features2DInvoke"
     "SimpleBlobDetectorParams"
@@ -1593,6 +1640,34 @@ ENDIF()
 	""
 	${HAVE_opencv_mcc})
 
+      CREATE_OCV_CLASS_PROPERTY( 
+    "mcc/ColorCorrectionModel_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/Mcc/ColorCorrectionModel.g.cs"
+    "cv::ccm::ColorCorrectionModel" 
+    "ColorCorrectionModel" 
+    "ColorSpace;CCM_TYPE;Loss;Distance;Linear;LinearGamma;LinearDegree;WeightCoeff;MaxCount" 
+    "cv::ccm::COLOR_SPACE;cv::ccm::CCM_TYPE;double;cv::ccm::DISTANCE_TYPE;cv::ccm::LINEAR_TYPE;double;int;double;int" 
+    "propW;propW;propR;propW;propW;propW;propW;propW;propW"
+    "ColorSpace;CcmType;Loss;DistanceType;LinearType;LinearGamma;LinearDegree;WeightCoeff;MaxCount" 
+    "ColorCorrectionModel.ColorSpace;ColorCorrectionModel.CcmType;double;ColorCorrectionModel.DistanceType;ColorCorrectionModel.LinearType;double;int;double;int"
+    "Color space;
+     Ccm type;
+     Loss;
+     The type of color distance;
+     The method of linearization;
+     The gamma value of gamma correction;
+     The degree of linearization polynomial;
+     The exponent number of L* component of the reference color in CIE Lab color space;
+     Used in MinProblemSolver-DownhillSolver, terminal criteria to the algorithm"
+    "Emgu.CV.Ccm"
+    "CcmInvoke"
+    "ColorCorrectionModel"
+	""
+    "#include \"mcc_c.h\""
+	""
+	""
+	${HAVE_opencv_mcc})
+
 ############################### features2d code gen END ################################
 
 ############################### ml code gen START ##############################
@@ -1649,7 +1724,7 @@ ENDIF()
 	""
 	""
 	${HAVE_opencv_ml})
-	
+
   CREATE_OCV_CLASS_PROPERTY( 
     "ml/svmsgd_property" 
     "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Ml/SVMSGD.g.cs"
@@ -1906,13 +1981,14 @@ ENDIF()
     "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Videoio/VideoCapture.g.cs"
     "cv::VideoCapture" 
     "VideoCapture" 
-    "isOpened;ExceptionMode" 
-    "bool;bool" 
-    "val;prop"
-    "IsOpened;ExceptionMode" 
-    "bool;bool"
+    "isOpened;ExceptionMode;release" 
+    "bool;bool;void" 
+    "val;prop;act0"
+    "IsOpened;ExceptionMode;Release" 
+    "bool;bool;void"
     "True if the camera is opened;
-    If True, methods raise exceptions if not successful instead of returning an error code"
+    If True, methods raise exceptions if not successful instead of returning an error code;
+    The method is automatically called by subsequent VideoCapture.Open and by VideoCapture destructor."
     "Emgu.CV"
     "CvInvoke"
     "VideoCapture"
@@ -2152,6 +2228,42 @@ ENDIF()
 	""
 	${HAVE_opencv_stitching})  
 
+   CREATE_OCV_CLASS_PROPERTY( 
+    "stitching/camera_params_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Stitching/CameraParams.g.cs"
+    "cv::detail::CameraParams" 
+    "CameraParams" 
+    "focal;aspect;ppx;ppy;R;t" 
+    "double;double;double;double;cv::Mat;cv::Mat" 
+    "element;element;element;element;element;element"
+    "Focal;Aspect;Ppx;Ppy;R;T" 
+    "double;double;double;double;Mat;Mat"
+    "The focal length;
+    The aspect ratio;
+    The principal point X;
+    The principal point Y;
+    The rotation Mat;
+    The translation Mat"
+    "Emgu.CV.Stitching"
+    "StitchingInvoke"
+    "CameraParams"
+	""
+    "#include \"stitching_c.h\""
+	""
+	""
+	${HAVE_opencv_stitching})  
+
+CREATE_VECTOR_CS(
+    "CameraParams" 
+    "cv::detail::CameraParams" 
+    "Emgu.CV.Stitching.CameraParams" 
+    "object_not_array" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Util" 
+    Emgu.CV.Stitching 
+    "" 
+    "#include \"stitching_c.h\"" 
+    "" 
+    "defined(HAVE_OPENCV_STITCHING)")
 ############################### stitching code gen END ################################
 
 ############################### video code gen START ##############################
@@ -2241,6 +2353,26 @@ ENDIF()
     "BackgroundSubtractorMOG2"
 	""
     "#include \"video_c.h\""
+	""
+	""
+	${HAVE_opencv_video})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "video/TrackerDaSiamRPN_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Video/TrackerDaSiamRPN.g.cs"
+    "cv::TrackerDaSiamRPN" 
+    "TrackerDaSiamRPN" 
+    "TrackingScore" 
+    "float" 
+    "propR"
+    "TrackingScore" 
+    "float"
+    "Tracking score"
+    "Emgu.CV"
+    "CvInvoke"
+    "TrackerDaSiamRPN"
+	""
+	"#include \"video_c.h\""
 	""
 	""
 	${HAVE_opencv_video})
@@ -2458,7 +2590,7 @@ ENDIF()
 	""
 	${HAVE_opencv_saliency})
 
-############################### plot code gen END ##############################
+############################### saliency code gen END ##############################
 
 ############################### xphoto code gen START ##############################
 IF (NOT HAVE_opencv_xphoto)
@@ -2628,14 +2760,15 @@ ENDIF()
     "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV/Dnn/Net.g.cs"
     "cv::dnn::Net" 
     "Net" 
-    "PreferableBackend;PreferableTarget;enableFusion;empty;HalideScheduler" 
-    "int;int;bool;bool;cv::String" 
-    "propW;propW;act1;val;propW"
-    "PreferableBackend;PreferableTarget;EnableFusion;Empty;HalideScheduler" 
-    "Backend;Target;bool;bool;String"
+    "PreferableBackend;PreferableTarget;enableFusion;enableWinograd;empty;HalideScheduler" 
+    "int;int;bool;bool;bool;cv::String" 
+    "propW;propW;act1;act1;val;propW"
+    "PreferableBackend;PreferableTarget;EnableFusion;EnableWinograd;Empty;HalideScheduler" 
+    "Backend;Target;bool;bool;bool;String"
     "Ask network to use specific computation backend where it supported.;
 	Ask network to make computations on specific target device.;
 	Enables or disables layer fusion in the network.;
+    Enables or disables the Winograd compute branch. The Winograd compute branch can speed up 3x3 Convolution at a small loss of accuracy.;
 	Returns true if there are no layers in the network.;
 	Schedule layers that support Halide backend. Then compile them for specific target. For layers that not represented in scheduling file or if no manual scheduling used at all, automatic scheduling will be applied."
     "Emgu.CV.Dnn"
@@ -2775,6 +2908,172 @@ ENDIF()
 
 ############################### stereo code gen END ##############################
 
+############################### structed_light code gen START ##############################
+IF (NOT HAVE_opencv_structured_light)
+  SET(HAVE_opencv_structured_light FALSE)
+ENDIF()
+  CREATE_OCV_CLASS_PROPERTY( 
+    "structured_light/graycodepattern_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/StructuredLight/GrayCodePattern.g.cs"
+    "cv::structured_light::GrayCodePattern" 
+    "GrayCodePattern" 
+    "NumberOfPatternImages;WhiteThreshold;BlackThreshold" 
+    "int;int;int" 
+    "propR;propW;propW"
+    "NumberOfPatternImages;WhiteThreshold;BlackThreshold" 
+    "int;int;int"
+    "Get the number of pattern images needed for the graycode pattern;
+    White threshold is a number between 0-255 that represents the minimum brightness difference required for valid pixels, between the graycode pattern and its inverse images, used in getProjPixel method;
+    Black threshold is a number between 0-255 that represents the minimum brightness difference required for valid pixels, between the fully illuminated (white) and the not illuminated images (black), used in computeShadowMasks method
+    "
+    "Emgu.CV.StructuredLight"
+    "StructuredLightInvoke"
+    "GrayCodePattern"
+	""
+	"#include \"structured_light_c.h\""
+	""
+	""
+	${HAVE_opencv_structured_light})
+
+############################### structed_light code gen END ##############################
+
+############################### ximgproc code gen START ##############################
+IF (NOT HAVE_opencv_ximgproc)
+  SET(HAVE_opencv_ximgproc FALSE)
+ENDIF()
+  CREATE_OCV_CLASS_PROPERTY( 
+    "ximgproc/scan_segment_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/XImgproc/ScanSegment.g.cs"
+    "cv::ximgproc::ScanSegment" 
+    "ScanSegment" 
+    "NumberOfSuperpixels" 
+    "int" 
+    "propR"
+    "NumberOfSuperpixels" 
+    "int"
+    "Returns the actual superpixel segmentation from the last image processed using iterate. Returns zero if no image has been processed."
+    "Emgu.CV.XImgproc"
+    "XImgprocInvoke"
+    "ScanSegment"
+	""
+	"#include \"ximgproc_c.h\""
+	""
+	""
+	${HAVE_opencv_structured_light})
+
+############################### ximgproc code gen END ##############################
+
+############################### sureface matching code gen START ##############################
+IF (NOT HAVE_opencv_surface_matching)
+  SET(HAVE_opencv_surface_matching FALSE)
+ENDIF()
+  CREATE_OCV_CLASS_PROPERTY( 
+    "surface_matching/pose3d_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/SurfaceMatching/Pose3D.g.cs"
+    "cv::ppf_match_3d::Pose3D" 
+    "Pose3D" 
+    "alpha;residual;angle;modelIndex;numVotes" 
+    "double;double;double;int;int" 
+    "element;element;element;element;element"
+    "Alpha;Residual;Angle;ModelIndex;NumVotes" 
+    "double;double;double;int;int"
+    "Alpha value;Residual value;Angle value;Model Index;Number of Votes"
+    "Emgu.CV.PpfMatch3d"
+    "PpfMatch3dInvoke"
+    "Pose3D"
+	""
+	"#include \"surface_matching_c.h\""
+	""
+	""
+	${HAVE_opencv_surface_matching})
+
+    CREATE_VECTOR_CS(
+        "Pose3D" 
+        "std::vector< cv::ppf_match_3d::Pose3D >" 
+        "Pose3D" "object_not_array" 
+        "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/SurfaceMatching" 
+        "Emgu.CV.PpfMatch3d"
+        "" 
+        "#include \"surface_matching_c.h\"" 
+        "" 
+        "defined(HAVE_OPENCV_SURFACE_MATCHING)")
+
+############################### sureface matching code gen END ##############################
+
+
+############################### rgbd code gen START ##############################
+IF (NOT HAVE_opencv_rgbd)
+  SET(HAVE_opencv_rgbd FALSE)
+ENDIF()
+  CREATE_OCV_CLASS_PROPERTY( 
+    "rgbd/match_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/Rgbd/Match.g.cs"
+    "cv::linemod::Match" 
+    "Match" 
+    "x;y;similarity;template_id;class_id" 
+    "int;int;float;int;cv::String" 
+    "element;element;element;element;element"
+    "X;Y;Similarity;TemplateId;class_id" 
+    "int;int;float;int;String"
+    "X position;
+    Y position;
+    Similarity;
+    TemplateId;
+    Class Id"
+    "Emgu.CV.Linemod"
+    "LinemodInvoke"
+    "Match"
+	""
+	"#include \"rgbd_c.h\""
+	""
+	""
+	${HAVE_opencv_rgbd})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "rgbd/detector_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/Rgbd/Detector.g.cs"
+    "cv::linemod::Detector" 
+    "Detector" 
+    "pyramidLevels;numTemplates;numClasses" 
+    "int;int;int" 
+    "val;val;val"
+    "PyramidLevels;NumTemplates;NumClasses" 
+    "int;int;int"
+    "Get number of pyramid levels used by this detector.;
+    Get number of templates.;
+    Get number of classes."
+    "Emgu.CV.Linemod"
+    "LinemodInvoke"
+    "Detector"
+	""
+	"#include \"rgbd_c.h\""
+	""
+	""
+	${HAVE_opencv_rgbd})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "rgbd/modality_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/Rgbd/Modality.g.cs"
+    "cv::linemod::Modality" 
+    "Modality" 
+    "name" 
+    "cv::String" 
+    "val"
+    "Name" 
+    "String"
+    "The name of modality"
+    "Emgu.CV.Linemod"
+    "LinemodInvoke"
+    "Modality"
+	""
+	"#include \"rgbd_c.h\""
+	""
+	""
+	${HAVE_opencv_rgbd})
+
+############################### structed_light code gen END ##############################
+
+
 ############################### OPENMP START ##############################
 IF(WITH_OPENMP)
   FIND_PACKAGE( OpenMP REQUIRED)
@@ -2789,6 +3088,7 @@ ENDIF()
 
 
 SET(OPENCV_MODULES_DIR "${OPENCV_SUBFOLDER}/modules")
+
 INCLUDE_DIRECTORIES("${CMAKE_BINARY_DIR}")
 INCLUDE_DIRECTORIES("${PROJECT_SOURCE_DIR}")
 
@@ -2800,10 +3100,19 @@ source_group("Include_extern" FILES ${extern_hdrs})
 FOREACH(CVEXTERN_OPTIONAL_DEP ${OPENCV_MODULE_NAME_CANDIDATES})
   #MESSAGE("Retriveing source folder for project :  opencv_${CVEXTERN_OPTIONAL_DEP}")
   #GET_TARGET_PROPERTY(OPENCV_MODULE_SOURCE_DIR opencv_${CVEXTERN_OPTIONAL_DEP} PROJECT_SOURCE_DIR)
-  #IF (HAVE_opencv_${CVEXTERN_OPTIONAL_DEP})
-  INCLUDE_DIRECTORIES("${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
-  #ENDIF()
-  #MESSAGE("Included:  ${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
+
+  IF (HAVE_opencv_${CVEXTERN_OPTIONAL_DEP})
+    IF ( (DEFINED opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR) AND (EXISTS ${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include) )
+      INCLUDE_DIRECTORIES("${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
+      MESSAGE(STATUS "Include directory for cvextern:  ${opencv_${CVEXTERN_OPTIONAL_DEP}_SOURCE_DIR}/include")
+    ELSEIF (EXISTS "${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+      INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+      MESSAGE(STATUS "Include directory for cvextern:  ${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
+    ELSEIF (EXISTS "${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+      INCLUDE_DIRECTORIES("${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+      MESSAGE(STATUS "Include directory for cvextern:  ${OPENCV_EXTRA_MODULES_PATH}/${CVEXTERN_OPTIONAL_DEP}/include")
+    ENDIF()
+  ENDIF()
   
   SET(CVEXTERN_OPTIONAL_DIR "${PROJECT_SOURCE_DIR}/${CVEXTERN_OPTIONAL_DEP}")
   IF(EXISTS "${CVEXTERN_OPTIONAL_DIR}" AND IS_DIRECTORY "${CVEXTERN_OPTIONAL_DIR}")
@@ -2821,48 +3130,107 @@ ENDFOREACH()
 
 ############################### DEPTHAI START ##############################
 
-
   CREATE_OCV_CLASS_PROPERTY( 
-    "depthai/device_property" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/Device.g.cs"
-    "Device" 
-    "Device" 
-    "is_usb3;is_eeprom_loaded;is_rgb_connected;is_left_connected;is_right_connected" 
-    "bool;bool;bool;bool;bool" 
-    "val;val;val;val;val"
-    "IsUsb3;IsEepromLoaded;IsRgbConnected;IsLeftConnected;IsRightConnected" 
-    "bool;bool;bool;bool;bool"
-    "True if the connection is USB3;
-     True if eeprom is loaded;
-     True if rgb connected;
-     True if left connected;
-     True if right connected"
-    "Emgu.CV.DepthAI"
-    "DepthAIInvoke"
-    "Device"
+    "depthai/color_camera_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/ColorCamera.g.cs"
+    "dai::node::ColorCamera" 
+    "ColorCamera" 
+    "Interleaved" 
+    "bool"
+    "prop"
+    "Interleaved" 
+    "bool"
+    "True if the image pixels are interleaved"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "ColorCamera"
 	""
     "#include \"depthai_c.h\""
 	""
 	"" 
 	${EMGU_CV_WITH_DEPTHAI})
 
-      CREATE_OCV_CLASS_PROPERTY( 
-    "depthai/hostDataPacket_property" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/HostDataPacket.g.cs"
-    "HostDataPacket" 
-    "HostDataPacket" 
-    "stream_name;size;Data;elem_size" 
-    "cv::String;int;const unsigned char*;int" 
-    "elementR;val;propR;elementR"
-    "StreamName;Size;Data;ElemSize" 
-    "String;int;IntPtr;int"
-    "Stream Name;
-    Size;
-    Pointer to the native data;
-    Element size"
-    "Emgu.CV.DepthAI"
-    "DepthAIInvoke"
-    "HostDataPacket"
+  CREATE_OCV_CLASS_PROPERTY( 
+    "depthai/mono_camera_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/MonoCamera.g.cs"
+    "dai::node::MonoCamera" 
+    "MonoCamera" 
+    "Fps" 
+    "float"
+    "prop"
+    "Fps" 
+    "float"
+    "The rate at which camera should produce frames"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "MonoCamera"
+	""
+    "#include \"depthai_c.h\""
+	""
+	"" 
+	${EMGU_CV_WITH_DEPTHAI})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "depthai/img_frame_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/ImgFrame.g.cs"
+    "dai::ImgFrame" 
+    "ImgFrame" 
+    "Width;Height;InstanceNum;Category;SequenceNum" 
+    "uint32_t;uint32_t;uint32_t;uint32_t;int64_t"
+    "prop;prop;prop;prop;prop"
+    "Width;Height;InstanceNum;Category;SequenceNum" 
+    "UInt32;UInt32;UInt32;UInt32;Int64"
+    "Image width;
+    Image height;
+    Instance number;
+    Image category;
+    Image sequence number"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "ImgFrame"
+	""
+    "#include \"depthai_c.h\""
+	""
+	"" 
+	${EMGU_CV_WITH_DEPTHAI})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "depthai/xlinkout_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/XLinkOut.g.cs"
+    "dai::node::XLinkOut" 
+    "XLinkOut" 
+    "StreamName;FpsLimit;MetadataOnly" 
+    "cv::String;float;bool"
+    "prop;prop;prop"
+    "StreamName;FpsLimit;MetadataOnly" 
+    "String;float;bool"
+    "The Stream Name;
+    A message sending limit. It's approximated from specified rate;
+    Specify whether to transfer only messages attributes and not buffer data"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "XLinkOut"
+	""
+    "#include \"depthai_c.h\""
+	""
+	"" 
+	${EMGU_CV_WITH_DEPTHAI})
+
+  CREATE_OCV_CLASS_PROPERTY( 
+    "depthai/data_output_queue_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/DataOutputQueue.g.cs"
+    "dai::DataOutputQueue" 
+    "DataOutputQueue" 
+    "Blocking;MaxSize" 
+    "bool;uint32_t"
+    "prop;prop"
+    "Blocking;MaxSize" 
+    "bool;UInt32"
+    "Specifies if block or overwrite the oldest message in the queue;
+    Specifies maximum number of messages in the queue"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "DataOutputQueue"
 	""
     "#include \"depthai_c.h\""
 	""
@@ -2870,34 +3238,26 @@ ENDFOREACH()
 	${EMGU_CV_WITH_DEPTHAI})
 
     CREATE_OCV_CLASS_PROPERTY( 
-    "depthai/FrameMetadata_property" 
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/FrameMetadata.g.cs"
-    "FrameMetadata" 
-    "FrameMetadata" 
-    "CameraName;SequenceNum;InstanceNum;Category;Stride;FrameBytesPP;FrameHeight;FrameWidth;FrameType;Timestamp;isValid" 
-    "cv::String;int;int;int;unsigned int;unsigned int;unsigned int;unsigned int;int;double;bool" 
-    "propR;propR;propR;propR;propR;propR;propR;propR;propR;propR;val"
-    "CameraName;SequenceNum;InstanceNum;Category;Stride;FrameBytesPP;FrameHeight;FrameWidth;FrameType;Timestamp;IsValid" 
-    "String;int;int;int;UInt32;UInt32;UInt32;UInt32;int;double;bool"
-    "Camera Name; 
-    Sequence Number;
-    Instance Number;
-    Category;
-    Stride;
-    FrameBytesPP;
-    FrameHeight;
-    FrameWidth;
-    FrameType;
-    Timestamp;
-    True if the value is valid"
-    "Emgu.CV.DepthAI"
-    "DepthAIInvoke"
-    "FrameMetadata"
+    "depthai/neural_network_property" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Emgu.CV.Contrib/DepthAI/NeuralNetwork.g.cs"
+    "dai::node::NeuralNetwork" 
+    "NeuralNetwork" 
+    "NumInferenceThreads" 
+    "int"
+    "prop"
+    "NumInferenceThreads" 
+    "int"
+    "How many inference threads will be used to run the network, Zero means AUTO"
+    "Emgu.CV.Dai"
+    "DaiInvoke"
+    "NeuralNetwork"
 	""
     "#include \"depthai_c.h\""
 	""
 	"" 
 	${EMGU_CV_WITH_DEPTHAI})
+
+
 	
 file(GLOB_RECURSE depthai_srcs "${PROJECT_SOURCE_DIR}/depthai/*.cpp")
 file(GLOB_RECURSE depthai_hdrs "${PROJECT_SOURCE_DIR}/depthai/*.h*")
@@ -2907,6 +3267,15 @@ source_group("Src_depthai" FILES ${depthai_srcs})
 source_group("Include_depthai" FILES ${depthai_hdrs})
 LIST(APPEND extern_srcs ${depthai_srcs})
 LIST(APPEND extern_hdrs ${depthai_hdrs})
+
+IF(WIN32)
+  #MESSAGE(STATUS "++++++++++++++++++++  LIBUSB_BINARY_FILE_DIR: ${LIBUSB_BINARY_FILE_DIR}")
+  IF (EMGU_CV_WITH_DEPTHAI)
+    SET(LIBUSB_BINARY_FILE_DIR "${CMAKE_CURRENT_BINARY_DIR}/depthai-core/${CMAKE_BUILD_TYPE}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${LIBUSB_BINARY_FILE_DIR}/libusb-1.0.dll")
+  ENDIF()
+ENDIF()
+
 ############################### DEPTHAI END ################################
 
 IF(WIN32 AND CV_ICC)
@@ -2954,7 +3323,7 @@ if (WITH_TBB AND TBB_ENV_INCLUDE AND TBB_ENV_LIB)
     
     #LIST(APPEND CVEXTERN_DEPENDENCY_DLL_NAMES tbb)
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${TBB_BINARY_FILE_DIR}/tbb.dll")
-    
+
   ENDIF()
 endif()
 
@@ -2993,6 +3362,13 @@ IF(WIN32 AND MSVC AND (NOT NETFX_CORE))
   LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS})   
 ENDIF()
 
+IF(ANDROID)
+  GET_FILENAME_COMPONENT(ANDROID_NATIVE_LIBRARRY_PATH "${ZLIB_LIBRARY_RELEASE}" DIRECTORY)
+  SET(CPP_SHARED_LIBRARY_RELEASE "${ANDROID_NATIVE_LIBRARRY_PATH}/../libc++_shared.so") 
+  LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${CPP_SHARED_LIBRARY_RELEASE})   
+ENDIF()
+
+
 ############################### OPENNI START ##############################
 IF(WIN32 AND WITH_OPENNI)
   IF(TARGET_ARCH_64)
@@ -3015,6 +3391,7 @@ SET(LEPT_ROOT_DIR "${PROJECT_SOURCE_DIR}/tesseract/libtesseract/leptonica/lepton
     IF(TESSERACT_FOUND)
     ELSE()
       SET(TESSERACT_INCLUDE_DIRS 
+        "${TESSERACT_OCR_ROOT_DIR}/include" 
         "${TESSERACT_OCR_ROOT_DIR}/src/ccutil" 
         "${TESSERACT_OCR_ROOT_DIR}/src/api" 
         "${TESSERACT_OCR_ROOT_DIR}/src/ccmain" 
@@ -3042,41 +3419,129 @@ LIST(APPEND extern_srcs "${PROJECT_SOURCE_DIR}/tesseract/tesseract.cpp")
 
 ############################### TESSERACT END ##########################
 
-IF(WITH_INF_ENGINE)
+
+IF (WITH_VTK)
+  IF(WIN32)
+    CMAKE_PATH(SET VTK_DLL_DIRS NORMALIZE "${VTK_DIR}/bin/Release")
+    FILE(GLOB VTK_DLL_NAMES "${VTK_DLL_DIRS}/vtk*.dll")
+    MESSAGE(STATUS "VTK_DLL_NAMES: ${VTK_DLL_NAMES}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${VTK_DLL_NAMES})
+  ENDIF()
+ENDIF()
+
+
+IF(WITH_OPENVINO)
+
+  IF(WIN32)
+    CMAKE_PATH(SET OPENVINO_RUNTIME_DIR NORMALIZE "${OpenVINO_DIR}/..")
+    link_directories("${OPENVINO_RUNTIME_DIR}/lib/intel64")	
+    SET(OPENVINO_DLL_DIRS "${OPENVINO_RUNTIME_DIR}/bin/intel64/Release")
+    FILE(GLOB OPENVINO_DLL_NAMES "${OPENVINO_DLL_DIRS}/*.dll" "${OPENVINO_DLL_DIRS}/*.xml" "${OPENVINO_DLL_DIRS}/*.mvcmd" "${OPENVINO_DLL_DIRS}/*.json" "${OPENVINO_DLL_DIRS}/*.elf")
+    MESSAGE(STATUS "OPENVINO_DLL_NAMES: ${OPENVINO_DLL_NAMES}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${OPENVINO_DLL_NAMES})
+    
+    SET(OPENVINO_TBB_DLL_DIRS "${OPENVINO_RUNTIME_DIR}/3rdparty/tbb/bin")
+    FILE(GLOB OPENVINO_TBB_DLL_NAMES "${OPENVINO_TBB_DLL_DIRS}/*.dll")
+	IF (NOT OPENVINO_TBB_DLL_NAMES)
+		SET(OPENVINO_TBB_DLL_DIRS_OLD ${OPENVINO_TBB_DLL_DIRS})
+		IF (TARGET_ARCH_64)
+			#MESSAGE(STATUS "^^^^^^^^^^^^^^ MSVC_TOOLSET_VERSION: ${MSVC_TOOLSET_VERSION}")
+			IF(("${MSVC_TOOLSET_VERSION}" STREQUAL "143") AND (EXISTS "${TBB_DIR}/../../../redist/intel64/vc14"))
+				CMAKE_PATH(SET OPENVINO_TBB_DLL_DIRS NORMALIZE "${TBB_DIR}/../../../redist/intel64/vc14")
+			ELSE()
+				CMAKE_PATH(SET OPENVINO_TBB_DLL_DIRS NORMALIZE "${TBB_DIR}/../../../redist/intel64/vc_mt")
+			ENDIF()
+		ELSE()
+			IF(("${MSVC_TOOLSET_VERSION}" STREQUAL "143") AND (EXISTS "${TBB_DIR}/../../../redist/ia32/vc14"))
+				CMAKE_PATH(SET OPENVINO_TBB_DLL_DIRS NORMALIZE "${TBB_DIR}/../../../redist/ia32/vc14")
+			ELSE()
+				CMAKE_PATH(SET OPENVINO_TBB_DLL_DIRS NORMALIZE "${TBB_DIR}/../../../redist/ia32/vc_mt")
+			ENDIF()
+		ENDIF()
+		MESSAGE(STATUS "Cannot find TBB dll in ${OPENVINO_TBB_DLL_DIRS_OLD}, trying to look into ${OPENVINO_TBB_DLL_DIRS}")
+		FILE(GLOB OPENVINO_TBB_DLL_NAMES "${OPENVINO_TBB_DLL_DIRS}/*.dll")
+	ENDIF()
+	#FILE(TO_CMAKE_PATH "${OPENVINO_TBB_DLL_DIRS}" OPENVINO_TBB_DLL_DIRS)
+	MESSAGE(STATUS "OPENVINO_TBB_DLL_DIRS: ${OPENVINO_TBB_DLL_DIRS}")
+    FILE(GLOB OPENVINO_TBB_DEBUG_DLL_NAMES "${OPENVINO_TBB_DLL_DIRS}/*_debug.dll")
+    MESSAGE(STATUS "OPENVINO_TBB_DEBUG_DLL_NAMES: ${OPENVINO_TBB_DEBUG_DLL_NAMES}")
+    IF (OPENVINO_TBB_DEBUG_DLL_NAMES)
+      LIST(REMOVE_ITEM OPENVINO_TBB_DLL_NAMES ${OPENVINO_TBB_DEBUG_DLL_NAMES})
+    ENDIF()
+	
+    MESSAGE(STATUS "OPENVINO_TBB_DLL_NAMES: ${OPENVINO_TBB_DLL_NAMES}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${OPENVINO_TBB_DLL_NAMES})
+
+    if(TARGET_ARCH_64)
+      set(OPENVINO_SUFFIX _64)
+    endif()
+    set(OPENCV_OPENVINO_OUTPUT_NAME "opencv_dnn_openvino${OPENCV_VERSION_MAJOR}${OPENCV_VERSION_MINOR}${OPENCV_VERSION_PATCH}${OPENVINO_SUFFIX}")
+    IF(MSVC_IDE)
+	  SET(OPENCV_OPENVINO_OUTPUT_FILE_PATH "${EXECUTABLE_OUTPUT_PATH}/Release/${OPENCV_OPENVINO_OUTPUT_NAME}.dll")
+    ELSEIF(MSVC AND (CMAKE_GENERATOR MATCHES "Visual"))
+	  SET(OPENCV_OPENVINO_OUTPUT_FILE_PATH "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/${OPENCV_OPENVINO_OUTPUT_NAME}.dll")
+    ENDIF()
+    MESSAGE(STATUS "OPENVINO DNN plugin file path: ${OPENCV_OPENVINO_OUTPUT_FILE_PATH}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${OPENCV_OPENVINO_OUTPUT_FILE_PATH}")
+
+  ELSEIF(APPLE)
+    SET(OPENVINO_RUNTIME_DIR "${OpenVINO_DIR}/..")
+    SET(OPENVINO_DYLIB_DIRS "${OPENVINO_RUNTIME_DIR}/lib/intel64/Release")
+    FILE(GLOB OPENVINO_DYLIB_NAMES "${OPENVINO_DYLIB_DIRS}/*.dylib" "${OPENVINO_DYLIB_DIRS}/*.so" "${OPENVINO_DYLIB_DIRS}/*.xml" "${OPENVINO_DYLIB_DIRS}/*.mvcmd" "${OPENVINO_DYLIB_DIRS}/*.json" "${OPENVINO_DYLIB_DIRS}/*.elf")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  OPENVINO_DYLIB_NAMES: ${OPENVINO_DYLIB_NAMES}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${OPENVINO_DYLIB_NAMES})
+
+    SET(OPENVINO_TBB_DYLIB_DIRS "${OPENVINO_RUNTIME_DIR}/3rdparty/tbb/lib")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  OPENVINO_TBB_DYLIB_DIRS: ${OPENVINO_TBB_DYLIB_DIRS}")
+    FILE(GLOB OPENVINO_TBB_DYLIB_NAMES "${OPENVINO_TBB_DYLIB_DIRS}/*.dylib")
+    FILE(GLOB OPENVINO_TBB_DEBUG_DYLIB_NAMES "${OPENVINO_TBB_DYLIB_DIRS}/*_debug.dylib")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  OPENVINO_TBB_DEBUG_DYLIB_NAMES: ${OPENVINO_TBB_DEBUG_DYLIB_NAMES}")
+    IF (OPENVINO_TBB_DEBUG_DYLIB_NAMES)
+      LIST(REMOVE_ITEM OPENVINO_TBB_DYLIB_NAMES ${OPENVINO_TBB_DEBUG_DYLIB_NAMES})
+    ENDIF()
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  OPENVINO_TBB_DYLIB_NAMES: ${OPENVINO_TBB_DYLIB_NAMES}")
+    LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${OPENVINO_TBB_DYLIB_NAMES})
+  ENDIF()
+ELSEIF(WITH_INF_ENGINE)
+  IF(WIN32)
 	#SET(INF_ENGINE_LIB_DIRS )
 	#link_directories("${INF_ENGINE_LIB_DIRS}/Release")
-	link_directories("${IE_INCLUDE_DIR}/../lib/intel64/")
+    SET(INF_ENGINE_BASE_DIR "${InferenceEngine_DIR}/../../../inference_engine")
+    #MESSAGE(STATUS "^^^^^^^^^^^^^^^^^ IE_INCLUDE_DIR: ${IE_INCLUDE_DIR}")
+	link_directories("${INF_ENGINE_BASE_DIR}/lib/intel64/")
 	
-	SET(INF_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../bin/intel64/Release")
+	#SET(INF_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../../../bin/intel64/Release")
+    SET(INF_ENGINE_DLL_DIRS "${INF_ENGINE_BASE_DIR}/bin/intel64/Release")
 	FILE(GLOB INF_DLL_NAMES "${INF_ENGINE_DLL_DIRS}/*.dll" "${INF_ENGINE_DLL_DIRS}/*.xml" "${INF_ENGINE_DLL_DIRS}/*.mvcmd" "${INF_ENGINE_DLL_DIRS}/*.json" "${INF_ENGINE_DLL_DIRS}/*.elf")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_DLL_NAMES: ${INF_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_DLL_NAMES})
 
-    SET(INF_TBB_ENGINE_DLL_DIRS "${IE_INCLUDE_DIR}/../external/tbb/bin")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_ENGINE_DLL_DIRS: ${INF_TBB_ENGINE_DLL_DIRS}")
+    SET(INF_TBB_ENGINE_DLL_DIRS "${INF_ENGINE_BASE_DIR}/external/tbb/bin")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_ENGINE_DLL_DIRS: ${INF_TBB_ENGINE_DLL_DIRS}")
     FILE(GLOB INF_TBB_DLL_NAMES "${INF_TBB_ENGINE_DLL_DIRS}/*.dll")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DLL_NAMES: ${INF_TBB_DLL_NAMES}")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DLL_NAMES: ${INF_TBB_DLL_NAMES}")
     FILE(GLOB INF_TBB_DEBUG_DLL_NAMES "${INF_TBB_ENGINE_DLL_DIRS}/*_debug.dll")
-	#MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DEBUG_DLL_NAMES: ${INF_TBB_DEBUG_DLL_NAMES}")
+	MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_TBB_DEBUG_DLL_NAMES: ${INF_TBB_DEBUG_DLL_NAMES}")
     IF (INF_TBB_DEBUG_DLL_NAMES)
       LIST(REMOVE_ITEM INF_TBB_DLL_NAMES ${INF_TBB_DEBUG_DLL_NAMES})
     ENDIF()
 	LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_TBB_DLL_NAMES})
     
-    SET(INF_NGRAPH_DLL_DIRS "${IE_INCLUDE_DIR}/../../ngraph/lib")
+    SET(INF_NGRAPH_DLL_DIRS "${InferenceEngine_DIR}/../../ngraph/lib")
     FILE(GLOB INF_NGRAPH_DLL_NAMES "${INF_NGRAPH_DLL_DIRS}/*ngraph.dll" "${INF_NGRAPH_DLL_DIRS}/*_importer.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_NGRAPH_DLL_NAMES: ${INF_NGRAPH_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_NGRAPH_DLL_NAMES: ${INF_NGRAPH_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_NGRAPH_DLL_NAMES})
 	
-	SET(INF_HDDL_DLL_DIRS "${IE_INCLUDE_DIR}/../external/hddl/bin")
+	SET(INF_HDDL_DLL_DIRS "${INF_ENGINE_BASE_DIR}/external/hddl/bin")
     FILE(GLOB INF_HDDL_DLL_NAMES "${INF_HDDL_DLL_DIRS}/*.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_HDDL_DLL_NAMES: ${INF_HDDL_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  INF_HDDL_DLL_NAMES: ${INF_HDDL_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${INF_HDDL_DLL_NAMES})
 	
 	SET(PROGRAMFILES_X86_ENV "ProgramFiles(x86)")
     SET(ICC_RUNTIME_DIRS "$ENV{${PROGRAMFILES_X86_ENV}}/Common Files/Intel/Shared Libraries/redist/intel64_win/compiler")
     STRING(REGEX REPLACE "\\\\" "/" ICC_RUNTIME_DIRS ${ICC_RUNTIME_DIRS})
     FILE(GLOB ICC_RUNTIME_DLL_NAMES "${ICC_RUNTIME_DIRS}/libmmd.dll" "${ICC_RUNTIME_DIRS}/svml_dispmd.dll")
-    #MESSAGE(STATUS "^^^^^^^^^^^^^^  ICC_RUNTIME_DLL_NAMES: ${ICC_RUNTIME_DLL_NAMES}")
+    MESSAGE(STATUS "^^^^^^^^^^^^^^  ICC_RUNTIME_DLL_NAMES: ${ICC_RUNTIME_DLL_NAMES}")
     LIST(APPEND CVEXTERN_DEPENDENCY_DLLS ${ICC_RUNTIME_DLL_NAMES})
 	##Add the inference_engine dll
 	#LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${INF_ENGINE_DLL_DIRS}/inference_engine.dll")
@@ -3096,6 +3561,7 @@ IF(WITH_INF_ENGINE)
 	##Add GNA plugin and dependency
 	#LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${INF_ENGINE_DLL_DIRS}/GNAPlugin.dll")
 	#LIST(APPEND CVEXTERN_DEPENDENCY_DLLS "${INF_ENGINE_DLL_DIRS}/gna.dll")
+  ENDIF()
 ENDIF()
 
 ############################# FFMPEG START ##############################
@@ -3115,7 +3581,6 @@ if(WIN32 AND WITH_FFMPEG)
   #  MESSAGE(FATAL_ERROR "Could not find Open CV FFMPEG dll, please verify if the ffmpeg dll is in '${OPENCV_FFMPEG_OUTPUT_FILE_PATH}'")
   #ENDIF()
 endif()
-
 
 ############################### FFMPEG END ##############################
 
@@ -3188,8 +3653,12 @@ IF(WIN32 AND WITH_CUDA)
   #replace any potential backslash in the path with slash
   #STRING(REGEX REPLACE "\\\\" "/" CUDA_NPP_LIBRARY_ROOT_DIR ${CUDA_NPP_LIBRARY_ROOT_DIR}) 
   
+  SET(CUDA_ARCH_SUBFOLDER "")
   IF(TARGET_ARCH_64) 
     SET(CUDA_POSTFIX 64)
+    IF(${cuda_major} GREATER 12)
+      SET(CUDA_ARCH_SUBFOLDER "/x64")
+    ENDIF()
   else()
     SET(CUDA_POSTFIX 32)
   ENDIF()
@@ -3204,26 +3673,26 @@ IF(WIN32 AND WITH_CUDA)
 	ENDIF()
     
 	SET(CUDA_NPP_DLLS 
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppi${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppial${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppicc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppicom${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppidei${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppif${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppig${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppim${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppist${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppisu${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/nppitc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
-      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/npps${CUDA_POSTFIX}_${NPP_POSTFIX}.dll")
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppi${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppial${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppicc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppicom${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppidei${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppif${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppig${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppim${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppist${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppisu${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+	  "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/nppitc${CUDA_POSTFIX}_${NPP_POSTFIX}.dll"
+      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/npps${CUDA_POSTFIX}_${NPP_POSTFIX}.dll")
 	FOREACH(CUDA_NPP_DLL ${CUDA_NPP_DLLS})
 	  IF(EXISTS "${CUDA_NPP_DLL}")
 		LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_NPP_DLL}")
 	  ENDIF()
     ENDFOREACH()
-
-	FILE(GLOB CUDART_DLL_FULL_NAME "${CUDA_TOOLKIT_ROOT_DIR}/bin/cudart${CUDA_POSTFIX}_*.dll")
+    FILE(GLOB CUDART_DLL_FULL_NAME "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cudart${CUDA_POSTFIX}_*.dll")
+    
 	
 	LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDART_DLL_FULL_NAME}" )
     #LIST(APPEND CVEXTERN_DEPENDENCY_DLLS
@@ -3242,13 +3711,13 @@ IF(WIN32 AND WITH_CUDA)
     #ENDIF()
     
     IF(WITH_CUFFT)
-      FILE(GLOB CVEXTERN_CUFFT_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cufft*.dll")
+      FILE(GLOB CVEXTERN_CUFFT_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cufft*.dll")
       MESSAGE(STATUS "CVEXTERN_CUFFT_DEPENDENCY_DLLS: ${CVEXTERN_CUFFT_DEPENDENCY_DLLS}")
       LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS ${CVEXTERN_CUFFT_DEPENDENCY_DLLS})
     ENDIF()
     
     IF(WITH_CUBLAS)
-      FILE(GLOB CVEXTERN_CUBLAS_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cublas*.dll")
+      FILE(GLOB CVEXTERN_CUBLAS_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cublas*.dll")
       MESSAGE(STATUS "CVEXTERN_CUBLAS_DEPENDENCY_DLLS: ${CVEXTERN_CUBLAS_DEPENDENCY_DLLS}")
       LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS ${CVEXTERN_CUBLAS_DEPENDENCY_DLLS})
 	  #LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cublas${CUDA_POSTFIX}_${NPP_POSTFIX}.dll")
@@ -3258,26 +3727,26 @@ IF(WIN32 AND WITH_CUDA)
     ENDIF()  
   ELSE()  
     LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS 
-      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin/npp${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll"
-      "${CUDA_TOOLKIT_ROOT_DIR}/bin/cudart${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll"
+      "${CUDA_NPP_LIBRARY_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/npp${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll"
+      "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cudart${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll"
       )
     #LIST(APPEND CVEXTERN_DEPENDENCY_DLL_NAMES 
     #  npp${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build} 
     #  cudart${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build})
     
     IF(WITH_CUFFT)
-      LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cufft${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll")
+      LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cufft${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll")
       #LIST(APPEND CVEXTERN_DEPENDENCY_DLL_NAMES cufft${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}) 
     ENDIF()
     
     IF(WITH_CUBLAS)
-      LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cublas${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll")
+      LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cublas${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build}.dll")
       #LIST(APPEND CVEXTERN_DEPENDENCY_DLL_NAMES cublas${CUDA_POSTFIX}_${npp_major}${npp_minor}_${npp_build})
     ENDIF()
   ENDIF()
 
   IF(WITH_CUDNN)
-    FILE(GLOB CVEXTERN_CUDNN_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cudnn*.dll")
+    FILE(GLOB CVEXTERN_CUDNN_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/cudnn*.dll" "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/zlibwapi.dll")
     MESSAGE(STATUS "CVEXTERN_CUDNN_DEPENDENCY_DLLS: ${CVEXTERN_CUDNN_DEPENDENCY_DLLS}")
     LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS ${CVEXTERN_CUDNN_DEPENDENCY_DLLS})
 	#MESSAGE("WITH_CUDNN: ${WITH_CUDNN}")
@@ -3285,7 +3754,7 @@ IF(WIN32 AND WITH_CUDA)
     #LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/cudnn${CUDA_POSTFIX}_${CUDNN_MAJOR_VERSION}.dll") 
   ENDIF()
 
-  FILE(GLOB CVEXTERN_CURAND_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin/curand*.dll")
+  FILE(GLOB CVEXTERN_CURAND_DEPENDENCY_DLLS "${CUDA_TOOLKIT_ROOT_DIR}/bin${CUDA_ARCH_SUBFOLDER}/curand*.dll")
   MESSAGE(STATUS "CVEXTERN_CURAND_DEPENDENCY_DLLS: ${CVEXTERN_CURAND_DEPENDENCY_DLLS}")
   LIST(APPEND CVEXTERN_CUDA_DEPENDENCY_DLLS ${CVEXTERN_CURAND_DEPENDENCY_DLLS})
 
@@ -3327,12 +3796,12 @@ ENDIF()
 
 ############################### xfeatures2d START ##############################
 
-  IF( (NOT WITH_CUDA) OR (NOT (TARGET opencv_cudaimgproc)) )
-    FILE(GLOB xfeatures2d_srcs_excludes "xfeatures2d/nonfree_gpu_c.cpp")
-    LIST(REMOVE_ITEM extern_srcs ${xfeatures2d_srcs_excludes})
-    FILE(GLOB xfeatures2d_hdrs_excludes "xfeatures2d/nonfree_gpu_c.h")
-    LIST(REMOVE_ITEM extern_hdrs ${xfeatures2d_hdrs_excludes})
-  ENDIF()
+#  IF( (NOT WITH_CUDA) OR (NOT (TARGET opencv_cudaimgproc)) )
+#    FILE(GLOB xfeatures2d_srcs_excludes "xfeatures2d/nonfree_gpu_c.cpp")
+#    LIST(REMOVE_ITEM extern_srcs ${xfeatures2d_srcs_excludes})
+#    FILE(GLOB xfeatures2d_hdrs_excludes "xfeatures2d/nonfree_gpu_c.h")
+#    LIST(REMOVE_ITEM extern_hdrs ${xfeatures2d_hdrs_excludes})
+#  ENDIF()
 
 ############################### xfeatures2d END ################################
 
@@ -3377,7 +3846,6 @@ ELSE()
 ENDIF()  
 
 
-
 IF(DEFINED CVEXTERN_DEPENDENCY_DLLS)
   FOREACH(CVEXTERN_DEPENDENCY_DLL ${CVEXTERN_DEPENDENCY_DLLS})
     LIST(APPEND CVEXTERN_DEPENDENCY_DLL_DEPLOY_COMMAND COMMAND ${CMAKE_COMMAND} -E copy "${CVEXTERN_DEPENDENCY_DLL}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
@@ -3386,7 +3854,7 @@ IF(DEFINED CVEXTERN_DEPENDENCY_DLLS)
   ENDFOREACH()
   
   #Promote this to parent scope such that cpack will know what dlls to be included in the package
-  #MESSAGE("**************CVEXTERN_DEPENDENCY_DLL_NAMES: ${CVEXTERN_DEPENDENCY_DLL_NAMES}")
+  MESSAGE(STATUS "Copying CVEXTERN_DEPENDENCY_DLL_NAMES to parent scope: ${CVEXTERN_DEPENDENCY_DLL_NAMES}")
   SET(CVEXTERN_DEPENDENCY_DLL_NAMES ${CVEXTERN_DEPENDENCY_DLL_NAMES} PARENT_SCOPE)
   
   ADD_CUSTOM_COMMAND(
@@ -3474,7 +3942,7 @@ ELSE()
 ENDIF()
 
 IF(EMGU_CV_WITH_TIFF)
-  SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/libgeotiff/cmake")
+  SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libgeotiff/cmake")
   FIND_PACKAGE(GeoTIFF)
   IF(GEOTIFF_FOUND)
     MESSAGE(STATUS "CVEXTERN: GEOTIFF found. INCLUDE DIR: ${GEOTIFF_INCLUDE_DIR}")
@@ -3529,6 +3997,10 @@ ENDIF()
 #  ADD_DEPENDENCIES(${the_target}  ${CUDA_LIBRARIES})
 #ENDIF()
 
+IF (TARGET opencv_dnn_openvino)
+  ADD_DEPENDENCIES(${the_target} opencv_dnn_openvino)
+ENDIF()
+
 IF(EMGU_CV_WITH_TESSERACT)
   IF(TESSERACT_FOUND)
     #MESSAGE("TESSERACT found, no need to add dependency")
@@ -3544,7 +4016,6 @@ IF(EMGU_CV_WITH_DEPTHAI)
 ENDIF()
 
 FOREACH(CVEXTERN_OPTIONAL_DEP ${OPENCV_MODULE_NAMES})
-  #  INCLUDE_DIRECTORIES("${OPENCV_MODULES_DIR}/${CVEXTERN_OPTIONAL_DEP}/include")
   MESSAGE(STATUS "CVEXTERN dependency added:  opencv_${CVEXTERN_OPTIONAL_DEP}")
   ADD_DEPENDENCIES(${the_target} opencv_${CVEXTERN_OPTIONAL_DEP})
   target_link_libraries(${the_target} opencv_${CVEXTERN_OPTIONAL_DEP})
@@ -3559,6 +4030,9 @@ ENDIF()
 
 IF(ANDROID)
   ADD_DEFINITIONS(-DANDROID)
+  TARGET_LINK_LIBRARIES(${the_target} c++)
+  target_link_options(${the_target} PRIVATE "-Wl,-z,max-page-size=16384")
+  
   # For Android, tell the linker to transform all the symbols in the static libraries to hidden.
   # This can significantly reduce the binary size
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,--exclude-libs,ALL")
@@ -3589,12 +4063,18 @@ if(WITH_JPEG AND BUILD_JPEG)
 endif()
 
 # Add the required libraries for linking:
-target_link_libraries(${the_target} ${OPENCV_LINKER_LIBS} 
-  ${ZLIB_LIBRARY} 
+target_link_libraries(${the_target} 
+  ${OPENCV_LINKER_LIBS} 
+  ${ZLIB_LIBRARY})
   #  xtiff 
-  ${CVBLOB_LIBRARY})
+  #${CVBLOB_LIBRARY})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+#IF (APPLE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+#ELSE()
+#	set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 11)
+#ENDIF()
+
 IF(DEFINED EMGUCV_PLATFORM_TOOLSET)
   set_target_properties(${the_target} PROPERTIES PLATFORM_TOOLSET ${EMGUCV_PLATFORM_TOOLSET})
 ENDIF()
@@ -3610,13 +4090,17 @@ IF(EMGU_CV_WITH_TESSERACT AND TESSERACT_OPENCL)
   target_link_libraries(${the_target} OpenCL)
 ENDIF()
 
-IF(WITH_INF_ENGINE)
-  target_link_libraries(${the_target} inference_engine)
-ENDIF()
+#IF(WITH_INF_ENGINE)
+#  target_link_libraries(${the_target} inference_engine)
+#ENDIF()
 
 #message(STATUS "EMGU_CV_WITH_FREETYPE: ${EMGU_CV_WITH_FREETYPE}")
-IF (TARGET opencv_freetype)
-	target_link_libraries(${the_target} ${FREETYPE_LIBRARY} ${HARFBUZZ_LIBRARY})
+GET_TARGET_PROPERTY(CVEXTERN_TARGET_TYPE ${the_target} TYPE)
+IF (CVEXTERN_TARGET_TYPE STREQUAL STATIC_LIBRARY)
+  # Do not need to link FREETYPE or HARFBUZZ if static linking
+  # e.g. IOS will use FREETYPE and HARFBUZZ framework
+ELSEIF (TARGET opencv_freetype)
+  target_link_libraries(${the_target} ${FREETYPE_LIBRARY} ${HARFBUZZ_LIBRARY})
 ENDIF()
 
 IF (TARGET opencv_hdf)
@@ -3633,6 +4117,7 @@ IF(ANDROID)
 	RUNTIME DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs
     LIBRARY DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs
 	ARCHIVE DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs)
+	
 ELSEIF(APPLE)
   IF(EMGU_CV_WITH_TESSERACT)
     IF(NOT TESSERACT_FOUND)
@@ -3659,41 +4144,103 @@ ELSE()
     ARCHIVE DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs)
 ENDIF()
 
+
+SET(OPENCV_BUILD_INFO_VERSION_STRING ${CMAKE_BINARY_DIR}/opencv/modules/core/version_string.inc)
+IF(BUILD_opencv_world)
+  SET(OPENCV_BUILD_INFO_VERSION_STRING ${CMAKE_BINARY_DIR}/opencv/modules/world/version_string.inc)
+ENDIF()
+
 #add_subdirectory(gpu)
 IF (WIN32)
   IF (EMGU_SIGN_FOUND)
     EMGU_SIGN_BINARY(${the_target} ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/cvextern.dll)
   ENDIF()
+  add_custom_command(TARGET ${the_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/version_string.inc
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/version_string.inc")
+  #INSTALL(FILES
+  #    "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/version_string.inc"
+  #    DESTINATION "libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/"
+  #    COMPONENT emgucv_binary)
 ELSEIF (IOS)
   SET(IOS_RELEASE_FOLDER "")
   IF (IPHONESIMULATOR)
     SET(IOS_RELEASE_FOLDER "Release-iphonesimulator")
     SET(IOS_RELEASE_FILENAME "libcvextern_simulator_${IOS_ARCH}.a")
+	add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs/iOS/simulator_${IOS_ARCH}_version_string.inc
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+      COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs/iOS/simulator_${IOS_ARCH}_version_string.inc")
+	#INSTALL(FILES
+	#  "${CMAKE_SOURCE_DIR}/libs/iOS/simulator_${IOS_ARCH}_version_string.inc"
+	#  DESTINATION "libs/iOS/"
+	#  COMPONENT emgucv_binary)   
   ELSEIF(IPHONEOS)
     SET(IOS_RELEASE_FOLDER "Release-iphoneos")
     SET(IOS_RELEASE_FILENAME "libcvextern_iphoneos_${IOS_ARCH}.a")
+	add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs/iOS/iphoneos_${IOS_ARCH}_version_string.inc
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+      COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs/iOS/iphoneos_${IOS_ARCH}_version_string.inc")
+	#INSTALL(FILES
+	#  "${CMAKE_SOURCE_DIR}/libs/iOS/iphoneos_${IOS_ARCH}_version_string.inc"
+	#  DESTINATION "libs/iOS/"
+	#  COMPONENT emgucv_binary) 
+  ELSEIF(MAC_CATALYST)
+    SET(IOS_RELEASE_FOLDER "Release-catalyst")
+    SET(IOS_RELEASE_FILENAME "libcvextern_catalyst_${IOS_ARCH}.a")
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs/iOS/catalyst_${IOS_ARCH}_version_string.inc
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+      COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs/iOS/catalyst_${IOS_ARCH}_version_string.inc")
+	#INSTALL(FILES
+	#  "${CMAKE_SOURCE_DIR}/libs/iOS/catalyst_${IOS_ARCH}_version_string.inc"
+	#  DESTINATION "libs/iOS/"
+	#  COMPONENT emgucv_binary) 	 
   ENDIF()
   #MESSAGE(STATUS "<<<<<< IOS_RELEASE_FOLDER: ${IOS_RELEASE_FOLDER} >>>>>>") 
-  SET(LIBTOOL_LINKING_COMMAND libtool -static -o ${CMAKE_SOURCE_DIR}/libs/iOS/${IOS_RELEASE_FILENAME} bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/Release/*.a opencv/3rdparty/lib/Release/*.a ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release/*.a)
+  SET(LIBTOOL_LINKING_COMMAND libtool -static -arch_only ${IOS_ARCH} -o ${CMAKE_SOURCE_DIR}/libs/iOS/${IOS_RELEASE_FILENAME} bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/Release/*.a opencv/3rdparty/lib/Release/*.a ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/Release/*.a)
   IF (EMGU_CV_WITH_TESSERACT)
      LIST(APPEND LIBTOOL_LINKING_COMMAND libs/Release/*.a)
   ENDIF()
-  IF (TARGET opencv_freetype) 
-	LIST(APPEND LIBTOOL_LINKING_COMMAND ${FREETYPE_LIBRARIES} ${HARFBUZZ_LIBRARIES})
+  
+  GET_TARGET_PROPERTY(CVEXTERN_TARGET_TYPE ${the_target} TYPE)
+  IF (CVEXTERN_TARGET_TYPE STREQUAL STATIC_LIBRARY)
+    #  Do not need to link FREETYPE or HARFBUZZ if static linking
+    # e.g. IOS will use FREETYPE and HARFBUZZ framework
+  ELSEIF (TARGET opencv_freetype)
+    LIST(APPEND LIBTOOL_LINKING_COMMAND ${FREETYPE_LIBRARIES} ${HARFBUZZ_LIBRARIES})
   ENDIF()
+
+  #IF (TARGET opencv_freetype) 
+  #	LIST(APPEND LIBTOOL_LINKING_COMMAND ${FREETYPE_LIBRARIES} ${HARFBUZZ_LIBRARIES})
+  #ENDIF()
   add_custom_command(TARGET ${the_target}
     POST_BUILD
     COMMAND ${LIBTOOL_LINKING_COMMAND}
     WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-    COMMENT "Linking target for ${IOS_ARCH}")
+    COMMENT "Linking target for ${IOS_ARCH} using command: ${LIBTOOL_LINKING_COMMAND}")
     
   SET(IPHONEOS_STATIC_LIB_FILE ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_iphoneos.a)
   SET(IPHONESIMULATOR_STATIC_LIB_FILE ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_simulator.a)
-  
+  SET(IPHONE_UNIVERSAL_STATIC_LIB_FILE ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_universal.a)
+  SET(LIPO_INPUT_FILES)
+  SET(XCFRAMEWORK_INPUT_FILES)
+  SET(IOS_SIMULATOR_x86_64_RELEASE_FILE_NAME ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_simulator_x86_64.a)
   IF (IPHONESIMULATOR)
+    # Only add the x86_64 simulator file to the static library
+    IF(("${IOS_ARCH}" STREQUAL "x86_64") OR (EXISTS ${IOS_SIMULATOR_x86_64_RELEASE_FILE_NAME}))
+      LIST(APPEND LIPO_INPUT_FILES ${IOS_SIMULATOR_x86_64_RELEASE_FILE_NAME})
+    ENDIF()
+    LIST(APPEND XCFRAMEWORK_INPUT_FILES ${IPHONESIMULATOR_STATIC_LIB_FILE})
     IF (EXISTS ${IPHONEOS_STATIC_LIB_FILE})
-    ELSE()
-      FILE(WRITE ${IPHONEOS_STATIC_LIB_FILE} "")
+      LIST(APPEND LIPO_INPUT_FILES ${IPHONEOS_STATIC_LIB_FILE})
+      LIST(APPEND XCFRAMEWORK_INPUT_FILES ${IPHONEOS_STATIC_LIB_FILE})
     ENDIF()
     add_custom_command(TARGET ${the_target}
       POST_BUILD
@@ -3701,36 +4248,181 @@ ELSEIF (IOS)
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       COMMENT "Linking multiple arch into a single file for iOS simulator") 
   ELSEIF(IPHONEOS)
-    IF (EXISTS ${IPHONESIMULATOR_STATIC_LIB_FILE})
-    ELSE()
-      FILE(WRITE ${IPHONESIMULATOR_STATIC_LIB_FILE} "")
+    LIST(APPEND LIPO_INPUT_FILES ${IPHONEOS_STATIC_LIB_FILE})
+    IF (EXISTS ${IOS_SIMULATOR_x86_64_RELEASE_FILE_NAME})
+      LIST(APPEND LIPO_INPUT_FILES "${IOS_SIMULATOR_x86_64_RELEASE_FILE_NAME}")
     ENDIF()
+    LIST(APPEND XCFRAMEWORK_INPUT_FILES ${IPHONEOS_STATIC_LIB_FILE})
+    IF (EXISTS ${IPHONESIMULATOR_STATIC_LIB_FILE})
+      LIST(APPEND XCFRAMEWORK_INPUT_FILES ${IPHONESIMULATOR_STATIC_LIB_FILE})
+    ENDIF()
+
     add_custom_command(TARGET ${the_target}
       POST_BUILD
       COMMAND lipo -create -output ${IPHONEOS_STATIC_LIB_FILE} ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_iphoneos_*.a
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       COMMENT "Linking multiple arch into a single file for iOS device")
   ENDIF()
-  INSTALL(FILES
-    "${IPHONEOS_STATIC_LIB_FILE}"
-    DESTINATION "libs/iOS/"
-    COMPONENT emgucv_binary)
-  INSTALL(FILES
-    "${IPHONESIMULATOR_STATIC_LIB_FILE}"
-    DESTINATION "libs/iOS/"
-    COMPONENT emgucv_binary)
+  
+  LIST(LENGTH XCFRAMEWORK_INPUT_FILES XCFRAMEWORK_INPUT_FILES_LENGTH)
+  IF (XCFRAMEWORK_INPUT_FILES_LENGTH GREATER 0)
+      SET(CVEXTERN_CXFRAMEWORK_LIBRARIES)
+	  FOREACH(XCFRAMEWORK_INPUT_FILE ${XCFRAMEWORK_INPUT_FILES}) 
+		LIST(APPEND CVEXTERN_XCFRAMEWORK_LIBRARIES -library ${XCFRAMEWORK_INPUT_FILE})
+	  ENDFOREACH()
+      add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND rm -rf ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_ios.xcframework
+      COMMAND xcodebuild -create-xcframework ${CVEXTERN_XCFRAMEWORK_LIBRARIES} -output ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_ios.xcframework
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/iOS"
+      COMMENT "Creating xcframework for iOS using files from: ${XCFRAMEWORK_INPUT_FILES}")
+  ENDIF()
+
+  IF(MAC_CATALYST)
+    SET(CATALYST_FAT_LIB ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst.a)
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND lipo -create -output ${CATALYST_FAT_LIB} ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_*.a
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      COMMENT "Merging Mac Catalyst static libraries into ${CATALYST_FAT_LIB}")
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND rm -rf ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst.xcframework
+      COMMAND xcodebuild -create-xcframework -library ${CATALYST_FAT_LIB} -output ${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst.xcframework
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs/iOS"
+      COMMENT "Creating xcframework for Mac Catalyst")
+  ENDIF()
+
+  LIST(LENGTH LIPO_INPUT_FILES LIPO_INPUT_FILES_LENGTH)
+  IF (LIPO_INPUT_FILES_LENGTH EQUAL 1)
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy ${LIPO_INPUT_FILES} ${IPHONE_UNIVERSAL_STATIC_LIB_FILE} 
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      COMMENT "Linking simulator and iphoneos static library into a universal file for iOS: ${LIPO_INPUT_FILES}")
+   INSTALL(FILES
+      "${IPHONE_UNIVERSAL_STATIC_LIB_FILE}"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)    
+  ELSEIF (LIPO_INPUT_FILES_LENGTH GREATER 1)
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND lipo -create -output ${IPHONE_UNIVERSAL_STATIC_LIB_FILE} ${LIPO_INPUT_FILES}
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      COMMENT "Linking multiple arch into a single file for iOS device: ${LIPO_INPUT_FILES}")
+   INSTALL(FILES
+      "${IPHONE_UNIVERSAL_STATIC_LIB_FILE}"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+  ENDIF()
+  
+  IF(IPHONESIMULATOR OR IPHONEOS)
+    INSTALL(FILES
+      "${IPHONEOS_STATIC_LIB_FILE}"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+    INSTALL(FILES
+      "${IPHONESIMULATOR_STATIC_LIB_FILE}"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+    INSTALL(FILES
+      "${IPHONE_UNIVERSAL_STATIC_LIB_FILE}"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+    INSTALL(DIRECTORY
+      "${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_ios.xcframework"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)  
+
+	#IF(IPHONESIMULATOR AND (EXISTS "${CMAKE_SOURCE_DIR}/libs/iOS/iphoneos_arm64_version_string.inc"))
+	#    INSTALL(FILES
+	#	  "${CMAKE_SOURCE_DIR}/libs/iOS/iphoneos_arm64_version_string.inc"
+	#	  DESTINATION "libs/iOS/"
+	#	  COMPONENT emgucv_binary)
+	#ENDIF()
+	#IF(IPHONEOS AND (EXISTS "${CMAKE_SOURCE_DIR}/libs/iOS/simulator_x86_64_version_string.inc"))
+	#    INSTALL(FILES
+	#	  "${CMAKE_SOURCE_DIR}/libs/iOS/simulator_x86_64_version_string.inc"
+	#	  DESTINATION "libs/iOS/"
+	#	  COMPONENT emgucv_binary)
+	#ENDIF()
+  ELSEIF(MAC_CATALYST)
+    INSTALL(FILES
+      "${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_${IOS_ARCH}.a"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+    IF(("${IOS_ARCH}" STREQUAL "x86_64") AND (EXISTS "${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_arm64.a"))
+      INSTALL(FILES
+		"${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_arm64.a"
+		#"${CMAKE_SOURCE_DIR}/libs/iOS/catalyst_arm64_version_string.inc"
+		DESTINATION "libs/iOS/"
+		COMPONENT emgucv_binary)
+    ELSEIF(("${IOS_ARCH}" STREQUAL "arm64") AND (EXISTS "${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_x86_64.a"))
+      INSTALL(FILES
+		"${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst_x86_64.a"
+		#"${CMAKE_SOURCE_DIR}/libs/iOS/catalyst_x86_64_version_string.inc"
+		DESTINATION "libs/iOS/"
+		COMPONENT emgucv_binary)
+    ENDIF()
+    INSTALL(DIRECTORY
+      "${CMAKE_SOURCE_DIR}/libs/iOS/libcvextern_catalyst.xcframework"
+      DESTINATION "libs/iOS/"
+      COMPONENT emgucv_binary)
+  ENDIF()
+
 ELSEIF (ANDROID)
-add_custom_command(TARGET ${the_target}
-    POST_BUILD
-    COMMAND ${CMAKE_STRIP} libcvextern.so 
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
-    COMMENT "Stripping libcvextern.so from ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}")
-ELSEIF (IS_UBUNTU AND WITH_CUDA)
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_STRIP} libcvextern.so 
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
+      COMMENT "Stripping libcvextern.so from ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}")
+	
+	#GET_FILENAME_COMPONENT(ANDROID_NATIVE_LIBRARRY_PATH "${ZLIB_LIBRARY_RELEASE}" DIRECTORY)
+	#SET(CPP_SHARED_LIBRARY_RELEASE "${ANDROID_NATIVE_LIBRARRY_PATH}/../libc++_shared.so") 
+	#add_custom_command(TARGET ${the_target}
+    #  POST_BUILD
+    #  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CPP_SHARED_LIBRARY_RELEASE} ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/libc++_shared.so
+    #  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    #  COMMENT "Copying libc++_shared.so from ${CPP_SHARED_LIBRARY_RELEASE} to ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/libc++_shared.so")
+	  
+	add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${ANDROID_ABI}_version_string.inc
+      WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+      COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${ANDROID_ABI}_version_string.inc")
+	#INSTALL(FILES
+	#	"${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${ANDROID_ABI}_version_string.inc"
+	#	DESTINATION "libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
+	#	COMPONENT emgucv_binary)  
+ELSEIF (IS_UBUNTU OR IS_DEBIAN OR IS_RHEL)
+
+  IF (WITH_CUDA)
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND cp -fP ${CMAKE_BINARY_DIR}/bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/*.so ${CMAKE_BINARY_DIR}/bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/*.so.* ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}
+      #WORKING_DIRECTORY "${UNMANAGED_LIBRARY_OUTPUT_PATH}"
+      COMMENT "Copying file to ${CMAKE_SOURCEDIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}")
+  ENDIF()
+  
+  IF (IS_UBUNTU)
+    SET(VERSION_STR_FILE ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${EMGUCV_ARCH}_${UBUNTU_VERSION}_version_string.inc)
+  ELSEIF(IS_DEBIAN)
+    SET(VERSION_STR_FILE ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${EMGUCV_ARCH}_${DEBIAN_VERSION}_version_string.inc)
+  ELSE()
+    SET(VERSION_STR_FILE ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/${EMGUCV_ARCH}_version_string.inc)
+  ENDIF()
+  
   add_custom_command(TARGET ${the_target}
     POST_BUILD
-    COMMAND cp -fP ${CMAKE_BINARY_DIR}/bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/*.so ${CMAKE_BINARY_DIR}/bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/*.so.* ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}
-    #WORKING_DIRECTORY "${UNMANAGED_LIBRARY_OUTPUT_PATH}"
-    COMMENT "Copying file to ${CMAKE_SOURCEDIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}")
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${VERSION_STR_FILE}
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Copying build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${VERSION_STR_FILE}")
+  
+  INSTALL(FILES
+    "${VERSION_STR_FILE}"
+    DESTINATION "libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}"
+  	COMPONENT emgucv_binary)  
+	  
 ELSEIF (APPLE)
   SET_TARGET_PROPERTIES(${the_target}
     PROPERTIES
@@ -3739,30 +4431,15 @@ ELSEIF (APPLE)
     XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
     XCODE_ATTRIBUTE_STRIPFLAGS "-x -u -r"
     XCODE_ATTRIBUTE_DEAD_CODE_STRIPPING "YES"
-    )
-  IF ("${${CMAKE_SYSTEM_PROCESSOR}}" STREQUAL "arm64")
-    SET(CV_EXTERN_FILE_NAME "libcvextern_arm64.dylib")
-    SET(LIBUSB_FILE_NAME "libusb_arm64.dylib")
-  ELSE()
-    SET(CV_EXTERN_FILE_NAME "libcvextern_x64.dylib")
-    SET(LIBUSB_FILE_NAME "libusb_x64.dylib")
-  ENDIF()
+  )
+
   add_custom_command(TARGET ${the_target}
     POST_BUILD
     COMMAND mkdir -p ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch
     COMMENT "Creating arch folder: ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch")
-    
-  add_custom_command(TARGET ${the_target}
-    POST_BUILD
-    COMMAND cp -f ${UNMANAGED_LIBRARY_OUTPUT_PATH}/libcvextern.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${CV_EXTERN_FILE_NAME}
-    COMMENT "Copying file to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${CV_EXTERN_FILE_NAME}")
-  add_custom_command(TARGET ${the_target}
-    POST_BUILD
-    COMMAND lipo ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/libcvextern_*.dylib -output ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib -create
-    COMMENT "Linking target for all architectures and ouputing to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib")
 
-
-  IF(EMGU_CV_WITH_DEPTHAI)
+  IF(EMGU_CV_WITH_DEPTHAI)  
+    SET(LIBUSB_FILE_NAME "libusb_${CMAKE_SYSTEM_PROCESSOR}.dylib")
     IF ("${EMGUCV_ARCH}" STREQUAL "arm64")
        # Apple silicon
        SET(LIBUSB_PATH /opt/homebrew/opt/libusb/lib/libusb-1.0.0.dylib)
@@ -3770,6 +4447,7 @@ ELSEIF (APPLE)
        # Intel Mac
        SET(LIBUSB_PATH /usr/local/opt/libusb/lib/libusb-1.0.0.dylib)
     ENDIF()
+    IF(EXISTS ${LIBUSB_PATH})
     add_custom_command(TARGET ${the_target}
       POST_BUILD
       COMMAND cp -f ${LIBUSB_PATH} ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${LIBUSB_FILE_NAME}
@@ -3780,28 +4458,83 @@ ELSEIF (APPLE)
       COMMENT "Linking target for all architectures and ouputing to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib")
     INSTALL(FILES
       ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
-      DESTINATION "libs/macos/"
+      DESTINATION "libs/runtimes/osx/native/"
       COMPONENT emgucv_binary)
-#    add_custom_command(TARGET ${the_target}
-#      POST_BUILD
-#      COMMAND install_name_tool -change /usr/local/opt/libusb/lib/libusb-1.0.0.dylib @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib 
-#      COMMENT "Altering dependency for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib")
     add_custom_command(TARGET ${the_target}
       POST_BUILD
-      COMMAND install_name_tool -change /usr/local/opt/libusb/lib/libusb-1.0.0.dylib @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib 
+      COMMAND install_name_tool -change ${LIBUSB_PATH} @rpath/libusb-1.0.0.dylib ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib 
       COMMENT "Altering dependency for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib")
     add_custom_command(TARGET ${the_target}
       POST_BUILD
       COMMAND install_name_tool -id "@rpath/libusb-1.0.0.dylib" ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
       COMMAND chmod a+x ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib
       COMMENT "Altering id for ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libusb-1.0.0.dylib")
+    ENDIF()
   ENDIF()
 
-  INSTALL(FILES
-    ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../libcvextern.dylib
-    DESTINATION "libs/macos/"
-    COMPONENT emgucv_binary)
+  add_custom_command(TARGET ${the_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${OPENCV_BUILD_INFO_VERSION_STRING} ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../${EMGUCV_ARCH}_version_string.inc
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Copying MacOS build information from ${OPENCV_BUILD_INFO_VERSION_STRING} to ${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../${EMGUCV_ARCH}_version_string.inc")
+  
+    #INSTALL(FILES
+	#	"${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../${EMGUCV_ARCH}_version_string.inc"
+	#	DESTINATION "libs/runtimes/osx/native"
+	#	COMPONENT emgucv_binary)
+		
+    #IF(("${EMGUCV_ARCH}" STREQUAL "x86_64") AND (EXISTS "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../arm64_version_string.inc"))
+    #  INSTALL(FILES
+	#	"${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../arm64_version_string.inc"
+	#	DESTINATION "libs/runtimes/osx/native"
+	#	COMPONENT emgucv_binary)
+    #ELSEIF(("${EMGUCV_ARCH}" STREQUAL "arm64") AND (EXISTS "${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../x86_64_version_string.inc"))
+    #  INSTALL(FILES
+	#	"${CMAKE_SOURCE_DIR}/libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/../x86_64_version_string.inc"
+	#	DESTINATION "libs/runtimes/osx/native"
+	#	COMPONENT emgucv_binary)
+    #ENDIF()
 
+  SET(CVEXTERN_AND_DEPENDENCY_DLLS ${CVEXTERN_DEPENDENCY_DLLS} "libcvextern.dylib")
+  
+
+  FOREACH(CVEXTERN_DEPENDENCY_DLL ${CVEXTERN_AND_DEPENDENCY_DLLS})
+    GET_FILENAME_COMPONENT(CVEXTERN_DEPENDENCY_DLL_NAME ${CVEXTERN_DEPENDENCY_DLL} NAME_WE)
+    GET_FILENAME_COMPONENT(CVEXTERN_DEPENDENCY_DLL_EXT ${CVEXTERN_DEPENDENCY_DLL} EXT)
+    STRING(TOLOWER ${CVEXTERN_DEPENDENCY_DLL_EXT} CVEXTERN_DEPENDENCY_DLL_EXT_LOWER)
+    
+    add_custom_command(TARGET ${the_target}
+      POST_BUILD
+      COMMAND rm -f ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}
+      COMMENT "Removing file ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}")
+    
+    IF( (${CVEXTERN_DEPENDENCY_DLL_EXT_LOWER} STREQUAL ".dylib") OR (${CVEXTERN_DEPENDENCY_DLL_EXT_LOWER} STREQUAL ".so") ) 
+      add_custom_command(TARGET ${the_target}
+	POST_BUILD
+	COMMAND cp -f ${UNMANAGED_LIBRARY_OUTPUT_PATH}/${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT} ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${CVEXTERN_DEPENDENCY_DLL_NAME}_${CMAKE_SYSTEM_PROCESSOR}${CVEXTERN_DEPENDENCY_DLL_EXT}
+	COMMENT "Copying file to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${CVEXTERN_DEPENDENCY_DLL_NAME}_${CMAKE_SYSTEM_PROCESSOR}${CVEXTERN_DEPENDENCY_DLL_EXT}")
+      add_custom_command(TARGET ${the_target}
+	POST_BUILD
+	COMMAND lipo ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../arch/${CVEXTERN_DEPENDENCY_DLL_NAME}_*${CVEXTERN_DEPENDENCY_DLL_EXT} -output ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT} -create
+	COMMENT "Linking target for all architectures and outputing to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}")
+      add_custom_command(TARGET ${the_target}
+	POST_BUILD
+	COMMAND chmod a+x ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}
+	COMMENT "Add execute permission to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}")
+    ELSE()
+      add_custom_command(TARGET ${the_target}
+	POST_BUILD
+	COMMAND cp -f ${UNMANAGED_LIBRARY_OUTPUT_PATH}/${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT} ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}
+	COMMENT "Copying file to ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL_NAME}${CVEXTERN_DEPENDENCY_DLL_EXT}")
+    ENDIF()
+    
+    INSTALL(FILES
+      ${UNMANAGED_LIBRARY_OUTPUT_PATH}/../${CVEXTERN_DEPENDENCY_DLL}
+      DESTINATION "libs/runtimes/osx/native/"
+      COMPONENT emgucv_binary)
+    
+  ENDFOREACH()
+  
   #INSTALL(FILES ${the_target} 
   #  RUNTIME DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs
   #  LIBRARY DESTINATION libs${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER} COMPONENT libs
@@ -3809,10 +4542,14 @@ ELSEIF (APPLE)
   
 ENDIF()
 
-#IF("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
-#  add_custom_command(TARGET ${the_target}
-#    POST_BUILD
-#    COMMAND emcc -o ${CMAKE_SOURCE_DIR}/libs/libcvextern.bc bin${UNMANAGED_LIBRARY_OUTPUT_SUBFOLDER}/*.a opencv/3rdparty/lib/*.a opencv/lib/*.a ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/*.a
-#    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-#    COMMENT "Merging libcvextern.bc")
-#ENDIF()
+IF(IS_EMSCRIPTEN_BUILD AND EMGU_CV_EMSCRIPTEN_LLVM_AR_PATH)
+  add_custom_command(TARGET ${the_target}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+      -DLLVM_AR=${EMGU_CV_EMSCRIPTEN_LLVM_AR_PATH}
+      -DBUILD_DIR=${CMAKE_BINARY_DIR}
+      -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
+      -DOBJ_DIR=${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${the_target}.dir
+      -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/merge_emscripten_libs.cmake
+    COMMENT "Merging LLVM IR bitcode archives into libs/webgl/cvextern.a")
+ENDIF()
